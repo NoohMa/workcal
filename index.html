@@ -815,10 +815,10 @@ const DEF_PROMPT=`請根據以下我的工作紀錄，撰寫「{期間}」的個
 
 const DEF_SET={displayName:'馬哥',teamsName:'小馬',hoursPerDay:8,leaveUnit:1,
   leaveTypes:['特休','補休','病假','事假','公假','其他'],places:['板橋','台中','台北'],
-  dailyItemLimit:5,workCategories:['專案','例行','會議','突發','其他'],exportDefaults:{priv:false,extras:false,loc:false,leave:false},
+  dailyItemLimit:5,workCategories:['專案','例行','會議','突發','授課','助教','導師','考官','跟課','聽課','異地辦公','其他'],exportDefaults:{priv:false,extras:false,loc:false,leave:false},
   holidaysText:HOLI_TEXT,theme:'auto',edFont:'mono',aiPrompt:DEF_PROMPT,lastBackup:null,importStartYear:2024};
 const PCOLORS=['#0A97D9','#4C9F38','#FD6925','#DD1367','#26BDE2','#A21942','#FCC30B','#3F7E44','#E5243B','#BF8B2E','#FD9D24','#19486A','#DDA63A','#56C02B','#00689D','#FD6925','#E5243B'];
-const CATS=['專案','例行','會議','突發','其他'];
+const CATS=['專案','例行','會議','突發','授課','助教','導師','考官','跟課','聽課','異地辦公','其他'];
 function categories(){return [...new Set([...CATS,...(db?.settings?.workCategories||[])])]};
 function catRE(){return new RegExp('^('+categories().map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')\\s*[-|]\\s*(.+)$')}
 const STATUSES=['待辦','規劃','完成','已交付','延遲','放棄'];
