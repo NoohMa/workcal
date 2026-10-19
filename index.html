@@ -672,6 +672,29 @@ body{background:linear-gradient(150deg,#BCEBE8 0%,#E0F8F3 45%,#E8FAF7 100%)}
 :root[data-theme="light"] #nav .brand :is(b,span){color:#173B48 !important;}
 :root[data-theme="light"] :is(.md-box,.md-f){background:#FFFFFF !important;}
 
+
+/* WORKCAL modal surface hierarchy / input borders — 2026-10-19 */
+:root[data-theme="light"] .ov .md-box{
+  overflow:hidden; border:1px solid #98CBCD !important; border-top:1px solid #98CBCD !important;
+  border-radius:16px !important; background:#FFFFFF !important;
+  box-shadow:0 18px 55px rgba(12,54,66,.22) !important;
+  isolation:isolate;
+}
+:root[data-theme="light"] .ov .md-h{
+  background:#EAF7F7 !important; color:#174753 !important;
+  border-radius:0 !important; border-bottom:1px solid #C8E3E5 !important;
+}
+:root[data-theme="light"] .ov .md-b{background:#FFFFFF !important}
+:root[data-theme="light"] .ov .md-f{background:#F7FBFB !important;border-top:1px solid #D1E6E7 !important}
+:root[data-theme="light"] :is(.md-b,.guided,.guide-header,.week-panel,.card) :is(input:not([type="checkbox"]):not([type="radio"]),select,textarea){
+  border:1px solid #93C6CD !important; background-color:#FFFFFF !important; color:#173B48 !important;
+}
+:root[data-theme="light"] :is(.md-b,.guided,.guide-header,.week-panel,.card) :is(input,select,textarea):focus{
+  border-color:#007D85 !important;outline:2px solid rgba(0,125,133,.23) !important;outline-offset:1px;
+}
+:root[data-theme="light"] :is(.md-b,.guided,.guide-header,.week-panel,.card) :is(input,textarea)::placeholder{color:#597680 !important}
+:root[data-theme="light"] .ov .md-box .xbtn{border-color:#A8D2D5 !important;background:#FFFFFF !important;color:#174753 !important}
+@media(max-width:1023px){:root[data-theme="light"] .ov .md-box{border-radius:14px !important}}
 </style>
 </head>
 <body>
@@ -931,8 +954,12 @@ function parseItem(raw,sec){
   return it}
 function parseHeaderLocs(v){const out=[];for(const g of v.split('|')){const s=g.trim();if(!s)continue;
   const m=s.match(/^(\d{1,2}:\d{2})\s*[-~]\s*(\d{1,2}:\d{2})\s*(.*)$/);
-  let place=(m?m[3]:s).trim();const trip=/出差/.test(place);place=place.replace(/[(（]?出差[)）]?/,'').trim();
-  if(place)out.push({start:m?m[1]:'',end:m?m[2]:'',place,trip})}return out.slice(0,4)}
+  let place=(m?m[3]:s).trim();
+  const activityMatch=place.match(/[（(](?:出差|一般辦公)[:：](授課／助教／導師／考官|跟課／聽課|會議|異地辦公)[)）]$/);
+  const activity=activityMatch?activityMatch[1]:'';
+  const trip=/[（(]出差(?:[:：][^)）]+)?[)）]$/.test(place)||(!activityMatch&&/出差/.test(place));
+  place=place.replace(/[（(](?:出差|一般辦公)[:：][^)）]+[)）]$/,'').replace(/[（(]出差[)）]$/,'').trim();
+  if(place)out.push({start:m?m[1]:'',end:m?m[2]:'',place,trip,activity})}return out.slice(0,4)}
 function parseHeaderLeaves(v){const out=[];for(const g of v.split(/[|,]/)){const s=g.trim();if(!s)continue;
   const m=s.match(new RegExp('^(.+?)\\s*'+NUM+'\\s*(hr|h|小時|天|日)?$'));
   if(m){let h=+m[2];if(/天|日/.test(m[3]||''))h*=hpd();out.push({type:m[1].trim(),hours:h})}}return out}
@@ -1552,7 +1579,7 @@ function guideInitHeader(){
  guideHeaderDay=S.day;
 }
 function guideHeaderText(){
- const places=guidePlaces.filter(x=>String(x.place||'').trim()).map(x=>`${x.start&&x.end?x.start+'-'+x.end+' ':''}${x.place}${x.trip?'（出差）':''}`).join(' | ');
+ const places=guidePlaces.filter(x=>String(x.place||'').trim()).map(x=>`${x.start&&x.end?x.start+'-'+x.end+' ':''}${x.place}${x.activity?'（'+(x.trip?'出差':'一般辦公')+'：'+x.activity+'）':(x.trip?'（出差）':'')}`).join(' | ');
  const leaves=guideLeaves.filter(x=>String(x.type||'').trim()&&Number(x.hours)>0).map(x=>`${x.type} ${fh(x.hours)}hr`).join(' | ');
  return {places,leaves};
 }
@@ -1582,7 +1609,7 @@ function guideCompleteText(){
 }
 function guideHeaderHTML(){
  guideInitHeader();
- const loc=guidePlaces.map((x,i)=>`<div class="g-item"><div class="fgrid"><label class="fl">辦公地<input data-gplace="${i}" data-gfield="place" value="${esc(x.place)}" placeholder="例如：板橋"></label><label class="fl">工作性質<select data-gplace="${i}" data-gfield="trip"><option value="0" ${!x.trip?'selected':''}>一般辦公</option><option value="1" ${x.trip?'selected':''}>出差</option></select></label><label class="fl">開始時間<input type="time" data-gplace="${i}" data-gfield="start" value="${esc(x.start||'08:30')}"></label><label class="fl">結束時間<input type="time" data-gplace="${i}" data-gfield="end" value="${esc(x.end||'17:30')}"></label></div><button class="btn sm" data-guide="remove-place" data-i="${i}">移除這段辦公地</button></div>`).join('');
+ const loc=guidePlaces.map((x,i)=>`<div class="g-item"><div class="fgrid"><label class="fl">辦公地<input data-gplace="${i}" data-gfield="place" value="${esc(x.place)}" placeholder="例如：板橋"></label><label class="fl">工作性質<select data-gplace="${i}" data-gfield="trip"><option value="0" ${!x.trip?'selected':''}>一般辦公</option><option value="1" ${x.trip?'selected':''}>出差</option></select></label><label class="fl">實際工作項目<select data-gplace="${i}" data-gfield="activity"><option value="" ${!x.activity?'selected':''}>請選擇（選填）</option>${['授課／助教／導師／考官','跟課／聽課','會議','異地辦公'].map(a=>`<option value="${a}" ${x.activity===a?'selected':''}>${a}</option>`).join('')}</select></label><label class="fl">開始時間<input type="time" data-gplace="${i}" data-gfield="start" value="${esc(x.start||'08:30')}"></label><label class="fl">結束時間<input type="time" data-gplace="${i}" data-gfield="end" value="${esc(x.end||'17:30')}"></label></div><button class="btn sm" data-guide="remove-place" data-i="${i}">移除這段辦公地</button></div>`).join('');
  const leave=guideLeaves.map((x,i)=>`<div class="g-item"><div class="fgrid"><label class="fl">假別<select data-gleave="${i}" data-gfield="type">${['特休','補休','事假','病假','公假','其他'].map(y=>`<option ${x.type===y?'selected':''}>${y}</option>`).join('')}${!['特休','補休','事假','病假','公假','其他'].includes(x.type)?`<option selected>${esc(x.type)}</option>`:''}</select></label><label class="fl">請假時數 hr<input type="number" min="0" step="0.5" data-gleave="${i}" data-gfield="hours" value="${esc(x.hours)}"></label></div><button class="btn sm" data-guide="remove-leave" data-i="${i}">移除這筆請假</button></div>`).join('');
  return `<div class="guide-header"><h2>當日基本資料</h2><div class="sub">辦公地可分時段、請假可多筆；空白表示無，輸出後自動填回日誌。</div><div class="row" style="justify-content:space-between;margin:10px 0 6px"><b>辦公地／出差</b><button class="btn sm" data-guide="add-place">＋ 新增時段</button></div>${loc||'<div class="sub">尚未設定辦公地</div>'}<div class="row" style="justify-content:space-between;margin:12px 0 6px"><b>請假</b><button class="btn sm" data-guide="add-leave">＋ 新增請假</button></div>${leave||'<div class="sub">無請假</div>'}</div>`;
 }
@@ -1605,7 +1632,7 @@ function guideOutputPrev(){const done=[],undone=[];for(const x of guidePrev()){c
 function guideAction(type,el){
  if(type==='add-place'){
   if(guidePlaces.length>=4){toast('辦公地最多四段');return}
-  guidePlaces.push({place:'',start:'08:30',end:'17:30',trip:false});guideRender();return;
+  guidePlaces.push({place:'',start:'08:30',end:'17:30',trip:false,activity:''});guideRender();return;
  }
  if(type==='remove-place'){guidePlaces.splice(+el.dataset.i,1);guideRender();return}
  if(type==='add-leave'){guideLeaves.push({type:'特休',hours:1});guideRender();return}
