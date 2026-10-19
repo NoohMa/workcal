@@ -645,6 +645,33 @@ body{background:linear-gradient(150deg,#BCEBE8 0%,#E0F8F3 45%,#E8FAF7 100%)}
 :root:not([data-theme="dark"]) ::selection{background:#007D85;color:#FFFFFF}
 @media(max-width:1023px){:root:not([data-theme="dark"]) #main{background:#F7FCFC}}
 /* === END WORKCAL GLOBAL LEGIBILITY STANDARD === */
+
+/* WORKCAL LIGHT SURFACES V4 | keep dark theme available on explicit choice */
+:root[data-theme="light"] body,
+:root[data-theme="light"] #app { background:#F8FCFC !important; }
+:root[data-theme="light"] #nav {background:#F3FAFA !important;color:#173B48 !important;border-right:1px solid #D9EAEB !important;}
+:root[data-theme="light"] #rail {background:#F7FCFC !important;color:#173B48 !important;border-left:1px solid #DCEBEC !important;}
+:root[data-theme="light"] #main {background:#F8FCFC !important;}
+:root[data-theme="light"] .ph,
+:root[data-theme="light"] .md-h,
+:root[data-theme="light"] .dash-output-head {background:#FAFDFD !important;color:#173B48 !important;border-color:#DCEBEC !important;}
+:root[data-theme="light"] :is(.card,.md-box,.mini-calendar,.guided,.dash-work-col,.dash-prev-col,.pcard){background:#FFFFFF !important;color:#173B48 !important;}
+:root[data-theme="light"] .md-box .md-h h2,
+:root[data-theme="light"] .ph h1,
+:root[data-theme="light"] .dash-output-head small {color:#173B48 !important;}
+:root[data-theme="light"] #nav .navbtn {background:transparent !important;color:#174753 !important;}
+:root[data-theme="light"] #nav .navbtn:hover {background:#E4F4F3 !important;}
+:root[data-theme="light"] #nav .navbtn[aria-current="page"]{background:#007D85 !important;color:#FFFFFF !important;}
+:root[data-theme="light"] #nav .navbtn[aria-current="page"] :is(svg,.k){color:#FFFFFF !important;}
+:root[data-theme="light"] #nav .navbtn .k {color:#456578 !important;}
+:root[data-theme="light"] :is(.btn.pri,.tab[aria-pressed="true"]){background:#007D85 !important;color:#FFFFFF !important;border-color:#007D85 !important;}
+:root[data-theme="light"] .dash-section-head {background:#ECF8F7 !important;color:#174753 !important;}
+:root[data-theme="light"] .dash-section-head small {color:#456578 !important;}
+:root[data-theme="light"] .dash-prev-col .dash-section-head {background:#EFF9F3 !important;color:#174C3C !important;}
+:root[data-theme="light"] :is(.sub,.syncstate,.railsec .sub){color:#476273 !important;}
+:root[data-theme="light"] #nav .brand :is(b,span){color:#173B48 !important;}
+:root[data-theme="light"] :is(.md-box,.md-f){background:#FFFFFF !important;}
+
 </style>
 </head>
 <body>
@@ -1302,7 +1329,7 @@ function checkMorningReminder(){
 }
 
 
-function applyTheme(){const t=db.settings.theme;if(t==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t);
+function applyTheme(){const t=db.settings.theme;document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');
   document.documentElement.style.setProperty('--edf',db.settings.edFont==='sans'?'var(--font)':'var(--mono)')}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('on'),1800)}
 async function copy(text){try{await navigator.clipboard.writeText(text);toast('已複製');return true}catch(e){
