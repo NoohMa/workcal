@@ -558,6 +558,43 @@ body{background:linear-gradient(150deg,#BCEBE8 0%,#E0F8F3 45%,#E8FAF7 100%)}
 /* 整份日誌操作按鈕：安排在最後一段表單下方，符合閱讀與輸入順序。 */
 .guide-final-actions{margin-top:18px;padding-top:14px;border-top:1px solid var(--line);justify-content:flex-end}
 @media(max-width:1023px){.guide-final-actions{display:grid;grid-template-columns:1fr;gap:8px}.guide-final-actions .btn{width:100%;justify-content:center;min-height:46px}}
+
+/* === SOFT AQUA VISUAL HIERARCHY — CSS ONLY === */
+:root:not([data-theme="dark"]){--bg:#F0FBFA;--surface-2:#EAF8F7;--line:#D3EAE9;--line-2:#E5F2F1;--accent-soft:#E0F5F4}
+:root:not([data-theme="dark"]) body{background:#F1FBFA}
+:root:not([data-theme="dark"]) #app{background:linear-gradient(135deg,#EFFBFB 0%,#E5F7F7 60%,#F5FCFA 100%)}
+:root:not([data-theme="dark"]) #main{background:linear-gradient(145deg,#F2FBFA,#E8F8F8 58%,#F4FCFA)}
+:root:not([data-theme="dark"]) #nav{background:linear-gradient(180deg,#D8F1F0 0%,#CDEAE9 65%,#E0F5F3 100%);border-right:1px solid #B8DDDB;color:#164B54}
+:root:not([data-theme="dark"]) .brand b{color:#0B6470}
+:root:not([data-theme="dark"]) .brand span{color:#497B81}
+:root:not([data-theme="dark"]) #nav .navbtn{color:#28616A;background:#E7F7F5;border:1px solid transparent}
+:root:not([data-theme="dark"]) #nav .navbtn svg{color:#3F8790}
+:root:not([data-theme="dark"]) #nav .navbtn:hover{background:#D9F1EE;border-color:#B4DBD8}
+:root:not([data-theme="dark"]) #nav .navbtn[aria-current="page"]{background:#FFFFFF;color:#006C7C;border-color:#8CCDD0;box-shadow:0 2px 7px rgba(0,108,124,.08)}
+:root:not([data-theme="dark"]) #nav .navbtn[aria-current="page"] svg{color:#008DA2}
+:root:not([data-theme="dark"]) #nav .navfoot .syncstate{color:#356B73}
+:root:not([data-theme="dark"]) #rail{background:linear-gradient(180deg,#EDF9F8,#E4F5F3);border-left:1px solid #C7E8E4}
+:root:not([data-theme="dark"]) .ph{background:#F2FCFB;border-color:#C6E7E4}
+:root:not([data-theme="dark"]) .card{border-color:#D3E8E6;border-top-color:#93D7D6;box-shadow:0 2px 7px rgba(25,100,110,.04)}
+:root:not([data-theme="dark"]) .dash-kpi.k-blue{background:#EBF3FE}
+:root:not([data-theme="dark"]) .dash-kpi.k-green{background:#EAF8EF}
+:root:not([data-theme="dark"]) .dash-kpi.k-orange{background:#FFF4ED}
+:root:not([data-theme="dark"]) .dash-kpi.k-rose{background:#FFF0F4}
+:root:not([data-theme="dark"]) .dash-kpi .k-ico{box-shadow:none}
+:root:not([data-theme="dark"]) .dash-output-head{background:#E4F6F5;border-color:#B9E4E2}
+:root:not([data-theme="dark"]) .dash-work-col,:root:not([data-theme="dark"]) .dash-prev-col{border-color:#C3E5E2}
+:root:not([data-theme="dark"]) .dash-section-head{background:linear-gradient(95deg,#087E8E,#19A6A5)}
+:root:not([data-theme="dark"]) .dash-prev-col .dash-section-head{background:linear-gradient(95deg,#168E70,#2EAB90)}
+:root:not([data-theme="dark"]) .cell:nth-child(n){background:#FFFFFF;border-color:#D0E8E7}
+:root:not([data-theme="dark"]) .cell:nth-child(7n+1){background:#F2FBFB}
+:root:not([data-theme="dark"]) .cell:nth-child(7n+3){background:#F2FAF6}
+:root:not([data-theme="dark"]) .cell:nth-child(7n+5){background:#F4F9FC}
+:root:not([data-theme="dark"]) .cell.today{border-color:#0097A9}
+:root:not([data-theme="dark"]) #bnav{background:#EAF8F6;border-color:#B9E1DE}
+:root:not([data-theme="dark"]) #bnav .bn{color:#43777C}
+:root:not([data-theme="dark"]) #bnav .bn[aria-current="page"]{color:#006B7D;background:#D7F0ED}
+@media(max-width:1023px){:root:not([data-theme="dark"]) #main{background:linear-gradient(160deg,#F1FBFA,#EAF8F7)}}
+/* === END SOFT AQUA VISUAL HIERARCHY === */
 </style>
 </head>
 <body>
