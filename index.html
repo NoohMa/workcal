@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0A97D9">
+<meta name="theme-color" content="#009EAE">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
 <title>工作日誌</title>
 <style>
 /* 版面：左導覽｜主內容｜右側待辦欄；手機為單欄＋底部導覽。記事本格線為每日頁的識別。 */
@@ -305,6 +310,222 @@ table.t td.n,table.t th.n{text-align:right;font-variant-numeric:tabular-nums;whi
 @media (max-width:1023px){.hide-m{display:none!important}.btn kbd,.seg kbd,.navbtn .k{display:none}}
 @media (min-width:1024px){.only-m{display:none!important}}
 @media (min-width:1280px){.rail-toggle{display:none!important}}
+
+/* === SDGs FULL-PAGE COLOR THEME v1.2: VISUAL ONLY === */
+:root{
+  --bg:#FFF9EE;--surface:#FFFFFF;--surface-2:#FFF1DF;--line:#F0DDBF;--line-2:#F9EBD8;
+  --fg:#29253B;--fg-2:#544D66;--fg-3:#797188;
+  --accent:#C2185B;--accent-fg:#FFFFFF;--accent-soft:#FFE1F0;
+  --plan:#1268B3;--plan-bg:#DDF2FF;--done:#197844;--done-bg:#DCF8E4;
+  --late:#C4213D;--late-bg:#FFE1E7;--pend:#AE5500;--pend-bg:#FFF0BD;
+  --none:#897B91;--none-bg:#F1ECF4;--star:#9D6600;--priv:#90387B;--priv-bg:#FCE5FA;
+  --rule:rgba(194,24,91,.10);--shadow:0 8px 26px rgba(97,45,85,.13);
+}
+body{background:linear-gradient(140deg,#FFF3DC 0%,#FFE6EC 35%,#E2F8F7 70%,#FFF6DF 100%)}
+#main{background:linear-gradient(165deg,rgba(255,255,255,.20),rgba(255,255,255,.45))}
+#nav{background:linear-gradient(180deg,#FFDAE6 0%,#FFE5C5 35%,#FFF4C7 65%,#D9F6E7 100%);border-right:2px solid #F3B3CA;padding-left:7px}
+#rail{background:linear-gradient(170deg,#DFF6FC 0%,#EEE5FF 53%,#FFE8F0 100%);border-left:2px solid #CDB4E9;padding-right:10px}
+.brand{padding-top:12px}.brand b{color:#A11452;font-size:18px}.brand span{color:#7F4468}
+.navbtn{border:1px solid transparent;font-weight:600;color:#39334B}
+.navbtn:nth-child(2){background:#FCE0E6;color:#9E1530}
+.navbtn:nth-child(3){background:#FFF0BD;color:#855000}
+.navbtn:nth-child(4){background:#E7DFFF;color:#513E9B}
+.navbtn:nth-child(5){background:#D9F3E4;color:#17613D}
+.navbtn:nth-child(6){background:#DDF3FF;color:#126298}
+.navbtn:nth-child(7){background:#FFE3D1;color:#9E411D}
+.navbtn:nth-child(8){background:#FBE3F4;color:#923A73}
+.navbtn[aria-current="page"]{border:2px solid currentColor;box-shadow:0 3px 12px rgba(61,28,71,.12)}
+.navbtn:hover{filter:saturate(1.3) brightness(.98)}
+.ph{background:linear-gradient(95deg,#FFE0EB,#FFF0C6 50%,#DDF7EF);border:1px solid #F2CCCD;border-radius:12px;padding:12px}
+h1{color:#9F1E53}h2{color:#79316C}h3{color:#775092}
+.card{background:#FFFFFF;border:1px solid #F2D6CA;box-shadow:0 3px 12px rgba(171,79,102,.06)}
+.grid>.card:nth-child(5n+1),.prev>.card:nth-child(5n+1){border-top:4px solid #E5243B}
+.grid>.card:nth-child(5n+2),.prev>.card:nth-child(5n+2){border-top:4px solid #26BDE2}
+.grid>.card:nth-child(5n+3),.prev>.card:nth-child(5n+3){border-top:4px solid #4C9F38}
+.grid>.card:nth-child(5n+4),.prev>.card:nth-child(5n+4){border-top:4px solid #FD9D24}
+.grid>.card:nth-child(5n+5),.prev>.card:nth-child(5n+5){border-top:4px solid #A21942}
+.btn.pri,.savebar .btn.pri{background:linear-gradient(120deg,#D72668,#A21979);border-color:#B71B60;color:white;font-weight:700}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn:not(.pri):not(.ghost){background:#FFFFFF;border-color:#E7BED0}
+.seg{border-color:#E5B0C8}.seg button[aria-pressed="true"]{background:#FDD5E7;color:#911452}
+.tab[aria-pressed="true"]{background:#B92068;border-color:#B92068;color:white}
+.tab{border-color:#EAC1CC}
+.banner{background:linear-gradient(90deg,#FFF0B8,#FFE0DF);border-color:#F2C67B}
+.banner b{color:#AF5418}
+.rem-i{background:#FFF7E5;border-left:4px solid #FD9D24}
+.rem-i:nth-child(3n+2){background:#E6F7F0;border-left-color:#4C9F38}
+.rem-i:nth-child(3n){background:#E5F5FF;border-left-color:#26BDE2}
+.calhead{color:#A91E5B;font-weight:700}
+.cell{border-color:#F0CFD9;background:#FFFFFF;border-radius:10px}
+.cell:nth-child(7n+1){background:#FFF2EB}.cell:nth-child(7n+2){background:#FFF8DF}
+.cell:nth-child(7n+3){background:#F0FBE7}.cell:nth-child(7n+4){background:#E9FAFE}
+.cell:nth-child(7n+5){background:#F1EBFF}.cell:nth-child(7n+6){background:#FFEDF7}
+.cell:nth-child(7n){background:#FFF0EC}
+.cell.today{border:2px solid #D72668;box-shadow:inset 0 0 0 1px #F08EBA}
+.cell.cur{outline-color:#A21979}
+.cell.off{filter:saturate(.62)}
+.mm{border-top:4px solid #26BDE2}.mm:nth-child(4n+1){border-top-color:#E5243B}.mm:nth-child(4n+2){border-top-color:#FCC30B}.mm:nth-child(4n+3){border-top-color:#4C9F38}
+.ed{border:2px solid #E5B7D1;box-shadow:0 4px 18px rgba(183,59,117,.07);background-color:#FFFCF7}
+.ed.read{background-color:#FFFCF7}
+.infobar .chip:nth-child(3n+1){background:#E0F4FF;color:#1764A9}
+.infobar .chip:nth-child(3n+2){background:#FCE6F1;color:#91235C}
+.infobar .chip:nth-child(3n){background:#F3F3CB;color:#745D13}
+.kpi{background:linear-gradient(140deg,#FFF1D8,#FFFFFF);border:1px solid #F0D49E;border-top:5px solid #FD9D24}
+.kpi:nth-child(4n+2){background:linear-gradient(140deg,#E5F7F0,#FFFFFF);border-color:#B4E4CD;border-top-color:#4C9F38}
+.kpi:nth-child(4n+3){background:linear-gradient(140deg,#E1F3FF,#FFFFFF);border-color:#B3DFFC;border-top-color:#26BDE2}
+.kpi:nth-child(4n){background:linear-gradient(140deg,#FFE8F1,#FFFFFF);border-color:#F4BED6;border-top-color:#DD1367}
+.kpi b{color:#9D225A}
+.pcard{background:linear-gradient(160deg,#FFFFFF,#FFF9F2)}
+.list{border-color:#EEC9D5}.li:nth-child(3n+1){background:#FFF7F2}.li:nth-child(3n+2){background:#F4FBF8}.li:nth-child(3n){background:#F3F9FF}.li.sel{outline:2px solid #CB2983;background:#FFE6F1}
+.ov{background:rgba(48,24,56,.48)}.md-box{border:2px solid #E8ADCA;background:#FFFCFA}.md-h{background:linear-gradient(95deg,#FFDDE9,#FFF0C9,#DDF6EF)}
+.md-h h2{color:#A2195F}.md-f{background:#FFF4F7}
+.gwrap{border-color:#E5B7D1;background:#FFFCFF}.gl.head,.gt.head{background:#FBE8F4}
+.gplan{opacity:.34}.gact{filter:saturate(1.25)}
+#bnav{background:linear-gradient(90deg,#FFE4E8,#FFF2C8,#E4F6E6,#E1F1FF,#EFE7FF,#FFE6DC);border-top:2px solid #E5A5C5}
+.bn:nth-child(1){color:#B71C47}.bn:nth-child(2){color:#9A6810}.bn:nth-child(3){color:#6545A0}.bn:nth-child(4){color:#22814B}.bn:nth-child(5){color:#1269A5}.bn:nth-child(6){color:#B04F1E}
+.bn[aria-current="page"]{font-weight:800;text-decoration:underline;text-underline-offset:5px}
+@media(max-width:1023px){#main{background:linear-gradient(170deg,#FFF2DC,#FFEEF5 35%,#E8F8EF)}#rail{background:linear-gradient(170deg,#E3F6FC,#FFF0F5)}}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+ --bg:#1C1827;--surface:#272335;--surface-2:#363048;--line:#50415A;--line-2:#42354C;--fg:#F7EDF4;--fg-2:#D5BDD4;--fg-3:#AC93AE;
+ --accent:#FF78B3;--accent-fg:#241320;--accent-soft:#5B2F52;--plan:#8BCBFF;--plan-bg:#24445F;--done:#99E5AE;--done-bg:#224934;
+ --late:#FF91A0;--late-bg:#572939;--pend:#FFD587;--pend-bg:#51412B;--none:#A99DB5;--none-bg:#383242;--star:#FFDE86;--priv:#F2A6D7;--priv-bg:#49304C;
+} }
+:root[data-theme="dark"]{
+ --bg:#1C1827;--surface:#272335;--surface-2:#363048;--line:#50415A;--line-2:#42354C;--fg:#F7EDF4;--fg-2:#D5BDD4;--fg-3:#AC93AE;
+ --accent:#FF78B3;--accent-fg:#241320;--accent-soft:#5B2F52;--plan:#8BCBFF;--plan-bg:#24445F;--done:#99E5AE;--done-bg:#224934;
+ --late:#FF91A0;--late-bg:#572939;--pend:#FFD587;--pend-bg:#51412B;--none:#A99DB5;--none-bg:#383242;--star:#FFDE86;--priv:#F2A6D7;--priv-bg:#49304C;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body{background:linear-gradient(135deg,#302037,#25394A,#223E35)}
+ :root:not([data-theme="light"]) :is(#nav,#rail,.ph,.md-h,#bnav){filter:brightness(.70)}
+ :root:not([data-theme="light"]) :is(.card,.cell,.kpi,.li,.ed,.md-box){background:var(--surface);color:var(--fg)}
+}
+:root[data-theme="dark"] body{background:linear-gradient(135deg,#302037,#25394A,#223E35)}
+:root[data-theme="dark"] :is(#nav,#rail,.ph,.md-h,#bnav){filter:brightness(.70)}
+:root[data-theme="dark"] :is(.card,.cell,.kpi,.li,.ed,.md-box){background:var(--surface);color:var(--fg)}
+/* === END SDGs FULL-PAGE COLOR THEME === */
+
+/* === AQUA WORKLOG VISUAL THEME === */
+:root{--bg:#E1F7F6;--surface:#FFFFFF;--surface-2:#D6F2F0;--line:#A9DEDC;--line-2:#DCF1F0;--fg:#113B40;--fg-2:#42686B;--fg-3:#557C80;--accent:#007D85;--accent-fg:#FFFFFF;--accent-soft:#B8ECEA;--plan:#087BBD;--plan-bg:#E1F4FF;--done:#16764D;--done-bg:#E4F6E9;--late:#AD3046;--late-bg:#FCE8EB;--pend:#A85A0D;--pend-bg:#FFF0DC;--none:#6C8990;--none-bg:#EFF5F5;--star:#A57C00;--priv:#8051A1;--priv-bg:#F3ECFA;--rule:rgba(0,125,133,.1)}
+body{background:linear-gradient(150deg,#BCEBE8 0%,#E0F8F3 45%,#E8FAF7 100%)}
+#main{background:linear-gradient(155deg,#CEF2EF,#E9FBF7 60%,#E1F6FA)}
+#nav{background:linear-gradient(180deg,#00A6AD,#008E98);border-right-color:#00818A}
+.brand,.brand b,.brand span,#nav .navfoot .syncstate{color:#FFFFFF}
+.navbtn,.navbtn .k{color:#EFFDFC}.navbtn:hover{background:rgba(255,255,255,.15);color:white}
+.navbtn[aria-current="page"]{background:#F2FFFD;color:#05545B;font-weight:750}
+#nav .navfoot .btn{background:#F5FEFD!important;color:#075A61!important;border-color:#B2E5E1!important}
+#rail{background:#D5F5F1;border-left-color:#9ADDD7}
+.ph{background:#B8E9E4;border:1px solid #90D8D3;border-radius:13px;padding:12px}
+.ph h1{color:#075D63}
+.card,.pcard,.grid>.card,.prev>.card,.md-box{background:#FCFFFE;border:1px solid #AEDFD8;border-top:4px solid #00A6AD;box-shadow:0 2px 10px rgba(0,112,119,.07)}
+.grid>.card:nth-child(3n+2),.prev>.card:nth-child(3n+2){border-top-color:#19B4AC}
+.grid>.card:nth-child(3n),.prev>.card:nth-child(3n){border-top-color:#3F9DC4}
+.btn,.btn:not(.pri):not(.ghost),.tab,.seg button,.navfoot button{background:#FFFFFF;color:#123E42;border-color:#98D4D0}
+.btn.pri,.savebar .btn.pri,.tab[aria-pressed="true"]{background:#007D85;color:#FFFFFF;border-color:#007D85;filter:none}
+.btn.pri:hover,.savebar .btn.pri:hover{background:#006971;filter:none}
+.btn.ghost{background:transparent;color:#11454B;border-color:transparent}
+.btn.danger{color:#A52940!important;background:#FFF4F5!important;border-color:#E9AAB2!important}
+.seg button[aria-pressed="true"]{background:#D2F4EF;color:#075A62}
+.btn:disabled,button:disabled{opacity:.56}
+.cell,.cell:nth-child(n){background:#FFFFFF;border-color:#BCDFDB;color:#174146}
+.cell:nth-child(7n+1){background:#E2FAF4}.cell:nth-child(7n+2){background:#E8F8FC}.cell:nth-child(7n+3){background:#F3FCF9}.cell:nth-child(7n+4){background:#DFF5F2}.cell:nth-child(7n+5){background:#E5F6F7}.cell:nth-child(7n+6){background:#F1FBF7}.cell:nth-child(7n){background:#E6FAFA}
+.cell.today{border:2px solid #007D85;box-shadow:inset 0 0 0 1px #A2E5E0}.cell.cur{outline-color:#007D85}
+.calhead{color:#08636A}.mm,.mm:nth-child(n){border-top:4px solid #009CA7;background:#FAFFFE}
+.ed,.ed.read{background-color:#FFFFFF;border:2px solid #8ACDC8;box-shadow:0 2px 12px rgba(0,125,133,.07)}
+.infobar .chip:nth-child(n){background:#E0F6F4;color:#0A5760}
+.kpi,.kpi:nth-child(n){background:linear-gradient(145deg,#E3F8F6,#FFFFFF);border:1px solid #ADDCD6;border-top:5px solid #00A6AD}
+.kpi:nth-child(3n+2){border-top-color:#3C9FC3}.kpi:nth-child(3n){border-top-color:#39A378}.kpi b{color:#006C77}
+.list{border-color:#B7DBD7}.li:nth-child(n){background:#FFFFFF}.li:nth-child(2n){background:#F0FCF8}.li.sel{background:#D5F4EF;outline:2px solid #06868A}
+.ov{background:rgba(4,54,62,.48)}.md-box{background:#FFFFFF;border:2px solid #9BD8D4}.md-h{background:#CAF0EC}.md-h h2{color:#075E64}.md-f{background:#F1FCFB}
+.gwrap{background:#FFFFFF;border-color:#9BD8D4}.gl.head,.gt.head{background:#D4F3F1}
+.banner{background:#E5F8ED;border-color:#B1DCC6}.banner b{color:#166747}
+.rem-i,.rem-i:nth-child(n){background:#E7F8F3;border-left:4px solid #16A6A8;color:#143E41}
+#bnav{background:#E8FAF7;border-top:2px solid #9ADCD6}
+.bn:nth-child(n){color:#24676B}.bn[aria-current="page"]{color:#006E75;font-weight:800}
+:root:not([data-theme="dark"]) input,:root:not([data-theme="dark"]) select,:root:not([data-theme="dark"]) textarea{color:#143E42;background-color:#FFFFFF}
+:root:not([data-theme="dark"]) button:not(.pri):not([aria-pressed="true"]){color:inherit}
+:root:not([data-theme="dark"]) .btn:not(.pri):not(.ghost),:root:not([data-theme="dark"]) .tab:not([aria-pressed="true"]){color:#113F43}
+@media(max-width:1023px){#main{background:linear-gradient(160deg,#D1F3EF,#EAFBF8)}#rail{background:#D5F6F1}}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#092E33;--surface:#103C42;--surface-2:#1C5054;--line:#36777A;--line-2:#286166;--fg:#F2FEFD;--fg-2:#C6E9E6;--fg-3:#A4D0CD;--accent:#5CDDD5;--accent-fg:#073439;--accent-soft:#20555A;--plan:#88D0F7;--plan-bg:#204A5B;--done:#8CE4B2;--done-bg:#204C41;--late:#FF9FAF;--late-bg:#5A303B;--pend:#FFCB84;--pend-bg:#59442D}}
+:root[data-theme="dark"]{--bg:#092E33;--surface:#103C42;--surface-2:#1C5054;--line:#36777A;--line-2:#286166;--fg:#F2FEFD;--fg-2:#C6E9E6;--fg-3:#A4D0CD;--accent:#5CDDD5;--accent-fg:#073439;--accent-soft:#20555A;--plan:#88D0F7;--plan-bg:#204A5B;--done:#8CE4B2;--done-bg:#204C41;--late:#FF9FAF;--late-bg:#5A303B;--pend:#FFCB84;--pend-bg:#59442D}
+:root[data-theme="dark"] body,:root[data-theme="dark"] #main{background:#092E33}
+:root[data-theme="dark"] .card,:root[data-theme="dark"] .cell,:root[data-theme="dark"] .kpi,:root[data-theme="dark"] .li,:root[data-theme="dark"] .ed,:root[data-theme="dark"] .md-box{background:#103C42;color:#F2FEFD}
+:root[data-theme="dark"] .btn:not(.pri),:root[data-theme="dark"] .tab:not([aria-pressed="true"]){background:#16464B;color:#F2FEFD}
+/* === END AQUA THEME === */
+/* Guided entry */
+.guided{margin-bottom:14px;border:1px solid #8ED6CF;border-radius:12px;background:#F5FFFD;padding:14px;color:#123E42}
+.guided h2{color:#08666D;margin:0 0 10px}.guided .fl{color:#275E61}
+.guided-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.guided .g-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.guided .g-item{border:1px solid #B2DCD7;border-radius:8px;padding:10px;margin:8px 0;background:#FFF}
+.guided .g-item .row{margin-bottom:6px}.guided textarea{min-height:50px}
+.guided .g-output{white-space:pre-wrap;overflow-wrap:anywhere;background:#E3F8F5;border-radius:8px;padding:10px;margin-top:10px;color:#11424A;font:13px/1.65 var(--mono)}
+@media(max-width:1023px){.guided{padding:10px}.guided-tabs .btn{flex:1;justify-content:center}}
+
+
+/* === REFERENCE-MATCH AQUA DASHBOARD THEME 2026-10-18 === */
+:root:not([data-theme="dark"]){--bg:#b7eff0;--surface:#ffffff;--surface-2:#e6f8fa;--line:#bae5e6;--line-2:#dff2f4;--fg:#173459;--fg-2:#45617b;--fg-3:#7389a0;--accent:#009EAE;--accent-fg:#fff;--accent-soft:#DCF7F7;--plan:#1262F5;--plan-bg:#D9EAFF;--done:#15AF47;--done-bg:#DFF9E9;--pend:#FD6E31;--pend-bg:#FFF2E4;--late:#FB456C;--late-bg:#FFE9EE}
+:root:not([data-theme="dark"]) body{background:#00AFB9}
+:root:not([data-theme="dark"]) #app{background:linear-gradient(132deg,#02B0BD 0%,#A9EBEE 68%,#D8F7F9 100%)}
+:root:not([data-theme="dark"]) #main{background:linear-gradient(120deg,#D2F7F8 0%,#B0ECF0 55%,#D7F8F7 100%)}
+:root:not([data-theme="dark"]) #nav{background:linear-gradient(178deg,#008B9F,#00A8B0 65%,#019DBA);border-right:none;color:white}
+:root:not([data-theme="dark"]) .brand b{color:#fff;font-size:19px}
+:root:not([data-theme="dark"]) .brand span{color:#ddffff}
+:root:not([data-theme="dark"]) #nav .navbtn{color:#fff;background:rgba(0,95,117,.23);border-radius:9px;margin-bottom:3px}
+:root:not([data-theme="dark"]) #nav .navbtn svg{color:#fff}
+:root:not([data-theme="dark"]) #nav .navbtn[aria-current="page"]{color:#006c82;background:#f2ffff;font-weight:750}
+:root:not([data-theme="dark"]) #nav .navbtn[aria-current="page"] svg{color:#008caa}
+:root:not([data-theme="dark"]) #rail{background:linear-gradient(180deg,#b5f2f3,#d4f7f4);border-left:none;padding:18px 12px}
+:root:not([data-theme="dark"]) .card{background:#fff;border:1px solid #BAE5E6;border-top:3px solid #00B4C0;border-radius:12px}
+:root:not([data-theme="dark"]) .ph{background:rgba(255,255,255,.6);border-color:#a5e7e7}
+:root:not([data-theme="dark"]) .ph h1{color:#075779}
+:root:not([data-theme="dark"]) .btn.pri,:root:not([data-theme="dark"]) .savebar .btn.pri{background:linear-gradient(125deg,#00a9ad,#008b9d);border-color:#008b9d;color:white;filter:none}
+:root:not([data-theme="dark"]) .btn.pri:hover{background:#007d90}
+:root:not([data-theme="dark"]) .btn:not(.pri):not(.ghost),:root:not([data-theme="dark"]) .tab:not([aria-pressed="true"]){background:#fff;color:#14516a;border-color:#bae2ed}
+:root:not([data-theme="dark"]) .tab[aria-pressed="true"]{background:#008ca0;color:#fff;border-color:#008ca0}
+:root:not([data-theme="dark"]) .seg button[aria-pressed="true"]{background:#d9f3f8;color:#075a7e}
+:root:not([data-theme="dark"]) .cell:nth-child(n){background:#fff;color:#204968}
+:root:not([data-theme="dark"]) .cell:nth-child(7n+1){background:#e7fafd}
+:root:not([data-theme="dark"]) .cell:nth-child(7n+3){background:#effbf6}
+:root:not([data-theme="dark"]) .cell:nth-child(7n+5){background:#f2f9fe}
+:root:not([data-theme="dark"]) .cell.today{border-color:#0097a9}
+:root:not([data-theme="dark"]) .ed{background-color:#fff;border-color:#a9deeb}
+:root:not([data-theme="dark"]) .g-item{background:#fff;border-color:#d1e6ef}
+:root:not([data-theme="dark"]) .guided{background:#fff;border-color:#87dce5;border-top:0}
+:root:not([data-theme="dark"]) .guided h2{color:#006f87}
+:root:not([data-theme="dark"]) .kpi:nth-child(n){background:linear-gradient(140deg,#eefbff,#fff);border-top-color:#009bab}
+:root:not([data-theme="dark"]) .kpi:nth-child(4n+2){border-top-color:#14a856}
+:root:not([data-theme="dark"]) .kpi:nth-child(4n+3){border-top-color:#ff793d}
+:root:not([data-theme="dark"]) .kpi:nth-child(4n){border-top-color:#ed4e78}
+:root:not([data-theme="dark"]) #bnav{background:linear-gradient(100deg,#007f98,#00b4bc);border-top:1px solid #75dfe3}
+:root:not([data-theme="dark"]) #bnav .bn{color:#e8ffff}
+:root:not([data-theme="dark"]) #bnav .bn[aria-current="page"]{background:rgba(255,255,255,.18);color:#fff;border-radius:9px;text-decoration:none}
+.dash-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin:9px 0 16px}
+.dash-kpi{display:flex;align-items:center;gap:10px;border-radius:13px;padding:13px;min-width:0;min-height:85px;color:#173252}
+.dash-kpi .k-ico{display:grid;place-items:center;flex:none;width:41px;height:41px;color:#fff;font-size:23px;border-radius:10px;box-shadow:0 3px 7px rgba(20,60,110,.13)}
+.dash-kpi span:not(.k-ico){display:block;font-size:12px;font-weight:650}
+.dash-kpi strong{display:block;font-size:25px;line-height:1.35;white-space:nowrap}
+.dash-kpi small{font-size:12px;font-weight:500}
+.dash-kpi.k-blue{background:linear-gradient(115deg,#D9EAFF,#B9D2FB)}.k-blue .k-ico{background:#1262F5}
+.dash-kpi.k-green{background:linear-gradient(115deg,#DFF9E9,#B9EED4)}.k-green .k-ico{background:#15AF47}
+.dash-kpi.k-orange{background:linear-gradient(115deg,#FFF2E4,#FFDBCC)}.k-orange .k-ico{background:#FD6E31}
+.dash-kpi.k-rose{background:linear-gradient(115deg,#FFE9EE,#F9CBD7)}.k-rose .k-ico{background:#FB456C}
+.dash-workspace{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:12px;margin:12px 0 15px;align-items:start}
+.dash-work-col,.dash-prev-col{border-radius:12px;background:#fff;border:1px solid #89dce5;overflow:hidden;min-width:0;min-height:315px}
+.dash-section-head{background:linear-gradient(95deg,#008fa4,#03b6b5);color:#fff;font-size:15px;font-weight:750;padding:11px 13px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.dash-section-head small{font-size:11px;color:#d9ffff;font-weight:400}
+.dash-prev-col .dash-section-head{background:linear-gradient(100deg,#14ab73,#31c4a0)}
+.dash-output-head{background:linear-gradient(90deg,#89dce9,#c5f3f7);color:#095f7c;border:1px solid #8bdae4;border-radius:9px 9px 0 0}
+.dash-output-head small{color:#367a8c}
+.dash-work-col .guided{border:0;border-radius:0;margin:0;padding:14px;box-shadow:none}
+.dash-work-col .guided>h2{font-size:12px;color:#40677d;margin-bottom:8px;font-weight:550}
+.dash-work-col .guided-tabs{gap:5px}
+.dash-quick{padding:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;background:#f0fcfb;font-size:12px;color:#487388}
+.dash-mini-list{padding:9px 12px}.dash-mini-item{padding:10px 2px;border-bottom:1px solid #e3eff2;display:flex;align-items:center;gap:8px;justify-content:space-between;font-size:12px}.dash-mini-item span{overflow:hidden;text-overflow:ellipsis}.dash-mini-item small{white-space:nowrap;color:#537993}
+.mini-calendar{background:#fff;border-radius:12px;padding:14px 12px;margin-bottom:12px;border:1px solid #9ddfe5;box-shadow:0 2px 8px rgba(0,100,123,.05)}
+.mini-calendar b{font-size:15px;color:#0d517a}.mini-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));margin-top:9px;gap:3px;text-align:center}.mini-wd{font-size:10px;color:#6791a1;padding:3px 0}.mini-date{width:100%;aspect-ratio:1;border:0;border-radius:50%;background:transparent;color:#274969;font-size:11px;cursor:pointer;position:relative}.mini-date.has:after{content:'';position:absolute;width:4px;height:4px;border-radius:50%;background:#00b9a3;left:calc(50% - 2px);bottom:0}.mini-date.active{background:#009ba7;color:#fff;font-weight:750}
+@media(max-width:1279px){.dash-kpis{gap:7px}.dash-kpi{padding:9px;gap:6px}.dash-kpi .k-ico{width:34px;height:34px}.dash-workspace{grid-template-columns:1fr 1fr}}
+@media(max-width:1023px){:root:not([data-theme="dark"]) #main{background:linear-gradient(165deg,#c0f1f4,#e0fcf8)}.dash-kpis{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.dash-kpi{padding:8px 5px;display:block;text-align:center;min-height:84px}.dash-kpi .k-ico{margin:0 auto 5px;width:29px;height:29px;font-size:17px}.dash-kpi strong{font-size:18px}.dash-kpi span:not(.k-ico){font-size:10px}.dash-workspace{grid-template-columns:1fr}.dash-work-col,.dash-prev-col{min-height:0}.dash-quick{flex-wrap:wrap}}
+@media(max-width:370px){.dash-kpi strong{font-size:15px}.dash-kpi span:not(.k-ico){font-size:9px}}
+/* === END REFERENCE-MATCH AQUA THEME === */
 </style>
 </head>
 <body>
@@ -425,10 +646,12 @@ const DEF_PROMPT=`請根據以下我的工作紀錄，撰寫「{期間}」的個
 
 const DEF_SET={displayName:'馬哥',teamsName:'小馬',hoursPerDay:8,leaveUnit:1,
   leaveTypes:['特休','補休','病假','事假','公假','其他'],places:['板橋','台中','台北'],
-  dailyItemLimit:5,exportDefaults:{priv:false,extras:false,loc:false,leave:false},
+  dailyItemLimit:5,workCategories:['專案','例行','會議','其他'],exportDefaults:{priv:false,extras:false,loc:false,leave:false},
   holidaysText:HOLI_TEXT,theme:'auto',edFont:'mono',aiPrompt:DEF_PROMPT,lastBackup:null,importStartYear:2024};
 const PCOLORS=['#0A97D9','#4C9F38','#FD6925','#DD1367','#26BDE2','#A21942','#FCC30B','#3F7E44','#E5243B','#BF8B2E','#FD9D24','#19486A','#DDA63A','#56C02B','#00689D','#FD6925','#E5243B'];
-const CATS=['專案','例行','會議'];
+const CATS=['專案','例行','會議','其他'];
+function categories(){return [...new Set([...CATS,...(db?.settings?.workCategories||[])])]};
+function catRE(){return new RegExp('^('+categories().map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')\\s*[-|]\\s*(.+)$')}
 const STATUSES=['待辦','規劃','完成','已交付','延遲','放棄'];
 const STCLS={'待辦':'none','規劃':'plan','完成':'done','已交付':'done','延遲':'late','放棄':'none'};
 const REASONS=['被突發擠掉','等他人回覆','低估工時','臨時會議','其他'];
@@ -472,10 +695,10 @@ function preSplit(text){
   return String(text||'').split(/\r?\n/).map(line=>{
     const n=N(line);
     const heads=(n.match(/今日工作項目|今日計畫|今日計劃|昨日未完成|昨日完成|昨日新增突發工作/g)||[]).length;
-    const cats=(n.match(/(專案|例行|會議)\s*[-|]/g)||[]).length;
+    const cats=(n.match(new RegExp('(?:'+categories().join('|')+')\\s*[-|]','g'))||[]).length;
     if((heads&&n.length>8&&!secOf(n))||cats>=2){
       let x=line.replace(/\s*(今日工作項目|今日計畫|今日計劃|昨日未完成|昨日完成|昨日新增突發工作)\s*/g,'\n$1\n');
-      x=x.replace(/\s+(?=(?:專案|例行|會議)\s*[-－｜|])/g,'\n');
+      x=x.replace(new RegExp('\\s+(?=(?:'+categories().join('|')+')\\s*[-－｜|])','g'),'\n');
       x=x.replace(/\n(無)\s+/g,'\n$1\n');
       return x;
     }
@@ -503,7 +726,7 @@ function splitContent(c){
 function reasonTag(t){t=t||'';if(/突發|插件|臨時交辦|擠/.test(t))return'被突發擠掉';if(/等|回覆|待.*確認|卡/.test(t))return'等他人回覆';if(/低估|來不及|時間不足|不夠/.test(t))return'低估工時';if(/會議|開會/.test(t))return'臨時會議';return t?'其他':''}
 function parseItem(raw,sec){
   const s=N(raw);
-  const m=s.match(/^(專案|例行|會議)\s*[-|]\s*(.+)$/);
+  const m=s.match(catRE());
   if(!m)return{ok:false,why:'找不到分類（行首須為 專案／例行／會議）'};
   const it={ok:true,sec,raw,cat:m[1],project:'',title:'',subs:[],est:null,actual:null,actualMissing:false,star:false,dl:null,
     doneCriteria:'',stopLoss:'',deliverTo:'',outcome:'',delivered:false,reason:'',newDate:null,pct:null,note:'',soft:''};
@@ -824,8 +1047,8 @@ function calcStats(from,to){
   while(x<=to){if(isWorkday(x)){wdays++;const has=ts.some(t=>t.date===x)||db.days[x]?.rawText;if(has&&leaveHours(x)<hpd())dset.add(x)}x=addD(x,1);if(diffD(from,x)>800)break}
   const byProj={};for(const t of ts){const k=t.projectId;byProj[k]=byProj[k]||{office:0,unpaid:0,decl:0};byProj[k].office+=t.actual?.office||0}
   for(const o of ots){const k=o.projectId||'_none';byProj[k]=byProj[k]||{office:0,unpaid:0,decl:0};if(o.type==='無償')byProj[k].unpaid+=o.hours;else byProj[k].decl+=o.hours}
-  const byCat={};CATS.forEach(c=>byCat[c]=0);ts.forEach(t=>{byCat[t.category]=(byCat[t.category]||0)+(t.actual?.office||0)});
-  const acc={};CATS.forEach(c=>{const l=ts.filter(t=>t.category===c&&t.estHours>0&&t.actual?.office!=null);acc[c]={e:sum(l,t=>t.estHours),a:sum(l,t=>t.actual.office),n:l.length}});
+  const byCat={};categories().forEach(c=>byCat[c]=0);ts.forEach(t=>{byCat[t.category]=(byCat[t.category]||0)+(t.actual?.office||0)});
+  const acc={};categories().forEach(c=>{const l=ts.filter(t=>t.category===c&&t.estHours>0&&t.actual?.office!=null);acc[c]={e:sum(l,t=>t.estHours),a:sum(l,t=>t.actual.office),n:l.length}});
   const dv=T().filter(t=>t.status==='已交付'&&t.dl&&(t.deliveredAt||t.date)>=from&&(t.deliveredAt||t.date)<=to);
   const ontime={n:dv.length,ok:dv.filter(t=>(t.deliveredAt||t.date)<=t.dl).length,list:dv};
   const lt=ts.filter(t=>t.status==='延遲');const tags={};lt.forEach(t=>{const k=t.delayReasonTag||'未填';tags[k]=(tags[k]||0)+1});
@@ -848,7 +1071,7 @@ function projDetail(pid){
   const ots=db.ot.filter(o=>o.projectId===pid);
   const office=sum(dated,t=>t.actual?.office),unpaid=sum(ots.filter(o=>o.type==='無償'),o=>o.hours),decl=sum(ots.filter(o=>o.type!=='無償'),o=>o.hours);
   const first=ds[0]||null,last=p.status==='結案'&&p.closedAt?p.closedAt:(ds[ds.length-1]||null);
-  const byCat={};CATS.forEach(c=>byCat[c]=sum(dated.filter(t=>t.category===c),t=>t.actual?.office));
+  const byCat={};categories().forEach(c=>byCat[c]=sum(dated.filter(t=>t.category===c),t=>t.actual?.office));
   const remain=sum(ts.filter(t=>['待辦','規劃'].includes(t.status)&&(!t.date||t.date>=today())),t=>t.estHours);
   const deliv=ts.filter(t=>t.status==='已交付').sort(by(t=>t.deliveredAt||t.date||''));
   return{p,ts,dated,ds,office,unpaid,decl,first,last,span:first&&last?diffD(first,last)+1:0,days:ds.length,byCat,remain,deliv,
@@ -931,6 +1154,7 @@ function buildSample(){
 const S={page:'calendar',calView:'month',cursor:today(),day:today(),edit:!isMobile(),dirty:false,
   todoTab:'未排日',todoSel:0,archYear:'all',archProj:'all',noteSel:null,noteQ:'',projFilter:'進行中',projSel:null,projTab:'list',
   gZoom:'month',gSel:0,gOpen:{},gAll:false,statKind:'month',statAnchor:today(),statFrom:null,statTo:null,chartTable:{},privacy:false,railSel:new Set(),settingsTab:'basic'};
+let guideMode='today',guideItems=[],guideReview={};
 let liveParse=null;
 
 function applyTheme(){const t=db.settings.theme;if(t==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t);
@@ -992,13 +1216,19 @@ function renderRail(){
   const todos=T().filter(t=>t.source==='todo'&&!t.date&&!t.archived&&!['完成','已交付','放棄'].includes(t.status)).sort(by(t=>t.dl||'9999'));
   const soon=T().filter(t=>t.dl&&!t.archived&&!['完成','已交付','放棄'].includes(t.status)&&diffD(today(),t.dl)<=14).sort(by(t=>t.dl)).slice(0,10);
   const rem=reminders().slice(0,6);
-  $('#rail').innerHTML=`<div class="row" style="margin-bottom:12px"><h2 style="flex:1">待辦與 DL</h2><button class="btn ghost sm rail-toggle" data-act="rail">關閉</button></div>
+  $('#rail').innerHTML=`${S.page==='day'?miniCalendar(S.day):''}<div class="row" style="margin-bottom:12px"><h2 style="flex:1">待辦與 DL</h2><button class="btn ghost sm rail-toggle" data-act="rail">關閉</button></div>
   ${S.page!=='calendar'&&rem.length?`<div class="railsec"><h3>提醒</h3><div class="rem">${rem.map(remHTML).join('')}</div></div>`:''}
   <div class="railsec"><h3>未排日待辦 <span class="chip">${todos.length}</span></h3>
   ${todos.length?todos.map(t=>`<label class="rti"><input type="checkbox" data-rsel="${t.id}" ${S.railSel.has(t.id)?'checked':''}><span style="flex:1;min-width:0"><span class="pdot" style="background:${pcolor(t.projectId)}"></span> ${esc(t.title)}<br><span class="sub">${esc(pname(t.projectId))}${t.estHours!=null?`・${fh(t.estHours)}hr`:''}${t.dl?`・DL ${md(t.dl)}`:''}</span></span></label>`).join(''):'<div class="sub">沒有未排日的待辦</div>'}
   ${todos.length?`<button class="btn sm pri" data-act="railbring" data-d="${D}">帶入 ${md(D)} 今日工作項目</button>`:''}
   <button class="btn sm" data-act="newtodo">＋ 新增待辦 <kbd>N</kbd></button></div>
   <div class="railsec"><h3>近期 DL（14 天內）</h3>${soon.length?soon.map(t=>{const l=diffD(today(),t.dl);return`<button class="rem-i" data-act="task" data-id="${t.id}"><span class="tag ${l<0?'r':l<=2?'o':'b'}">${l<0?`逾期${-l}天`:l===0?'今天':`${l} 天`}</span><span>${esc(pname(t.projectId))}｜${esc(t.title)}</span></button>`}).join(''):'<div class="sub">14 天內沒有 DL</div>'}</div>`}
+function miniCalendar(D){
+ const y=+D.slice(0,4),m=+D.slice(5,7),fd=new Date(y,m-1,1),start=(fd.getDay()+6)%7,max=new Date(y,m,0).getDate();
+ let cells='';for(let i=0;i<start;i++)cells+='<span class="mini-empty"></span>';
+ for(let i=1;i<=max;i++){const d=`${y}-${pad(m)}-${pad(i)}`;const planned=T().some(t=>t.date===d);cells+=`<button class="mini-date ${d===D?'active':''} ${planned?'has':''}" data-act="openday" data-d="${d}">${i}</button>`}
+ return `<div class="mini-calendar"><div class="row" style="justify-content:space-between"><b>${y} 年 ${m} 月</b><span class="sub">工作行事曆</span></div><div class="mini-grid">${'一二三四五六日'.split('').map(x=>`<span class="mini-wd">${x}</span>`).join('')}${cells}</div></div>`
+}
 function remHTML(r){return `<button class="rem-i" data-act="remgo" data-go='${esc(JSON.stringify(r.go))}'><span class="tag ${r.k}">${esc(r.tag)}</span><span>${esc(r.txt)}</span></button>`}
 
 /* ---------- 月曆 ---------- */
@@ -1039,7 +1269,7 @@ function pgCalendar(){
         cells+=`<button class="mmc" data-act="openday" data-d="${d}" title="${d} ${fh(I.hrs)}h" style="background:${bg};${d===today()?'outline:1.5px solid var(--accent)':''}" aria-label="${d}"></button>`}
       return`<div class="mm"><h4 data-act="calmonth" data-m="${mi+1}">${mi+1} 月</h4><div class="mmg">${cells}</div></div>`}).join('')}</div>
       <div class="legend"><span><i class="pdot" style="background:color-mix(in srgb,var(--accent) 25%,var(--surface-2))"></i>工時少</span><span><i class="pdot" style="background:color-mix(in srgb,var(--accent) 88%,var(--surface-2))"></i>工時多（含加班）</span><span><i class="pdot" style="background:var(--none-bg)"></i>工作日未填</span></div>`}
-  const legend=S.calView==='month'?`<div class="legend"><span><i class="dot" style="background:var(--done)"></i>全部完成</span><span><i class="dot" style="background:var(--plan)"></i>進行中</span><span><i class="dot" style="background:var(--late)"></i>有延遲</span><span><i class="dot" style="background:var(--pend)"></i>有突發</span><span><i class="dot" style="background:var(--none)"></i>未填</span><span>🚩 DL</span><span>✈ 出差</span><span><i class="pdot" style="background:var(--priv-bg);border:1px solid var(--priv)"></i>請假（高度＝時數）</span><span>方向鍵移動・Enter 進入</span></div>`:'';
+  const legend=S.calView==='month'?`<div class="legend"><span><i class="dot" style="background:var(--done)"></i>全部完成</span><span><i class="dot" style="background:var(--plan)"></i>進行中</span><span><i class="dot" style="background:var(--late)"></i>有延遲</span><span><i class="dot" style="background:var(--pend)"></i>有突發</span><span><i class="dot" style="background:var(--none)"></i>未填</span><span>🚩 DL</span><span>🚄 出差</span><span><i class="pdot" style="background:var(--priv-bg);border:1px solid var(--priv)"></i>請假（高度＝時數）</span><span>方向鍵移動・Enter 進入</span></div>`:'';
   return head+remBox+body+legend}
 function calCell(d,out){
   const I=dayInfo(d);const H=hol();const off=!isWorkday(d);
@@ -1048,7 +1278,7 @@ function calCell(d,out){
     <span class="dn">${+d.slice(8)}${I.st?`<span class="dot" style="background:var(--${I.st})"></span>`:''}${I.urg?'<span class="dot" style="background:var(--pend)"></span>':''}${I.warn?'<span class="chip pend" style="padding:0 4px;line-height:14px;font-size:10px">!</span>':''}</span>
     ${H.h[d]?`<span class="hn">${esc(H.h[d])}</span>`:H.w[d]?`<span class="hn" style="color:var(--plan)">補班</span>`:''}
     ${I.hrs||I.est?`<span class="hrs">${I.hrs?fh(I.hrs)+'h':'預'+fh(I.est)+'h'}${I.ot?`<span class="pv"> +${fh(I.ot)}</span>`:''}</span>`:''}
-    <span class="mk">${I.dls?`<span title="DL">🚩${I.dls>1?I.dls:''}</span>`:''}${I.trip?'<span class="pv">✈</span>':''}${I.lv?`<span class="lvt pv">假${fh(I.lv)}h</span>`:''}</span></button>`}
+    <span class="mk">${I.dls?`<span title="DL">🚩${I.dls>1?I.dls:''}</span>`:''}${I.trip?'<span class="pv">🚄</span>':''}${I.lv?`<span class="lvt pv">假${fh(I.lv)}h</span>`:''}</span></button>`}
 
 /* ---------- 每日頁 ---------- */
 function dayText(D){return drafts[D]??db.days[D]?.rawText??template(D)}
@@ -1059,6 +1289,12 @@ function pgDay(){
   return`<div class="dayhead"><button class="xbtn back" data-act="back" aria-label="上一頁（Esc）">‹</button><button class="btn sm" data-act="dayprev" aria-label="前一天">‹ <kbd>[</kbd></button><h1>${md(D)}（${wd(D)}）</h1><button class="btn sm" data-act="daynext" aria-label="後一天"><kbd>]</kbd> ›</button>
     <span class="sub">${D}</span>${H.h[D]?`<span class="chip late">${esc(H.h[D])}</span>`:!isWorkday(D)?'<span class="chip">假日</span>':H.w[D]?'<span class="chip plan">補班日</span>':''}
     <span class="sp" style="flex:1"></span><button class="btn sm rail-toggle" data-act="rail">待辦</button></div>
+  <div class="dash-kpis">
+    <div class="dash-kpi k-blue"><span class="k-ico">▦</span><div><span>今日預估工時</span><strong>${fh(sum(parseDay(text).today,x=>x.est||0))}<small> hr</small></strong></div></div>
+    <div class="dash-kpi k-green"><span class="k-ico">✓</span><div><span>已完成項目</span><strong>${T().filter(t=>t.date===D&&['完成','已交付'].includes(t.status)).length}<small> 項</small></strong></div></div>
+    <div class="dash-kpi k-orange"><span class="k-ico">◷</span><div><span>規劃項目</span><strong>${parseDay(text).today.length}<small> 項</small></strong></div></div>
+    <div class="dash-kpi k-rose"><span class="k-ico">⚑</span><div><span>延遲項目</span><strong>${T().filter(t=>t.date===D&&t.status==='延遲').length}<small> 項</small></strong></div></div>
+  </div>
   <div class="tool">
     ${ro?'<span class="chip priv">隱私模式：私記已隱藏、暫停編輯</span>':`<button class="btn sm" data-act="togedit">${editMode?'閱讀模式':'編輯 <kbd>E</kbd>'}</button>`}
     <button class="btn sm" data-act="copyai">複製給 AI <kbd class="hide-m">Ctrl⇧A</kbd></button>
@@ -1066,11 +1302,55 @@ function pgDay(){
     <button class="btn sm" data-act="teams">複製 Teams 版 <kbd class="hide-m">Ctrl⇧C</kbd></button>
     <button class="btn sm" data-act="picktodo" ${ro?'disabled':''}>帶入待辦 <kbd class="hide-m">Ctrl⇧T</kbd></button>
   </div>
+  <div class="dash-workspace">
+    <div class="dash-work-col"><div class="dash-section-head">▣ 今日工作項目 <small>選項輸入・條列輸出</small></div>
+    ${!ro?`<div id="guided-host"></div>`:''}</div>
+    <div class="dash-prev-col"><div class="dash-section-head">✓ 昨日工作項目確認 <small>上一工作日自動帶入</small></div>
+    <div id="guide-prev-shortcut" class="dash-quick"><span>逐項確認完成狀態、實際工時及延後事項</span><button class="btn sm" data-guide="tab-prev">開啟昨日確認</button></div><div class="dash-mini-list" id="dash-mini-list">${guidePrev().length?guidePrev().slice(0,5).map(x=>`<div class="dash-mini-item"><span>${esc(x.project)}${x.detail?'｜'+esc(x.detail):''}</span><small>預${fh(x.est)}hr</small></div>`).join(''):'<div class="empty">上一工作日尚無項目</div>'}</div></div>
+  </div>
+  <div class="dash-section-head dash-output-head">▤ 產生條列文字 <small>可自由編輯、複製、儲存</small></div>
   <div class="infobar" id="infobar"></div>
   <div class="ed ${editMode?'':'read'}" id="ed"><pre id="hl" aria-hidden="${editMode}"></pre>${editMode?`<textarea id="ta" spellcheck="false" aria-label="${D} 日誌內容">${esc(text)}</textarea>`:''}</div>
   <div class="prev grid g2" id="preview"></div>
   <div class="savebar"><span class="state ${sc}" id="daystate"><i></i>${sl}</span><button class="btn pri" data-act="savedayback" ${ro?'disabled':''}>儲存並返回</button></div>`}
+
+/* ---------- 選項式工作日誌：輸出原始文字，延用現有解析與儲存 ---------- */
+function guideSource(){return $('#ta')?.value??dayText(S.day)}
+function guideReplaceSection(text,key,lines){
+ const ls=text.split('\n'),start=ls.findIndex(l=>secOf(N(l))===key);
+ if(start<0)return text+'\n\n'+SEC_NAME[key]+'\n'+(lines.length?lines.join('\n'):'無');
+ let end=start+1;while(end<ls.length){const n=N(ls[end]);if(secOf(n)||/^[—─\-=_]{3,}$/.test(n)||/^私記/.test(n))break;end++}
+ ls.splice(start+1,end-start-1,...(lines.length?lines:['無']), '');return ls.join('\n')
+}
+function guideCommit(section,lines){
+ let text=guideSource();text=guideReplaceSection(text,section,lines);
+ const ta=$('#ta');if(ta){ta.value=text;ta.dispatchEvent(new Event('input'))}else{S.edit=true;drafts[S.day]=text;render();const t=$('#ta');if(t){t.dispatchEvent(new Event('input'))}}
+ toast('文字已帶入日誌，將自動儲存');
+}
+function guidePrev(){const D=prevWorkday(S.day);return T().filter(t=>t.date===D&&t.origin==='plan').map(t=>({id:t.id,category:t.category,project:pname(t.projectId),detail:taskContent(t)===pname(t.projectId)?'':taskContent(t),est:t.estHours,actual:t.actual?.office,status:'待確認'}))}
+function guideRender(){const host=$('#guided-host');if(!host)return;
+ const C=categories();const opts=C.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+ const prev=guidePrev();if(!Object.keys(guideReview).length)prev.forEach(x=>guideReview[x.id]={status:'待確認',actual:x.actual??'',reason:'',date:mmdd(S.day),detail:x.detail});
+ host.innerHTML=`<section class="guided"><h2>工作項目編輯｜產生可複製的條列文字</h2><div class="guided-tabs"><button class="btn ${guideMode==='today'?'pri':''}" data-guide="tab-today">今日工作項目</button><button class="btn ${guideMode==='prev'?'pri':''}" data-guide="tab-prev">昨日完成／未完成</button><button class="btn" data-guide="categories">＋ 分類</button></div>
+ ${guideMode==='today'?`<div class="fgrid"><label class="fl">分類<select id="gd-cat">${opts}</select></label><label class="fl">專案／工作名稱<input id="gd-project" type="text" list="gd-projects" placeholder="輸入工作名稱"><datalist id="gd-projects">${Object.values(db.projects).map(p=>`<option value="${esc(p.name)}">`).join('')}</datalist></label><label class="fl">預估工時 hr<input type="number" min="0" step="0.5" id="gd-hour" placeholder="例如 3"></label><label class="fl">內容<input id="gd-detail" type="text" placeholder="例如：公告更新、內容巡檢"></label></div><div class="g-actions"><button class="btn pri" data-guide="add">＋ 加入工作項目</button><button class="btn" data-guide="from-text">讀取現有今日項目</button></div><div id="gd-list">${guideItems.map((x,i)=>`<div class="g-item row"><span style="flex:1">${esc(x.category)}-${esc(x.project)}_${hrTok(x.hours)}${x.detail?'，'+esc(x.detail):''}</span><button class="btn sm" data-guide="remove" data-i="${i}">移除</button></div>`).join('')}</div><div class="g-actions"><button class="btn pri" data-guide="output-today">輸出到今日工作項目</button><button class="btn" data-guide="copy-today">複製條列文字</button></div>`:
+ `<div class="sub">來源：上一工作日 ${prevWorkday(S.day)}。逐項選擇完成、未完成或略過，實際工時由你填寫。</div>${prev.length?prev.map((x,i)=>{const r=guideReview[x.id]||{};return`<div class="g-item"><div class="row"><b style="flex:1">${esc(x.category)}－${esc(x.project)}</b><span class="sub">原預估 ${x.est==null?'未填':fh(x.est)+'hr'}</span></div><div class="sub">${esc(x.detail)}</div><div class="fgrid"><label class="fl">結果<select data-gstatus="${x.id}"><option value="待確認" ${r.status==='待確認'?'selected':''}>待確認／略過</option><option value="完成" ${r.status==='完成'?'selected':''}>完成</option><option value="未完成" ${r.status==='未完成'?'selected':''}>未完成</option></select></label><label class="fl">實際工時 hr<input type="number" min="0" step="0.5" data-gactual="${x.id}" value="${esc(r.actual??'')}" placeholder="自行填寫"></label><label class="fl">實際完成內容<input type="text" data-gdetail="${x.id}" value="${esc(r.detail??x.detail)}"></label><label class="fl">未完成原因<input type="text" data-greason="${x.id}" value="${esc(r.reason||'')}"></label><label class="fl">預計完成 MMDD<input type="text" data-gdate="${x.id}" value="${esc(r.date||mmdd(S.day))}"></label></div></div>`}).join(''):'<div class="empty">上一工作日尚無規劃項目，可先使用自由文字日誌。</div>'}<div class="g-actions"><button class="btn pri" data-guide="output-prev">產生昨日完成／未完成</button><button class="btn" data-guide="copy-prev">複製條列文字</button></div>`}
+ <div class="sub" style="margin-top:8px">自由文字模式仍可隨時編輯；產生結果可由下方「複製給 AI／複製 Teams 版」使用。</div></section>`;
+ host.querySelectorAll('[data-gstatus],[data-gactual],[data-gdetail],[data-greason],[data-gdate]').forEach(el=>el.addEventListener('change',()=>{const id=el.dataset.gstatus||el.dataset.gactual||el.dataset.gdetail||el.dataset.greason||el.dataset.gdate;const key=el.dataset.gstatus?'status':el.dataset.gactual?'actual':el.dataset.gdetail?'detail':el.dataset.greason?'reason':'date';guideReview[id]=guideReview[id]||{};guideReview[id][key]=el.value}));
+}
+function guideOutputPrev(){const done=[],undone=[];for(const x of guidePrev()){const r=guideReview[x.id]||{};const details=(r.detail||x.detail||'').trim();if(r.status==='完成')done.push(`${x.category}-${x.project}_預${x.est!=null?hrTok(x.est):'＿hr'}，實${r.actual!==''&&r.actual!=null?hrTok(+r.actual):'＿hr'}${details?'，'+details:''}`);
+ if(r.status==='未完成')undone.push(`${x.category}-${x.project}｜${details||x.project}_${x.est!=null?hrTok(x.est):'＿hr'}，因${r.reason||'待填原因'}，擬${r.date||mmdd(S.day)}完成`)}return{done,undone}}
+function guideAction(type,el){
+ if(type==='tab-today'||type==='tab-prev'){guideMode=type==='tab-today'?'today':'prev';guideRender();return}
+ if(type==='categories'){const t=promptCategory();return}
+ if(type==='add'){const category=$('#gd-cat').value,project=$('#gd-project').value.trim(),h=$('#gd-hour').value,detail=$('#gd-detail').value.trim();if(!project||h===''||+h<0){toast('請填工作名稱及預估工時');return}guideItems.push({category,project,hours:+h,detail});guideRender();return}
+ if(type==='remove'){guideItems.splice(+el.dataset.i,1);guideRender();return}
+ if(type==='from-text'){guideItems=parseDay(guideSource()).today.filter(i=>i.est!=null).map(i=>({category:i.cat,project:i.project,hours:i.est,detail:i.doneText||((i.title!==i.project)?i.title:'')}));guideRender();return}
+ if(type==='output-today'||type==='copy-today'){const lines=guideItems.map(x=>`${x.category}-${x.project}_${hrTok(x.hours)}${x.detail?'，'+x.detail:''}`);if(!lines.length){toast('請先加入工作項目');return}if(type==='copy-today')copy('今日工作項目\n'+lines.join('\n'));else guideCommit('today',lines);return}
+ if(type==='output-prev'||type==='copy-prev'){const {done,undone}=guideOutputPrev();if(!done.length&&!undone.length){toast('請先選擇完成或未完成的項目');return}if(type==='copy-prev'){copy('昨日完成\n'+(done.join('\n')||'無')+'\n\n昨日未完成\n'+(undone.join('\n')||'無'));return}let text=guideSource();text=guideReplaceSection(text,'done',done);text=guideReplaceSection(text,'undone',undone);const ta=$('#ta');if(ta){ta.value=text;ta.dispatchEvent(new Event('input'))}else{S.edit=true;drafts[S.day]=text;render();$('#ta')?.dispatchEvent(new Event('input'))}toast('昨日盤點已產生，將自動儲存')}
+}
+function promptCategory(){openModal({title:'新增工作分類',body:`<label class="fl">分類名稱<input id="gc-name" type="text" placeholder="例如：行政、支援" autofocus></label><p class="sub">新增後可用於日誌解析、待辦、專案與統計。</p>`,foot:'<button class="btn" data-act="mclose">取消</button><button class="btn pri" id="gc-save">新增分類</button>',onMount:ov=>{$('#gc-save',ov).onclick=()=>{const name=$('#gc-name',ov).value.trim();if(!name||/[-｜|_\n]/.test(name)){toast('名稱不能空白或含分隔符號');return}db.settings.workCategories=categories().concat(name).filter((x,i,a)=>a.indexOf(x)===i);persist();closeModal();guideRender();toast('分類已新增')}}})}
 after.day=()=>{
+  if(!S.privacy)guideRender();
   const D=S.day;const ta=$('#ta');
   const upd=()=>{const text=ta?ta.value:dayText(S.day);liveParse=parseDay(text);$('#hl').innerHTML=hlHTML(text,liveParse,!ta)+'\n ';$('#preview').innerHTML=previewHTML(liveParse);$('#infobar').innerHTML=infoHTML(liveParse)};
   upd();
@@ -1096,7 +1376,7 @@ function hlHTML(text,r,read){
     if(/^(日期|姓名|辦公地|請假)\s*:/.test(t))return `<span class="hl-meta">${esc(line)}</span>`;
     const w=aligned&&bad.has(i);
     let h=esc(line);
-    h=h.replace(/^(專案|例行|會議)(\s*[-－｜|])/,(m0,c,sep)=>`<span class="hl-c ${c==='例行'?'c2':c==='會議'?'c3':''}">${c}</span>${sep}`);
+    h=h.replace(new RegExp('^('+categories().join('|')+')(\\s*[-－｜|])'),(m0,c,sep)=>`<span class="hl-c ${c==='例行'?'c2':c==='會議'?'c3':''}">${c}</span>${sep}`);
     h=h.replace(/(預\s*)?(\d+(?:\.\d+)?\s*(?:hr|h|min|分鐘|小時)|＿hr)/g,m0=>`<span class="hl-hr">${m0}</span>`);
     h=h.replace(/([｜|]\s*)(DL\s*[:：]\s*[\d\/\-]+)/g,'$1<span class="hl-dl">$2</span>');
     h=h.replace(/⭐/g,'<span class="hl-star">⭐</span>');
@@ -1108,7 +1388,7 @@ function infoHTML(r){
   const err=r.warnings.filter(w=>w.level==='err').length;
   return [`<span class="chip ${est>avail?'late':'plan'} num">今日預估 ${fh(est)} / 可用 ${fh(avail)} hr</span>`,
     lv?`<span class="chip priv pv">請假 ${(r.header.leaves||[]).map(l=>esc(l.type)+' '+fh(l.hours)+'hr').join('、')}</span>`:'',
-    (r.header.locations||[]).length?`<span class="chip pv">辦公地 ${(r.header.locations||[]).map(l=>esc(l.place)+(l.trip?'✈':'')).join('→')}</span>`:'',
+    (r.header.locations||[]).length?`<span class="chip pv">辦公地 ${(r.header.locations||[]).map(l=>esc(l.place)+(l.trip?'🚄':'')).join('→')}</span>`:'',
     `<span class="chip ${r.today.length>lim&&lim?'pend':''}">項目 ${r.today.length}${lim?` / 上限 ${lim}`:''}</span>`,
     stars===1?'<span class="chip star">⭐ 主星已指定</span>':stars>1?`<span class="chip pend">⭐ ${stars} 顆主星</span>`:r.today.length?'<span class="chip">未指定 ⭐</span>':'',
     err?`<span class="chip pend">待確認 ${err} 行</span>`:'',
@@ -1180,7 +1460,7 @@ function curTodo(){const G=todoGroups();return(G[S.todoTab]||[])[S.todoSel]}
 function taskForm(t,isNew){
   const projs=Object.values(db.projects);
   return`<div class="fgrid">
-  <label class="fl">分類<select id="tf-cat">${CATS.map(c=>`<option ${t.category===c?'selected':''}>${c}</option>`).join('')}</select></label>
+  <label class="fl">分類<select id="tf-cat">${categories().map(c=>`<option ${t.category===c?'selected':''}>${c}</option>`).join('')}</select></label>
   <label class="fl">專案<input type="text" id="tf-proj" list="tf-pl" value="${esc(t.projectId?pname(t.projectId):'')}" placeholder="輸入或選擇，新名稱自動建立"><datalist id="tf-pl">${projs.map(p=>`<option value="${esc(p.name)}">`).join('')}</datalist></label></div>
   <label class="fl">任務名稱<input type="text" id="tf-title" value="${esc(t.title)}" autofocus></label>
   <label class="fl">子項（一行一項）<textarea class="f" id="tf-subs" rows="3">${esc((t.subItems||[]).map(s=>(s.status==='完成'?'[x] ':'')+s.text).join('\n'))}</textarea></label>
@@ -1332,7 +1612,7 @@ function projDetailHTML(pid){
       <dt>實際區間</dt><dd>${d.first||'—'} → ${d.last||'—'}${p.status!=='結案'&&d.first?'（進行中）':''}</dd>
       <dt>專案 DL</dt><dd>${p.dl||'—'}</dd>
       <dt>辦公室</dt><dd>${fh(d.office)}hr</dd><dt>申報加班</dt><dd class="pv">${fh(d.decl)}hr</dd><dt>無償加班</dt><dd class="pv">${fh(d.unpaid)}hr</dd>
-      <dt>分類組成</dt><dd>${CATS.map(c=>`${c} ${fh(d.byCat[c])}hr`).join('・')}</dd></dl>
+      <dt>分類組成</dt><dd>${categories().map(c=>`${c} ${fh(d.byCat[c])}hr`).join('・')}</dd></dl>
       ${(p.dlHistory||[]).length?`<h3 style="margin:12px 0 4px">DL 改期紀錄</h3>${p.dlHistory.map(h=>`<div class="sub">${h.changedAt}：${h.from} → ${h.to}${h.reason?`（${esc(h.reason)}）`:''}</div>`).join('')}`:''}</div>
     <div class="card"><h3 style="margin-bottom:10px">交付物時間軸</h3>${d.deliv.length?`<div class="tl">${d.deliv.map(t=>`<div class="tli"><b>${md(t.deliveredAt||t.date)}</b>　${esc(t.title)}${t.deliverTo?`<span class="sub">→ ${esc(t.deliverTo)}</span>`:''}${t.outcome?`<br><span class="sub">成果：${esc(t.outcome)}</span>`:''}${t.dl?`<br><span class="sub">DL ${md(t.dl)}・${(t.deliveredAt||t.date)<=t.dl?'準時':'逾期'}</span>`:''}</div>`).join('')}</div>`:'<div class="sub">尚無已交付項目</div>'}</div>
   </div>
@@ -1340,7 +1620,7 @@ function projDetailHTML(pid){
     ${tasks.map(t=>`<tr data-act="task" data-id="${t.id}" style="cursor:pointer"><td class="num">${t.date||'未排日'}</td><td>${t.isStar?'⭐ ':''}${esc(t.title)}${t.isUrgent?' <span class="chip pend">突發</span>':''}</td><td>${t.category}</td><td class="n">${fh(t.estHours)}</td><td class="n">${fh(t.actual?.office)}</td><td><span class="chip ${STCLS[t.status]}">${t.status}</span></td><td class="num">${t.dl?md(t.dl):''}</td></tr>`).join('')}</tbody></table></div></div>
   ${d.notes.length?`<div class="card" style="margin-top:14px"><h3 style="margin-bottom:6px">相關筆記</h3>${d.notes.map(n=>`<button class="rem-i" data-act="opennote" data-id="${n.id}">${esc(n.title)}</button>`).join('')}</div>`:''}`}
 function projEdit(pid){const p=P(pid);
-  openModal({title:'編輯專案',body:`<div class="fgrid"><label class="fl">名稱<input type="text" id="pe-n" value="${esc(p.name)}" autofocus></label><label class="fl">分類<select id="pe-c">${CATS.map(c=>`<option ${p.category===c?'selected':''}>${c}</option>`).join('')}</select></label>
+  openModal({title:'編輯專案',body:`<div class="fgrid"><label class="fl">名稱<input type="text" id="pe-n" value="${esc(p.name)}" autofocus></label><label class="fl">分類<select id="pe-c">${categories().map(c=>`<option ${p.category===c?'selected':''}>${c}</option>`).join('')}</select></label>
     <label class="fl">狀態<select id="pe-s">${['進行中','暫停','結案'].map(c=>`<option ${p.status===c?'selected':''}>${c}</option>`).join('')}</select></label><label class="fl">顏色<input type="color" id="pe-col" value="${p.color}" style="min-height:34px;width:100%"></label>
     <label class="fl">計畫起<input type="date" id="pe-ps" value="${p.planStart||''}"></label><label class="fl">計畫迄<input type="date" id="pe-pe" value="${p.planEnd||''}"></label><label class="fl">專案 DL<input type="date" id="pe-dl" value="${p.dl||''}"></label><label class="fl">DL 改期原因<input type="text" id="pe-dr"></label></div>
     <label class="fl">別名（逗號分隔，解析時自動對應）<input type="text" id="pe-al" value="${esc((p.aliases||[]).join('、'))}"></label>`,
@@ -1424,12 +1704,12 @@ function pgStats(){
     segs:[{v:x.office,c:x.pid==='_none'?'var(--none)':pcolor(x.pid),n:'辦公室'},{v:x.decl,c:'var(--pend)',n:'申報',pv:1},{v:x.unpaid,c:'var(--priv)',n:'無償',pv:1}]})),pmax);
   const projT=tbl(['專案','辦公室','申報','無償','合計','人日'],pr.map(x=>[esc(x.pid==='_none'?'未對應專案':pname(x.pid)),fh(x.office),fh(x.decl),fh(x.unpaid),fh(x.t),fh(x.t/hpd())]));
   // 分類
-  const cmax=Math.max(1,...CATS.map(c=>s.byCat[c]||0));const ccol={專案:'var(--plan)',例行:'var(--done)',會議:'var(--pend)'};
-  const catChart=hbars(CATS.map(c=>({label:c,total:s.byCat[c]||0,vtxt:`${fh(s.byCat[c]||0)}h ${s.office?Math.round((s.byCat[c]||0)/s.office*100):0}%`,drill:dq({type:'cat',id:c}),segs:[{v:s.byCat[c]||0,c:ccol[c],n:c}]})),cmax);
-  const catT=tbl(['分類','工時','佔比'],CATS.map(c=>[c,fh(s.byCat[c]||0),s.office?Math.round((s.byCat[c]||0)/s.office*100)+'%':'—']));
+  const cmax=Math.max(1,...categories().map(c=>s.byCat[c]||0));const ccol={專案:'var(--plan)',例行:'var(--done)',會議:'var(--pend)',其他:'var(--priv)'};
+  const catChart=hbars(categories().map(c=>({label:c,total:s.byCat[c]||0,vtxt:`${fh(s.byCat[c]||0)}h ${s.office?Math.round((s.byCat[c]||0)/s.office*100):0}%`,drill:dq({type:'cat',id:c}),segs:[{v:s.byCat[c]||0,c:ccol[c],n:c}]})),cmax);
+  const catT=tbl(['分類','工時','佔比'],categories().map(c=>[c,fh(s.byCat[c]||0),s.office?Math.round((s.byCat[c]||0)/s.office*100)+'%':'—']));
   // 估時
-  const accChart=`<div class="hb">${CATS.map(c=>{const x=s.acc[c];const r=x.e?x.a/x.e:null;return`<div class="hbr" style="cursor:default"><span class="lb">${c}</span><span class="tr" style="position:relative">${r?`<i style="width:${Math.min(100,r/2*100)}%;background:${r>1.25?'var(--late)':r<.8?'var(--plan)':'var(--done)'}"></i>`:''}<span style="position:absolute;left:50%;top:0;bottom:0;border-left:1px dashed var(--fg-3)"></span></span><span class="v">${r?'×'+r.toFixed(2):'—'}</span></div>`}).join('')}</div><p class="sub" style="margin:8px 0 0">實際 ÷ 預估；虛線＝1.0（剛好），超過代表低估。</p>`;
-  const accT=tbl(['分類','預估','實際','倍率','筆數'],CATS.map(c=>{const x=s.acc[c];return[c,fh(x.e),fh(x.a),x.e?'×'+(x.a/x.e).toFixed(2):'—',x.n]}));
+  const accChart=`<div class="hb">${categories().map(c=>{const x=s.acc[c];const r=x.e?x.a/x.e:null;return`<div class="hbr" style="cursor:default"><span class="lb">${c}</span><span class="tr" style="position:relative">${r?`<i style="width:${Math.min(100,r/2*100)}%;background:${r>1.25?'var(--late)':r<.8?'var(--plan)':'var(--done)'}"></i>`:''}<span style="position:absolute;left:50%;top:0;bottom:0;border-left:1px dashed var(--fg-3)"></span></span><span class="v">${r?'×'+r.toFixed(2):'—'}</span></div>`}).join('')}</div><p class="sub" style="margin:8px 0 0">實際 ÷ 預估；虛線＝1.0（剛好），超過代表低估。</p>`;
+  const accT=tbl(['分類','預估','實際','倍率','筆數'],categories().map(c=>{const x=s.acc[c];return[c,fh(x.e),fh(x.a),x.e?'×'+(x.a/x.e).toFixed(2):'—',x.n]}));
   // 延遲
   const tg=Object.entries(s.delays.tags).sort(by(x=>x[1],-1));const tmax=Math.max(1,...tg.map(x=>x[1]));
   const delChart=hbars(tg.map(([k2,v])=>({label:k2,total:v,vtxt:v+' 次',drill:dq({type:'delay',tag:k2}),segs:[{v,c:'var(--late)',n:k2}]})),tmax);
@@ -1499,6 +1779,7 @@ function pgSettings(){const s=db.settings;const tab=S.settingsTab;
     <label class="fl">日誌字體<select data-s="edFont"><option value="mono" ${s.edFont==='mono'?'selected':''}>等寬</option><option value="sans" ${s.edFont==='sans'?'selected':''}>易讀</option></select></label></div>
     <label class="fl">假別（逗號分隔）<input type="text" data-s="leaveTypes" data-arr="1" value="${esc(s.leaveTypes.join('、'))}"></label>
     <label class="fl">常用辦公地（逗號分隔）<input type="text" data-s="places" data-arr="1" value="${esc(s.places.join('、'))}"></label>
+    <label class="fl">工作分類（以頓號或逗號分隔，可新增）<input type="text" data-s="workCategories" data-arr="1" value="${esc(categories().join('、'))}"></label>
     <div class="row"><button class="btn" data-act="privacy">${S.privacy?'關閉':'開啟'}隱私模式</button><span class="sub">隱藏私記、無償時數、請假、辦公地；投影或旁人在場時用</span></div></div>`;
   if(tab==='export')body=`<div class="card stack"><h3>Teams 匯出預設勾選</h3><div class="row">${[['priv','私記'],['extras','附加欄位'],['loc','辦公地'],['leave','請假']].map(([k,l])=>`<label class="row"><input type="checkbox" data-ex="${k}" ${s.exportDefaults[k]?'checked':''}> ${l}</label>`).join('')}</div>
     <h3>AI 資料包提示詞</h3><textarea class="f" data-s="aiPrompt" rows="9">${esc(s.aiPrompt)}</textarea><div class="row"><span class="sub">{期間} 會換成實際日期</span><span class="sp" style="flex:1"></span><button class="btn sm" data-act="resetprompt">還原預設</button></div></div>`;
@@ -1509,7 +1790,7 @@ function pgSettings(){const s=db.settings;const tab=S.settingsTab;
     <div class="card stack"><h3>範例與重設</h3><button class="btn" data-act="loadsample">重新載入範例資料</button><button class="btn danger" data-act="resetall">清除全部資料</button><span class="sub">資料目前只存在這個瀏覽器；正式版接上 Firebase 後才會跨裝置同步。</span></div></div>`;
   return`<div class="ph"><h1>設定</h1></div><div class="tabs">${tabs.map(([k,l])=>`<button class="tab" data-act="settab" data-v="${k}" aria-pressed="${tab===k}">${l}</button>`).join('')}</div>${body}`}
 after.settings=()=>{
-  $$('[data-s]').forEach(el=>el.addEventListener('change',()=>{const k=el.dataset.s;let v=el.value;if(el.dataset.n)v=+v;if(el.dataset.arr)v=v.split(/[、,，]/).map(x=>x.trim()).filter(Boolean);db.settings[k]=v;persist();applyTheme();toast('已儲存');if(k==='holidaysText')HOL_SRC=null;if(['theme'].includes(k))render()}));
+  $$('[data-s]').forEach(el=>el.addEventListener('change',()=>{const k=el.dataset.s;let v=el.value;if(el.dataset.n)v=+v;if(el.dataset.arr)v=v.split(/[、,，]/).map(x=>x.trim()).filter(Boolean);db.settings[k]=v;persist();applyTheme();toast('已儲存');if(k==='holidaysText')HOL_SRC=null;if(['theme','workCategories'].includes(k))render()}));
   $$('[data-ex]').forEach(el=>el.addEventListener('change',()=>{db.settings.exportDefaults[el.dataset.ex]=el.checked;persist();toast('已儲存')}))};
 function backupModal(){const json=JSON.stringify(db);
   openModal({title:'完整備份（JSON）',wide:true,body:`<p class="sub" style="margin:0">複製全部內容存成文字檔（例如 <span class="mono">工作日誌備份-${today()}.json</span>）。還原時貼回或選擇檔案即可。</p><textarea class="f mono" id="bk" rows="10" style="font-size:11px" readonly>${esc(json)}</textarea><div class="sub">大小約 ${Math.round(json.length/1024)} KB</div>`,
@@ -1658,7 +1939,7 @@ function fixLineModal(i,sec){
   const g=parseItem(raw,sec||'today');const isDone=sec==='done';
   openModal({title:`補正第 ${i+1} 行`,body:`<div class="warn"><code>${esc(raw)}</code></div>
     <div class="fgrid"><label class="fl">區塊<select id="fx-s">${Object.entries(SEC_NAME).map(([k,l])=>`<option value="${k}" ${(sec||'today')===k?'selected':''}>${l}</option>`).join('')}</select></label>
-    <label class="fl">分類<select id="fx-c">${CATS.map(c=>`<option ${g.cat===c?'selected':''}>${c}</option>`).join('')}</select></label>
+    <label class="fl">分類<select id="fx-c">${categories().map(c=>`<option ${g.cat===c?'selected':''}>${c}</option>`).join('')}</select></label>
     <label class="fl">專案<input type="text" id="fx-p" list="fx-pl" value="${esc(g.project||'')}" autofocus><datalist id="fx-pl">${Object.values(db.projects).map(p=>`<option value="${esc(p.name)}">`).join('')}</datalist></label>
     <label class="fl">預估 hr<input type="number" step="0.5" id="fx-e" value="${g.est??''}"></label><label class="fl">實際 hr（昨日完成用）<input type="number" step="0.5" id="fx-a" value="${g.actual??''}"></label></div>
     <label class="fl">內容<input type="text" id="fx-t" value="${esc(g.ok?(g.title!==g.project?g.title:''):raw)}"></label>
@@ -1671,7 +1952,7 @@ function fixLineModal(i,sec){
       else line=`${c}-${p}${e!==''?'_'+hrTok(+e):''}${t?'，'+t:''}`;
       ls[i]=line;ta.value=ls.join('\n');closeModal();ta.dispatchEvent(new Event('input'));toast('已補正，記得存檔')}}})}
 function newNote(){const id=uid();db.notes[id]={id,title:'',body:'',projectIds:[],pinned:false,createdAt:Date.now(),updatedAt:Date.now()};S.noteSel=id;persist();go('notes');setTimeout(()=>$('#n-title')?.focus(),0)}
-function openDay(d){if(S.page==='day')saveDraftNow();else S.from=S.page;S.day=d;S.cursor=d;S.edit=!isMobile();S.page='day';render();$('#main').scrollTop=0;if(!isMobile()&&!S.privacy)setTimeout(()=>{const ta=$('#ta');if(ta){ta.focus();ta.setSelectionRange(0,0)}},0)}
+function openDay(d){guideReview={};guideItems=[];guideMode='today';if(S.page==='day')saveDraftNow();else S.from=S.page;S.day=d;S.cursor=d;S.edit=!isMobile();S.page='day';render();$('#main').scrollTop=0;if(!isMobile()&&!S.privacy)setTimeout(()=>{const ta=$('#ta');if(ta){ta.focus();ta.setSelectionRange(0,0)}},0)}
 
 /* ---------- 點擊事件 ---------- */
 const ACT={
@@ -1723,7 +2004,7 @@ const ACT={
     C.forEach(c=>{let text=c.text;if(c.action==='merge'&&db.days[c.date]?.rawText)text=db.days[c.date].rawText+'\n\n'+c.text.split('\n').slice(2).join('\n');applyDay(c.date,text)});
     persist();IMP=null;toast(`已匯入 ${C.length} 天${wasSample?'（已清除範例資料）':''}`);S.page='calendar';if(C.length)S.cursor=C[C.length-1].date;render()}
 };
-document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el||el.tagName==='SELECT'||(el.tagName==='INPUT'&&el.type!=='button'&&el.type!=='checkbox'))return;const f=ACT[el.dataset.act];if(f){f(el,e)}});
+document.addEventListener('click',e=>{const g=e.target.closest('[data-guide]');if(g){guideAction(g.dataset.guide,g);return}const el=e.target.closest('[data-act]');if(!el||el.tagName==='SELECT'||(el.tagName==='INPUT'&&el.type!=='button'&&el.type!=='checkbox'))return;const f=ACT[el.dataset.act];if(f){f(el,e)}});
 document.addEventListener('change',e=>{const el=e.target;
   if(el.dataset.act==='setstatus'){const t=db.tasks[el.dataset.id];t.status=el.value;if(t.status==='已交付'&&!t.deliveredAt)t.deliveredAt=t.date;persist();toast('狀態已更新');render._keep=true;render()}
   if(el.dataset.act==='archyear'){S.archYear=el.value;render()}if(el.dataset.act==='archproj'){S.archProj=el.value;render()}
@@ -1809,6 +2090,7 @@ matchMedia('(max-width:1023px)').addEventListener('change',()=>render());
 /* ---------- 啟動 ---------- */
 if(!db){db=emptyDb();persist()}
 applyTheme();render();
+if ('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
 
 </body>
