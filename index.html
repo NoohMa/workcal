@@ -595,6 +595,56 @@ body{background:linear-gradient(150deg,#BCEBE8 0%,#E0F8F3 45%,#E8FAF7 100%)}
 :root:not([data-theme="dark"]) #bnav .bn[aria-current="page"]{color:#006B7D;background:#D7F0ED}
 @media(max-width:1023px){:root:not([data-theme="dark"]) #main{background:linear-gradient(160deg,#F1FBFA,#EAF8F7)}}
 /* === END SOFT AQUA VISUAL HIERARCHY === */
+
+/* === WORKCAL GLOBAL LEGIBILITY STANDARD v2 === */
+/* Keep information panels neutral. Reserve dark teal for actively selected actions. */
+:root:not([data-theme="dark"]){--bg:#F5FBFB;--surface:#FFFFFF;--surface-2:#F1F9F9;--line:#D5E8E9;--line-2:#E7F1F2;--fg:#173B48;--fg-2:#365B69;--fg-3:#536C78;--accent:#007D85;--accent-fg:#FFFFFF;--accent-soft:#E9F7F7;--shadow:0 2px 12px rgba(8,65,76,.07)}
+:root:not([data-theme="dark"]) body,:root:not([data-theme="dark"]) #app{background:#F5FBFB}
+:root:not([data-theme="dark"]) #main{background:#F6FBFB}
+:root:not([data-theme="dark"]) #nav{background:#F3FAFA;color:#173B48;border-right:1px solid #D5E8E9}
+:root:not([data-theme="dark"]) .brand b{color:#095D6B}
+:root:not([data-theme="dark"]) .brand span{color:#496B78}
+:root:not([data-theme="dark"]) #nav .navbtn{background:transparent;color:#244F5E;border:1px solid transparent}
+:root:not([data-theme="dark"]) #nav .navbtn svg{color:#266879}
+:root:not([data-theme="dark"]) #nav .navbtn:hover{background:#E7F5F5;border-color:#D0E8E9;color:#164C5A}
+:root:not([data-theme="dark"]) #nav .navbtn[aria-current="page"]{background:#007D85;color:#FFFFFF;border-color:#007D85;box-shadow:none}
+:root:not([data-theme="dark"]) #nav .navbtn[aria-current="page"] svg,:root:not([data-theme="dark"]) #nav .navbtn[aria-current="page"] .k{color:#FFFFFF}
+:root:not([data-theme="dark"]) #nav .navbtn .k{color:#4D6C7A;opacity:1}
+:root:not([data-theme="dark"]) #nav .navfoot .btn{background:#FFFFFF!important;color:#1D5260!important;border:1px solid #C7E1E4!important}
+:root:not([data-theme="dark"]) #nav .navfoot .syncstate{color:#3D6470}
+:root:not([data-theme="dark"]) #rail{background:#F7FCFC;border-left:1px solid #D6E9EA;color:#173B48}
+:root:not([data-theme="dark"]) .ph{background:#FDFEFE;border:1px solid #D7E9E9;color:#173B48}
+:root:not([data-theme="dark"]) .ph h1{color:#154D5C}
+:root:not([data-theme="dark"]) .card,:root:not([data-theme="dark"]) .pcard,:root:not([data-theme="dark"]) .week-panel,:root:not([data-theme="dark"]) .dash-work-col,:root:not([data-theme="dark"]) .dash-prev-col,:root:not([data-theme="dark"]) .mini-calendar,:root:not([data-theme="dark"]) .md-box{background:#FFFFFF;color:#173B48;border-color:#D5E7E8;box-shadow:0 2px 10px rgba(5,60,65,.05)}
+:root:not([data-theme="dark"]) .card{border-top:2px solid #AEDBDA}
+:root:not([data-theme="dark"]) .md-h,:root:not([data-theme="dark"]) .md-f{background:#F3FAFA;color:#163F4D;border-color:#E0EEEE}
+:root:not([data-theme="dark"]) .md-h h2,:root:not([data-theme="dark"]) .md-h .sub{color:#163F4D}
+:root:not([data-theme="dark"]) .md-box .xbtn{background:#FFFFFF;color:#194D59;border-color:#CDE2E4}
+:root:not([data-theme="dark"]) .dash-output-head,:root:not([data-theme="dark"]) .dash-section-head,:root:not([data-theme="dark"]) .dash-prev-col .dash-section-head{background:#F0F9F9;color:#075968;border:1px solid #D0E8E9}
+:root:not([data-theme="dark"]) .dash-output-head small,:root:not([data-theme="dark"]) .dash-section-head small,:root:not([data-theme="dark"]) .dash-prev-col .dash-section-head small{color:#385F6B}
+:root:not([data-theme="dark"]) .dash-section-head :is(h2,h3,b,strong,span),:root:not([data-theme="dark"]) .dash-output-head :is(h2,h3,b,strong,span){color:inherit}
+:root:not([data-theme="dark"]) .dash-quick,:root:not([data-theme="dark"]) .guided,:root:not([data-theme="dark"]) .guide-header,:root:not([data-theme="dark"]) .week-stats{background:#F8FCFC;color:#244D5B;border-color:#DEEBEB}
+:root:not([data-theme="dark"]) .guided .g-item,:root:not([data-theme="dark"]) .mini-calendar,:root:not([data-theme="dark"]) .li{background:#FFFFFF;color:#244B59}
+:root:not([data-theme="dark"]) .mini-calendar b,:root:not([data-theme="dark"]) .calhead{color:#105469}
+:root:not([data-theme="dark"]) .mini-wd,:root:not([data-theme="dark"]) .sub,:root:not([data-theme="dark"]) .dash-quick small{color:#4B6875}
+:root:not([data-theme="dark"]) .mini-date.active{background:#007D85;color:#FFFFFF}
+:root:not([data-theme="dark"]) .rem-i,:root:not([data-theme="dark"]) .banner,:root:not([data-theme="dark"]) .teams-check{background:#F4FAF9;color:#244B59;border-color:#D8E9E8}
+:root:not([data-theme="dark"]) .rem-i{border-left:4px solid #078D92}
+:root:not([data-theme="dark"]) .btn:not(.pri):not(.danger):not(.ghost),:root:not([data-theme="dark"]) .tab:not([aria-pressed="true"]),:root:not([data-theme="dark"]) .seg button:not([aria-pressed="true"]){background:#FFFFFF;color:#1E5260;border-color:#C7E1E5}
+:root:not([data-theme="dark"]) .btn.pri,:root:not([data-theme="dark"]) .savebar .btn.pri,:root:not([data-theme="dark"]) .tab[aria-pressed="true"],:root:not([data-theme="dark"]) .seg button[aria-pressed="true"],:root:not([data-theme="dark"]) .teams-check .btn.pri{background:#007D85;color:#FFFFFF;border-color:#007D85;filter:none}
+:root:not([data-theme="dark"]) .btn.pri:hover,:root:not([data-theme="dark"]) .tab[aria-pressed="true"]:hover{background:#00686F;color:#FFFFFF}
+:root:not([data-theme="dark"]) input,:root:not([data-theme="dark"]) select,:root:not([data-theme="dark"]) textarea{background:#FFFFFF;color:#173B48;border-color:#C8E2E5}
+:root:not([data-theme="dark"]) #bnav{background:#FAFDFD;border-top:1px solid #CFE8EA}
+:root:not([data-theme="dark"]) #bnav .bn{color:#315D6A}
+:root:not([data-theme="dark"]) #bnav .bn[aria-current="page"]{background:#007D85;color:#FFFFFF}
+:root:not([data-theme="dark"]) .dash-kpi.k-blue{background:#EEF5FF}
+:root:not([data-theme="dark"]) .dash-kpi.k-green{background:#EFF9F2}
+:root:not([data-theme="dark"]) .dash-kpi.k-orange{background:#FFF6EF}
+:root:not([data-theme="dark"]) .dash-kpi.k-rose{background:#FFF0F4}
+:root:not([data-theme="dark"]) .dash-kpi .k-ico{color:#FFFFFF}
+:root:not([data-theme="dark"]) ::selection{background:#007D85;color:#FFFFFF}
+@media(max-width:1023px){:root:not([data-theme="dark"]) #main{background:#F7FCFC}}
+/* === END WORKCAL GLOBAL LEGIBILITY STANDARD === */
 </style>
 </head>
 <body>
