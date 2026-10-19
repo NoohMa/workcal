@@ -1,4 +1,4 @@
-const CACHE='worklog-aqua-v1';
+const CACHE='worklog-aqua-v2-morning-teams';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icons/icon-180.png','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('worklog-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));

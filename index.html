@@ -525,6 +525,12 @@ body{background:linear-gradient(150deg,#BCEBE8 0%,#E0F8F3 45%,#E8FAF7 100%)}
 @media(max-width:1279px){.dash-kpis{gap:7px}.dash-kpi{padding:9px;gap:6px}.dash-kpi .k-ico{width:34px;height:34px}.dash-workspace{grid-template-columns:1fr 1fr}}
 @media(max-width:1023px){:root:not([data-theme="dark"]) #main{background:linear-gradient(165deg,#c0f1f4,#e0fcf8)}.dash-kpis{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.dash-kpi{padding:8px 5px;display:block;text-align:center;min-height:84px}.dash-kpi .k-ico{margin:0 auto 5px;width:29px;height:29px;font-size:17px}.dash-kpi strong{font-size:18px}.dash-kpi span:not(.k-ico){font-size:10px}.dash-workspace{grid-template-columns:1fr}.dash-work-col,.dash-prev-col{min-height:0}.dash-quick{flex-wrap:wrap}}
 @media(max-width:370px){.dash-kpi strong{font-size:15px}.dash-kpi span:not(.k-ico){font-size:9px}}
+/* 09:30提醒及Teams人工確認 */
+.teams-check{margin:12px 0;border:1px solid #91dbe0;border-radius:12px;padding:13px;background:#f1fffe;color:#16465b}
+.teams-check .row{justify-content:space-between}.teams-check p{margin:6px 0;color:#42677c;font-size:12px}
+.teams-check .teams-done{color:#13714b;font-weight:700}
+.teams-check .btn{background:#fff;color:#115064}
+.teams-check .btn.pri{background:#008d9e;color:white;border-color:#008d9e}
 /* === END REFERENCE-MATCH AQUA THEME === */
 </style>
 </head>
@@ -1155,7 +1161,33 @@ const S={page:'calendar',calView:'month',cursor:today(),day:today(),edit:!isMobi
   todoTab:'未排日',todoSel:0,archYear:'all',archProj:'all',noteSel:null,noteQ:'',projFilter:'進行中',projSel:null,projTab:'list',
   gZoom:'month',gSel:0,gOpen:{},gAll:false,statKind:'month',statAnchor:today(),statFrom:null,statTo:null,chartTable:{},privacy:false,railSel:new Set(),settingsTab:'basic'};
 let guideMode='today',guideItems=[],guideReview={};
+let guideHeaderDay='',guidePlaces=[],guideLeaves=[];
 let liveParse=null;
+/* Teams 確認狀態採獨立儲存，避免更動原日誌資料結構 */
+const TEAMS_CONFIRM_KEY='worklog.teams-confirm.v1';
+let teamsConfirmed={};
+try{teamsConfirmed=JSON.parse(localStorage.getItem(TEAMS_CONFIRM_KEY)||'{}')||{}}catch(e){teamsConfirmed={}}
+function saveTeamsConfirm(){try{localStorage.setItem(TEAMS_CONFIRM_KEY,JSON.stringify(teamsConfirmed))}catch(e){toast('無法儲存 Teams 確認狀態')}}
+function teamsConfirmHTML(D){
+ const time=teamsConfirmed[D];
+ return `<section class="teams-check"><div class="row"><b>Teams 上傳確認</b><span class="${time?'teams-done':'sub'}">${time?'✓ 已上傳 Teams':'尚未確認上傳'}</span></div><p>請先複製日誌並實際上傳 Teams，確認成功後再點選；此狀態由你手動記錄。</p><div class="row"><button class="btn ${time?'':'pri'}" data-act="teamsconfirm">${time?'取消「已上傳」確認':'✓ 已上傳 Teams'}</button>${time?`<span class="sub">確認時間：${esc(new Date(time).toLocaleString('zh-TW',{hour12:false}))}</span>`:''}</div></section>`
+}
+function setTeamsConfirm(){
+ const D=S.day;
+ if(teamsConfirmed[D]){confirmBox('確定取消此日的 Teams 已上傳確認？',()=>{delete teamsConfirmed[D];saveTeamsConfirm();render._keep=true;render();toast('已取消 Teams 上傳確認')},'取消確認');return}
+ confirmBox('請確認這份日誌已實際上傳至 Teams。確認後會記錄現在的時間。',()=>{teamsConfirmed[D]=new Date().toISOString();saveTeamsConfirm();render._keep=true;render();toast('已記錄 Teams 上傳確認')},'確定已上傳');
+}
+/* 僅在網頁開啟期間提醒；本次開啟對同一日期最多提醒一次 */
+const reminderShown=new Set();
+function checkMorningReminder(){
+ const now=new Date(),D=iso(now),mins=now.getHours()*60+now.getMinutes();
+ if(mins<9*60+30||!isWorkday(D)||reminderShown.has(D)||modalStack.length)return;
+ const saved=db.days[D]?.rawText||'';
+ if(saved&&parseDay(saved).today.length>0)return;
+ reminderShown.add(D);
+ openModal({title:'09:30 工作日誌提醒',body:`<p>今天 ${D} 尚未登打今日工作項目。</p><p class="sub">可直接進入今日工作項目，完成後再複製並上傳 Teams。</p>`,foot:'<button class="btn" data-act="mclose">稍後再填</button><button class="btn pri" id="rem-edit">前往今日工作</button>',onMount:ov=>{$('#rem-edit',ov).onclick=()=>{closeModal();openDay(D);setTimeout(()=>$('#guided-host')?.scrollIntoView({block:'start',behavior:'smooth'}),60)}}});
+}
+
 
 function applyTheme(){const t=db.settings.theme;if(t==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t);
   document.documentElement.style.setProperty('--edf',db.settings.edFont==='sans'?'var(--font)':'var(--mono)')}
@@ -1302,6 +1334,7 @@ function pgDay(){
     <button class="btn sm" data-act="teams">複製 Teams 版 <kbd class="hide-m">Ctrl⇧C</kbd></button>
     <button class="btn sm" data-act="picktodo" ${ro?'disabled':''}>帶入待辦 <kbd class="hide-m">Ctrl⇧T</kbd></button>
   </div>
+  ${teamsConfirmHTML(D)}
   <div class="dash-workspace">
     <div class="dash-work-col"><div class="dash-section-head">▣ 今日工作項目 <small>選項輸入・條列輸出</small></div>
     ${!ro?`<div id="guided-host"></div>`:''}</div>
@@ -1328,13 +1361,58 @@ function guideCommit(section,lines){
  toast('文字已帶入日誌，將自動儲存');
 }
 function guidePrev(){const D=prevWorkday(S.day);return T().filter(t=>t.date===D&&t.origin==='plan').map(t=>({id:t.id,category:t.category,project:pname(t.projectId),detail:taskContent(t)===pname(t.projectId)?'':taskContent(t),est:t.estHours,actual:t.actual?.office,status:'待確認'}))}
+function guideInitHeader(){
+ if(guideHeaderDay===S.day)return;
+ const r=parseDay(guideSource()).header;
+ guidePlaces=(r.locations||[]).map(x=>({...x}));
+ guideLeaves=(r.leaves||[]).map(x=>({...x}));
+ guideHeaderDay=S.day;
+}
+function guideHeaderText(){
+ const places=guidePlaces.filter(x=>String(x.place||'').trim()).map(x=>`${x.start&&x.end?x.start+'-'+x.end+' ':''}${x.place}${x.trip?'（出差）':''}`).join('｜');
+ const leaves=guideLeaves.filter(x=>String(x.type||'').trim()&&Number(x.hours)>0).map(x=>`${x.type} ${fh(x.hours)}hr`).join('｜');
+ return {places,leaves};
+}
+function guideMergeHeader(text){
+ const h=guideHeaderText();
+ let lines=text.split('\n');
+ for(const [name,value] of [['辦公地',h.places],['請假',h.leaves]]){
+  const i=lines.findIndex(l=>new RegExp('^'+name+'\\s*[:：]').test(l.trim()));
+  if(i>=0)lines[i]=name+'：'+value;
+  else {const dateIndex=lines.findIndex(l=>/^日期\s*[:：]/.test(l.trim()));lines.splice(Math.max(0,dateIndex+1),0,name+'：'+value)}
+ }
+ return lines.join('\n')
+}
+function guidePutText(text,msg){
+ const ta=$('#ta');
+ if(ta){ta.value=text;ta.dispatchEvent(new Event('input'))}
+ else{S.edit=true;drafts[S.day]=text;render();$('#ta')?.dispatchEvent(new Event('input'))}
+ toast(msg||'文字已帶入日誌，將自動儲存');
+}
+function guideCompleteText(){
+ let t=guideMergeHeader(guideSource());
+ if(guideItems.length)t=guideReplaceSection(t,'today',guideItems.map(x=>`${x.category}-${x.project}_${hrTok(x.hours)}${x.detail?'，'+x.detail:''}`));
+ const {done,undone}=guideOutputPrev();
+ if(done.length||undone.length){t=guideReplaceSection(t,'done',done);t=guideReplaceSection(t,'undone',undone)}
+ return t;
+}
+function guideHeaderHTML(){
+ guideInitHeader();
+ const loc=guidePlaces.map((x,i)=>`<div class="g-item"><div class="fgrid"><label class="fl">辦公地<input data-gplace="${i}" data-gfield="place" value="${esc(x.place)}" placeholder="例如：板橋"></label><label class="fl">工作性質<select data-gplace="${i}" data-gfield="trip"><option value="0" ${!x.trip?'selected':''}>一般辦公</option><option value="1" ${x.trip?'selected':''}>出差（高鐵）</option></select></label><label class="fl">開始時間<input type="time" data-gplace="${i}" data-gfield="start" value="${esc(x.start||'08:30')}"></label><label class="fl">結束時間<input type="time" data-gplace="${i}" data-gfield="end" value="${esc(x.end||'17:30')}"></label></div><button class="btn sm" data-guide="remove-place" data-i="${i}">移除這段辦公地</button></div>`).join('');
+ const leave=guideLeaves.map((x,i)=>`<div class="g-item"><div class="fgrid"><label class="fl">假別<select data-gleave="${i}" data-gfield="type">${['特休','補休','事假','病假','公假','其他'].map(y=>`<option ${x.type===y?'selected':''}>${y}</option>`).join('')}${!['特休','補休','事假','病假','公假','其他'].includes(x.type)?`<option selected>${esc(x.type)}</option>`:''}</select></label><label class="fl">請假時數 hr<input type="number" min="0" step="0.5" data-gleave="${i}" data-gfield="hours" value="${esc(x.hours)}"></label></div><button class="btn sm" data-guide="remove-leave" data-i="${i}">移除這筆請假</button></div>`).join('');
+ return `<div class="guide-header"><h2>當日基本資料</h2><div class="sub">辦公地可分時段、請假可多筆；空白表示無，輸出後自動填回日誌。</div><div class="row" style="justify-content:space-between;margin:10px 0 6px"><b>辦公地／出差</b><button class="btn sm" data-guide="add-place">＋ 新增時段</button></div>${loc||'<div class="sub">尚未設定辦公地</div>'}<div class="row" style="justify-content:space-between;margin:12px 0 6px"><b>請假</b><button class="btn sm" data-guide="add-leave">＋ 新增請假</button></div>${leave||'<div class="sub">無請假</div>'}<div class="g-actions"><button class="btn pri" data-guide="output-all">輸出完整日誌</button><button class="btn" data-guide="copy-all">複製完整日誌</button></div></div>`;
+}
 function guideRender(){const host=$('#guided-host');if(!host)return;
- const C=categories();const opts=C.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+ guideInitHeader();const C=categories();const opts=C.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
  const prev=guidePrev();if(!Object.keys(guideReview).length)prev.forEach(x=>guideReview[x.id]={status:'待確認',actual:x.actual??'',reason:'',date:mmdd(S.day),detail:x.detail});
- host.innerHTML=`<section class="guided"><h2>工作項目編輯｜產生可複製的條列文字</h2><div class="guided-tabs"><button class="btn ${guideMode==='today'?'pri':''}" data-guide="tab-today">今日工作項目</button><button class="btn ${guideMode==='prev'?'pri':''}" data-guide="tab-prev">昨日完成／未完成</button><button class="btn" data-guide="categories">＋ 分類</button></div>
+ host.innerHTML=`<section class="guided"><h2>每日工作日誌｜一站式選項編輯</h2>${guideHeaderHTML()}<div class="guided-tabs"><button class="btn ${guideMode==='today'?'pri':''}" data-guide="tab-today">今日工作項目</button><button class="btn ${guideMode==='prev'?'pri':''}" data-guide="tab-prev">昨日完成／未完成</button><button class="btn" data-guide="categories">＋ 分類</button></div>
  ${guideMode==='today'?`<div class="fgrid"><label class="fl">分類<select id="gd-cat">${opts}</select></label><label class="fl">專案／工作名稱<input id="gd-project" type="text" list="gd-projects" placeholder="輸入工作名稱"><datalist id="gd-projects">${Object.values(db.projects).map(p=>`<option value="${esc(p.name)}">`).join('')}</datalist></label><label class="fl">預估工時 hr<input type="number" min="0" step="0.5" id="gd-hour" placeholder="例如 3"></label><label class="fl">內容<input id="gd-detail" type="text" placeholder="例如：公告更新、內容巡檢"></label></div><div class="g-actions"><button class="btn pri" data-guide="add">＋ 加入工作項目</button><button class="btn" data-guide="from-text">讀取現有今日項目</button></div><div id="gd-list">${guideItems.map((x,i)=>`<div class="g-item row"><span style="flex:1">${esc(x.category)}-${esc(x.project)}_${hrTok(x.hours)}${x.detail?'，'+esc(x.detail):''}</span><button class="btn sm" data-guide="remove" data-i="${i}">移除</button></div>`).join('')}</div><div class="g-actions"><button class="btn pri" data-guide="output-today">輸出到今日工作項目</button><button class="btn" data-guide="copy-today">複製條列文字</button></div>`:
  `<div class="sub">來源：上一工作日 ${prevWorkday(S.day)}。逐項選擇完成、未完成或略過，實際工時由你填寫。</div>${prev.length?prev.map((x,i)=>{const r=guideReview[x.id]||{};return`<div class="g-item"><div class="row"><b style="flex:1">${esc(x.category)}－${esc(x.project)}</b><span class="sub">原預估 ${x.est==null?'未填':fh(x.est)+'hr'}</span></div><div class="sub">${esc(x.detail)}</div><div class="fgrid"><label class="fl">結果<select data-gstatus="${x.id}"><option value="待確認" ${r.status==='待確認'?'selected':''}>待確認／略過</option><option value="完成" ${r.status==='完成'?'selected':''}>完成</option><option value="未完成" ${r.status==='未完成'?'selected':''}>未完成</option></select></label><label class="fl">實際工時 hr<input type="number" min="0" step="0.5" data-gactual="${x.id}" value="${esc(r.actual??'')}" placeholder="自行填寫"></label><label class="fl">實際完成內容<input type="text" data-gdetail="${x.id}" value="${esc(r.detail??x.detail)}"></label><label class="fl">未完成原因<input type="text" data-greason="${x.id}" value="${esc(r.reason||'')}"></label><label class="fl">預計完成 MMDD<input type="text" data-gdate="${x.id}" value="${esc(r.date||mmdd(S.day))}"></label></div></div>`}).join(''):'<div class="empty">上一工作日尚無規劃項目，可先使用自由文字日誌。</div>'}<div class="g-actions"><button class="btn pri" data-guide="output-prev">產生昨日完成／未完成</button><button class="btn" data-guide="copy-prev">複製條列文字</button></div>`}
  <div class="sub" style="margin-top:8px">自由文字模式仍可隨時編輯；產生結果可由下方「複製給 AI／複製 Teams 版」使用。</div></section>`;
+ host.querySelectorAll('[data-gplace],[data-gleave]').forEach(node=>node.addEventListener('input',()=>{
+  const isPlace=node.hasAttribute('data-gplace'),i=+(isPlace?node.dataset.gplace:node.dataset.gleave),o=(isPlace?guidePlaces:guideLeaves)[i];if(!o)return;
+  o[node.dataset.gfield]=node.dataset.gfield==='trip'?node.value==='1':node.dataset.gfield==='hours'?Number(node.value):node.value;
+ }));
  host.querySelectorAll('[data-gstatus],[data-gactual],[data-gdetail],[data-greason],[data-gdate]').forEach(el=>el.addEventListener('change',()=>{const id=el.dataset.gstatus||el.dataset.gactual||el.dataset.gdetail||el.dataset.greason||el.dataset.gdate;const key=el.dataset.gstatus?'status':el.dataset.gactual?'actual':el.dataset.gdetail?'detail':el.dataset.greason?'reason':'date';guideReview[id]=guideReview[id]||{};guideReview[id][key]=el.value}));
 }
 function guideOutputPrev(){const done=[],undone=[];for(const x of guidePrev()){const r=guideReview[x.id]||{};const details=(r.detail||x.detail||'').trim();if(r.status==='完成')done.push(`${x.category}-${x.project}_預${x.est!=null?hrTok(x.est):'＿hr'}，實${r.actual!==''&&r.actual!=null?hrTok(+r.actual):'＿hr'}${details?'，'+details:''}`);
@@ -1999,6 +2077,7 @@ const ACT={
   impsample:()=>{$('#im-x').value=IMP_SAMPLE;$('#im-y').value=2024},
   impparse:()=>{const text=$('#im-x').value;const y=+$('#im-y').value||2024;db.settings.importStartYear=y;persist();IMP={text,chunks:splitImport(text,y)};if(!IMP.chunks.length){toast('找不到日期行');return}render._keep=true;render()},
   impview:el=>{const c=IMP.chunks[+el.dataset.i];const r=parseDay(c.text);openModal({title:`${c.date} 解析結果`,wide:true,body:`<pre class="mono" style="white-space:pre-wrap;font-size:12px;background:var(--surface-2);padding:10px;border-radius:8px;margin:0">${hlHTML(c.text,r,true)}</pre>${r.warnings.map(w=>`<div class="warn">第 ${w.i+1} 行：${esc(w.why)}｜<code>${esc(w.raw)}</code></div>`).join('')}<div class="sub">今日 ${r.today.length}・昨日完成 ${r.done.length}・未完成 ${r.undone.length}・突發 ${r.urgent.length}・加班 ${r.ot.length}</div>`,foot:'<button class="btn" data-act="mclose">關閉</button>'})},
+  teamsconfirm:()=>setTeamsConfirm(),
   impcommit:()=>{const C=IMP.chunks.filter(c=>!c.bad&&c.date&&['write','overwrite','merge'].includes(c.action)).sort(by(c=>c.date));
     const wasSample=db.sample;if(wasSample){db=emptyDb(db.settings);drafts={}}
     C.forEach(c=>{let text=c.text;if(c.action==='merge'&&db.days[c.date]?.rawText)text=db.days[c.date].rawText+'\n\n'+c.text.split('\n').slice(2).join('\n');applyDay(c.date,text)});
@@ -2090,6 +2169,11 @@ matchMedia('(max-width:1023px)').addEventListener('change',()=>render());
 /* ---------- 啟動 ---------- */
 if(!db){db=emptyDb();persist()}
 applyTheme();render();
+setTimeout(checkMorningReminder,700);
+setInterval(()=>{if(document.visibilityState==='visible')checkMorningReminder()},60000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkMorningReminder()});
+window.addEventListener('focus',checkMorningReminder);
+
 if ('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
 
