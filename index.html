@@ -712,6 +712,12 @@ textarea.f.long-entry{min-height:190px;max-height:65vh;overflow-y:auto;resize:ve
 :root:not([data-theme="dark"]) .yr .mmg button.mmc.future{color:#173F51 !important;}
 :root:not([data-theme="dark"]) .yr .mmg button.mmc.current{color:#FFFFFF !important;background:#007D85 !important;font-weight:800;outline:1.5px solid #007D85;}
 .yr .mmg button.mmc:focus-visible{outline:2px solid #007D85;outline-offset:1px;}
+
+/* Calendar mode remains visible on daily page, including both editing subpages. */
+.calendar-mode-switch{flex-shrink:0}
+.week-plan-actions{display:flex;flex-wrap:wrap;column-gap:14px!important;row-gap:12px!important;margin-top:22px!important;margin-bottom:20px!important}
+.week-plan-actions .btn{margin:0}
+@media(max-width:540px){.week-plan-actions{row-gap:14px!important;margin-top:20px!important}.calendar-mode-switch button{padding:6px 9px}}
 </style>
 </head>
 <body>
@@ -1452,7 +1458,7 @@ function pgWeekSpace(){const [a,b]=weekRange(weekAnchor),w=wkData(),total=w.item
  const registered=w.items.map((x,i)=>`<div class="week-entry"><div><b>${esc(x.title)}</b> <small>${esc(x.group||'小組例行任務')}｜${esc(x.cat)}｜${x.date}｜預估 ${fh(x.h)}hr${x.dl?'｜DL '+esc(x.dl):''}${x.added?'｜已帶入':''}</small><div class="sub">${esc(x.detail)}</div></div><div class="row"><button class="btn sm" data-act="weekbring" data-i="${i}">帶入日誌</button><button class="btn sm" data-act="weekremove" data-i="${i}">移除</button></div></div>`).join('');
  return `<div class="ph"><h1>週工作規劃與回報</h1><span class="sp"></span><button class="btn sm" data-act="weekprev">‹ 前週</button><b>${a} ～ ${b}</b><button class="btn sm" data-act="weeknext">下週 ›</button></div><p class="sub">每週計畫與個人小組接龍獨立管理，與每日 Teams 上傳確認無關；資料保存在目前瀏覽器。</p>
  <div class="week-stats">本週計畫 ${fh(total)}hr／一般週參考 40hr｜當週日誌預估 ${fh(est)}hr｜已登記實際 ${fh(actual)}hr｜週計畫 ${w.items.length} 項（依請假、假日調整）</div>
- <div class="week-grid"><section class="week-panel"><h2>本週／下週預估工作</h2><div class="fgrid"><label class="fl">回報區塊<select id="wk-group"><option>小組例行任務</option><option>KM 專案</option><option>CHT 專案</option></select></label><label class="fl">分類<select id="wk-cat">${categories().map(x=>`<option>${esc(x)}</option>`).join('')}</select></label><label class="fl">工作名稱<input id="wk-title" placeholder="例如：通路小教室維護"></label><label class="fl">預定日期<input id="wk-date" type="date" value="${a}"></label><label class="fl">預估工時 hr<input id="wk-hours" type="number" value="2" min="0" step="0.5"></label><label class="fl">DL<input id="wk-dl" type="date"></label><label class="fl">工作內容<input id="wk-detail" placeholder="具體預計產出"></label></div><div class="g-actions"><button class="btn pri" data-act="weekadd">新增週計畫</button><button class="btn" data-act="weekcarry">承接上週未完成候選</button></div>${registered||'<div class="empty">目前無週計畫，可先新增。</div>'}</section>
+ <div class="week-grid"><section class="week-panel"><h2>本週／下週預估工作</h2><div class="fgrid"><label class="fl">回報區塊<select id="wk-group"><option>小組例行任務</option><option>KM 專案</option><option>CHT 專案</option></select></label><label class="fl">分類<select id="wk-cat">${categories().map(x=>`<option>${esc(x)}</option>`).join('')}</select></label><label class="fl">工作名稱<input id="wk-title" placeholder="例如：通路小教室維護"></label><label class="fl">預定日期<input id="wk-date" type="date" value="${a}"></label><label class="fl">預估工時 hr<input id="wk-hours" type="number" value="2" min="0" step="0.5"></label><label class="fl">DL<input id="wk-dl" type="date"></label><label class="fl">工作內容<input id="wk-detail" placeholder="具體預計產出"></label></div><div class="g-actions week-plan-actions"><button class="btn pri" data-act="weekadd">新增週計畫</button><button class="btn" data-act="weekcarry">承接上週未完成候選</button></div>${registered||'<div class="empty">目前無週計畫，可先新增。</div>'}</section>
  <section class="week-panel"><h2>產生我的週接龍</h2><p class="sub">僅整理你的內容（馬／馬哥／小馬）。範例來源分組無法由原日誌確定時，以「請確認」保留人工分類；不處理其他同事，不與每日 Teams 回報相連。</p><button class="btn sm" data-act="weekreload">依紀錄重新彙整</button><textarea class="f mono" rows="18" id="wk-report" placeholder="點擊重新彙整，再編輯並保存你的版本">${esc(w.report||'')}</textarea><div class="g-actions"><button class="btn pri" id="wk-save" type="button">保存個人週報</button><button class="btn" id="wk-copy" type="button">複製個人接龍文字</button></div><p class="sub">已保存的週報只更新你自己的資料；週計畫與每日紀錄變更時請重新彙整並核對。</p></section></div>`}
 function mountWeekSpace(){const x=$('#wk-report');if(weekDraft){x.value=weekDraft;weekDraft=''}$('#wk-save').onclick=()=>{wkData().report=x.value;weekSave();toast('已保存本週個人回報')};$('#wk-copy').onclick=()=>copy(x.value)}
 
@@ -1519,12 +1525,13 @@ function dayInfo(d){
   const dls=T().filter(t=>t.dl===d&&!t.archived).length+Object.values(db.projects).filter(p=>p.dl===d).length;
   const ot=sum(db.ot.filter(o=>o.date===d),o=>o.hours);
   return{dd,ts,plan,hrs,est,st,urg,lv,trip,dls,ot,warn:(dd?.warnings||[]).filter(w=>w.level==='err').length}}
+function calendarModeSwitch(){return `<div class="seg calendar-mode-switch" role="group" aria-label="週月年檢視">${[['week','週','W'],['month','月','M'],['year','年','Y']].map(([k,l,kb])=>`<button data-act="calview" data-v="${k}" aria-pressed="${S.calView===k}">${l} <kbd>${kb}</kbd></button>`).join('')}</div>`}
 function pgCalendar(){
   const c=S.cursor;const y=+c.slice(0,4),m=+c.slice(5,7);const rem=reminders();
   const head=`<div class="ph"><h1>${S.calView==='year'?`${y} 年`:S.calView==='week'?`${weekRange(c)[0]} 週`:`${y} 年 ${m} 月`}</h1>
     <div class="row"><button class="btn sm" data-act="calmove" data-n="-1" aria-label="上一頁">‹ <kbd>PgUp</kbd></button><button class="btn sm" data-act="caltoday">今天 <kbd>T</kbd></button><button class="btn sm" data-act="calmove" data-n="1" aria-label="下一頁"><kbd>PgDn</kbd> ›</button></div>
     <span class="sp"></span>
-    <div class="seg" role="group" aria-label="檢視">${[['week','週','W'],['month','月','M'],['year','年','Y']].map(([k,l,kb])=>`<button data-act="calview" data-v="${k}" aria-pressed="${S.calView===k}">${l} <kbd>${kb}</kbd></button>`).join('')}</div>
+    ${calendarModeSwitch()}
     <button class="btn pri" data-act="openday" data-d="${today()}">寫今天日誌</button>
     <button class="btn rail-toggle" data-act="rail">待辦</button></div>`;
   const remBox=rem.length?`<div class="card" style="margin-bottom:14px"><div class="row" style="margin-bottom:8px"><h3>打開提醒</h3><span class="sub">${today()}（${wd(today())}）</span></div><div class="rem">${rem.map(remHTML).join('')}</div></div>`:'';
@@ -1563,20 +1570,20 @@ function dayState(D){if(drafts[D]!=null&&drafts[D]!==db.days[D]?.rawText)return[
 function pgDay(){
   const D=S.day;const H=hol();const text=dayText(D);const[sc,sl]=dayState(D);const ro=S.privacy;
   const editMode=S.edit&&!ro;
-  if(S.logSub)return `<div class="dayhead"><button class="xbtn back" data-act="logclose" aria-label="返回每日主頁">‹</button><h1>${md(D)}（${wd(D)}）｜完整工作日誌</h1><span class="sp" style="flex:1"></span><button class="btn sm" data-act="logclose">返回每日主頁</button></div>
+  if(S.logSub)return `<div class="dayhead"><button class="xbtn back" data-act="logclose" aria-label="返回每日主頁">‹</button><h1>${md(D)}（${wd(D)}）｜完整工作日誌</h1><span class="sp" style="flex:1"></span>${calendarModeSwitch()}<button class="btn sm" data-act="logclose">返回每日主頁</button></div>
     <div class="dash-section-head dash-output-head">▤ 完整工作日誌 <small>可直接編輯、複製、儲存</small></div>
     <div class="tool"><button class="btn sm" data-act="togedit">${editMode?'閱讀模式':'編輯'}</button><button class="btn sm" data-act="copyai">複製給 AI</button><button class="btn sm" data-act="pasteback" ${ro?'disabled':''}>貼回定稿</button><button class="btn sm" data-act="teams">複製 Teams 版</button><button class="btn sm" data-act="picktodo" ${ro?'disabled':''}>帶入待辦</button></div>
     <div class="infobar" id="infobar"></div>
     <div class="ed ${editMode?'':'read'}" id="ed"><pre id="hl" aria-hidden="${editMode}"></pre>${editMode?`<textarea id="ta" spellcheck="false" aria-label="${D} 日誌內容">${esc(text)}</textarea>`:''}</div>
     <div class="savebar"><span class="state ${sc}" id="daystate"><i></i>${sl}</span><button class="btn pri" data-act="logsaveclose" ${ro?'disabled':''}>儲存並返回每日主頁</button></div>`;
-  if(S.guideSub)return `<div class="dayhead"><button class="xbtn back" data-act="guideclose" aria-label="返回每日主頁">‹</button><h1>${md(D)}（${wd(D)}）｜產生條列文字</h1><span class="sp" style="flex:1"></span><button class="btn sm" data-act="guideclose">返回每日主頁</button></div>
+  if(S.guideSub)return `<div class="dayhead"><button class="xbtn back" data-act="guideclose" aria-label="返回每日主頁">‹</button><h1>${md(D)}（${wd(D)}）｜產生條列文字</h1><span class="sp" style="flex:1"></span>${calendarModeSwitch()}<button class="btn sm" data-act="guideclose">返回每日主頁</button></div>
     <div id="guided-host"></div>
     <div class="dash-section-head dash-output-head">▤ 條列文字編輯 <small>可修改產生後的原文，會自動儲存</small></div>
     <div class="ed ${editMode?'':'read'}" id="ed"><pre id="hl" aria-hidden="${editMode}"></pre>${editMode?`<textarea id="ta" spellcheck="false" aria-label="${D} 日誌內容">${esc(text)}</textarea>`:''}</div>
     <div class="savebar"><span class="state ${sc}" id="daystate"><i></i>${sl}</span><button class="btn pri" data-act="guidesaveclose" ${ro?'disabled':''}>儲存並返回每日主頁</button></div>`;
   return`<div class="dayhead"><button class="xbtn back" data-act="back" aria-label="上一頁（Esc）">‹</button><button class="btn sm" data-act="dayprev" aria-label="前一天">‹ <kbd>[</kbd></button><h1>${md(D)}（${wd(D)}）</h1><button class="btn sm" data-act="daynext" aria-label="後一天"><kbd>]</kbd> ›</button>
     <span class="sub">${D}</span>${H.h[D]?`<span class="chip late">${esc(H.h[D])}</span>`:!isWorkday(D)?'<span class="chip">假日</span>':H.w[D]?'<span class="chip plan">補班日</span>':''}
-    <span class="sp" style="flex:1"></span><button class="btn sm rail-toggle" data-act="rail">待辦</button></div>
+    <span class="sp" style="flex:1"></span>${calendarModeSwitch()}<button class="btn sm rail-toggle" data-act="rail">待辦</button></div>
   <div class="dash-kpis">
     <div class="dash-kpi k-blue"><span class="k-ico">▦</span><div><span>今日預估工時</span><strong>${fh(sum(parseDay(text).today,x=>x.est||0))}<small> hr</small></strong></div></div>
     <div class="dash-kpi k-green"><span class="k-ico">✓</span><div><span>已完成項目</span><strong>${T().filter(t=>t.date===D&&['完成','已交付'].includes(t.status)).length}<small> 項</small></strong></div></div>
@@ -2410,7 +2417,7 @@ const ACT={
   resetall:()=>confirmBox('清除全部資料（含設定以外的所有紀錄），無法還原。確定？',()=>{db=emptyDb(db.settings);weekStore={};drafts={};persist();render()},'全部清除'),
   remgo:el=>{const g=JSON.parse(el.dataset.go);doAct(g)},
   calmove:el=>{const n=+el.dataset.n;const c=S.cursor;if(S.calView==='month')S.cursor=iso(new Date(+c.slice(0,4),+c.slice(5,7)-1+n,1));else if(S.calView==='week')S.cursor=addD(c,7*n);else S.cursor=`${+c.slice(0,4)+n}${c.slice(4)}`;render()},
-  caltoday:()=>{S.cursor=today();render()},calview:el=>{S.calView=el.dataset.v;render()},calmonth:el=>{S.cursor=`${S.cursor.slice(0,4)}-${pad(el.dataset.m)}-01`;S.calView='month';render()},
+  caltoday:()=>{S.cursor=today();render()},calview:el=>{if(S.page==='day'){saveDraftNow();S.cursor=S.day;S.guideSub=false;S.logSub=false;S.calView=el.dataset.v;go('calendar')}else{S.calView=el.dataset.v;render()}},calmonth:el=>{S.cursor=`${S.cursor.slice(0,4)}-${pad(el.dataset.m)}-01`;S.calView='month';render()},
   dayprev:()=>openDay(addD(S.day,-1)),daynext:()=>openDay(addD(S.day,1)),
   togedit:()=>{saveDraftNow();S.edit=!S.edit;render._keep=true;render();if(S.edit)setTimeout(()=>$('#ta')?.focus(),0)},
   copyai:()=>copy($('#ta')?.value??dayText(S.day)),pasteback:()=>pasteModal(),teams:()=>{saveDraftNow();teamsModal(S.day)},picktodo:()=>pickTodoModal(),saveday:()=>saveDay(false),
