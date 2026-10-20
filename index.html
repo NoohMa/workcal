@@ -775,6 +775,20 @@ textarea.f.long-entry{min-height:190px;max-height:65vh;overflow-y:auto;resize:ve
 @media(max-width:540px){.wc-dual-actions .btn{flex:1 1 190px;min-width:0}}
 
 .risk-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:14px 0}.risk-stat{background:#edf9f8;border:1px solid #d1e8e8;border-radius:12px;padding:16px}.risk-stat span{display:block;font-size:12px;color:#426875}.risk-stat b{font-size:25px;color:#075c65}.risk-light{padding:4px 8px;border-radius:15px;font-size:12px;font-weight:750;white-space:nowrap}.risk-light.r3{background:#ffe2e5;color:#a51f31}.risk-light.r2{background:#fff0dd;color:#9d5800}.risk-light.r1{background:#fff8d9;color:#816600}.risk-light.r0{background:#e7f5f3;color:#12645f}.risk-line,.risk-item{border:1px solid #dce9ea;border-radius:10px;padding:12px;background:#fcffff}.risk-line{display:flex;align-items:center;gap:12px;margin:8px 0;flex-wrap:wrap}.risk-line small{display:block;color:#526d77;margin-top:4px}.risk-item p{margin:7px 0}.risk-sims{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.risk-sim{background:#f1f9fb;border:1px solid #d6e8eb;border-radius:10px;padding:12px}.risk-sim>*{display:block;margin-bottom:6px}.risk-fields{border:1px solid #d7e9ea;padding:12px;border-radius:12px;background:#f7fbfb}@media(max-width:750px){.risk-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.risk-sims{grid-template-columns:1fr}}
+
+/* Accessible clickable KPI cards; preserve the four existing colors and grid. */
+button.dash-kpi.wc-kpi-link{font:inherit;text-align:left;border:1px solid transparent;width:100%;cursor:pointer;transition:border-color .15s,transform .15s}
+button.dash-kpi.wc-kpi-link:hover{border-color:#8BD3D5;transform:translateY(-1px)}
+button.dash-kpi.wc-kpi-link:focus-visible{outline:3px solid #007D85;outline-offset:2px}
+button.dash-kpi.wc-kpi-link.wc-kpi-alert{border-color:#F0A1B0}
+.wc-kpi-content{min-width:0;flex:1}
+.wc-kpi-hours{display:flex;gap:12px;flex-wrap:wrap;margin-top:3px}
+.wc-kpi-hours>span{display:flex!important;flex-direction:column;gap:0;min-width:0}
+.wc-kpi-hours b{font-size:17px;font-weight:800;color:#14385D;white-space:nowrap}
+.wc-kpi-hours small{font-size:10px!important;color:#3A5F72}
+.dash-kpi .wc-kpi-risk-detail{font-size:10px!important;color:#7D4053}
+.dash-kpi strong{white-space:normal}
+@media(max-width:1023px){.wc-kpi-hours{gap:3px;justify-content:center}.wc-kpi-hours>span{flex:1 1 40px}.wc-kpi-hours b{font-size:13px}.wc-kpi-hours small{font-size:9px!important}.dash-kpi .wc-kpi-risk-detail{font-size:9px!important}}
 </style>
 </head>
 <body>
@@ -1754,12 +1768,7 @@ function pgDay(){
     <span class="sub">${D}</span>${H.h[D]?`<span class="chip late">${esc(H.h[D])}</span>`:!isWorkday(D)?'<span class="chip">假日</span>':H.w[D]?'<span class="chip plan">補班日</span>':''}
     <span class="sp" style="flex:1"></span>${calendarModeSwitch()}<button class="btn sm rail-toggle" data-act="rail">待辦</button></div>
   ${wcHoursAudit(D)}
-  <div class="dash-kpis">
-    <div class="dash-kpi k-blue"><span class="k-ico">▦</span><div><span>今日預估工時</span><strong>${fh(sum(parseDay(text).today,x=>x.est||0))}<small> hr</small></strong></div></div>
-    <div class="dash-kpi k-green"><span class="k-ico">✓</span><div><span>已完成項目</span><strong>${T().filter(t=>t.date===D&&['完成','已交付'].includes(t.status)).length}<small> 項</small></strong></div></div>
-    <div class="dash-kpi k-orange"><span class="k-ico">◷</span><div><span>規劃項目</span><strong>${parseDay(text).today.length}<small> 項</small></strong></div></div>
-    <div class="dash-kpi k-rose"><span class="k-ico">⚑</span><div><span>延遲項目</span><strong>${T().filter(t=>t.date===D&&t.status==='延遲').length}<small> 項</small></strong></div></div>
-  </div>
+  ${wcDayKpis(D,text)}
   ${(()=>{const locs=dayOfficePlaces(text);return locs.length?`<div class="dash-locline"><span class="lbl">當日辦公地</span>${locs.map(p=>`<span class="chip pv">${esc(p)}</span>`).join('')}</div>`:'';})()}
   <div class="tool">
     ${ro?'<span class="chip priv">隱私模式已開啟</span>':''}
@@ -1780,6 +1789,31 @@ function pgDay(){
   </div>`}
 
 /* ---------- 選項式工作日誌：輸出原始文字，延用現有解析與儲存 ---------- */
+/* Dashboard KPI: one source per metric, no mixing work dates or duplicated urgent work. */
+function wcDayKpis(D,raw){
+ const parsed=parseDay(raw), work=sum(parsed.today,x=>x.est||0);
+ const leaves=(parsed.header.leaves||[]).reduce((n,x)=>n+(Number(x.hours)||0),0);
+ const review=db.days[D]?.reviewSummary||wcReviews[D];
+ const finished=review?(review.done||[]).length+(review.urgent||[]).filter(x=>x.status==='完成').length:null;
+ const risks=allRisk(), overdue=risks.filter(x=>x.isLate).length;
+ const high=risks.filter(x=>x.level===3).length;
+ const alerts=overdue+risks.filter(x=>x.level===3&&!x.isLate).length;
+ return `<div class="dash-kpis">
+  <button type="button" class="dash-kpi k-blue wc-kpi-link" data-act="kpiwork" title="檢視並編輯今日工時與請假">
+   <span class="k-ico">▦</span><div class="wc-kpi-content"><span>今日工時配置</span>
+   <div class="wc-kpi-hours"><span><b>${fh(work)}h</b><small>預估工作</small></span><span><b>${fh(leaves)}h</b><small>請假／補休</small></span><span><b>${fh(work+leaves)}h</b><small>合計</small></span></div></div>
+  </button>
+  <button type="button" class="dash-kpi k-green wc-kpi-link" data-act="wcprevopen" title="查看上一工作日完成盤點">
+   <span class="k-ico">✓</span><div><span>上一工作日完成</span><strong>${finished===null?'待確認':finished+'<small> 項</small>'}</strong></div>
+  </button>
+  <button type="button" class="dash-kpi k-orange wc-kpi-link" data-act="guideopen" title="開啟今日工作輸入">
+   <span class="k-ico">◷</span><div><span>今日規劃項目</span><strong>${parsed.today.length}<small> 項</small></strong></div>
+  </button>
+  <button type="button" class="dash-kpi k-rose wc-kpi-link ${alerts?'wc-kpi-alert':''}" data-act="riskopen" title="查看工作風險與逾期待辦">
+   <span class="k-ico">⚑</span><div><span>延遲／高風險</span><strong>${alerts}<small> 項</small></strong><span class="wc-kpi-risk-detail">逾期 ${overdue}｜高風險 ${high}</span></div>
+  </button>
+ </div>`;
+}
 function guideSource(){return $('#ta')?.value??dayText(S.day)}
 function guideReplaceSection(text,key,lines){
  const ls=text.split('\n'),start=ls.findIndex(l=>secOf(N(l))===key);
@@ -2786,6 +2820,8 @@ function openDay(d){S.dayDetail=false;wcPrevSub=false;S.guideSub=false;S.logSub=
 const ACT={
   go:el=>{if(el.dataset.p==='projects')S.projSel=null;go(el.dataset.p)},riskopen:()=>go('risk'),riskedit:el=>openTask(el.dataset.id),riskaction:el=>riskAction(el.dataset.id),riskscenario:()=>riskScenario(),riskapply:()=>riskApply(),riskreset:()=>{riskDraft=null;render()},
   openday:el=>openDay(el.dataset.d),wcdaydetail:el=>{openDay(el.dataset.d);S.dayDetail=true;render()},
+  kpiwork:()=>{document.querySelector('#guided-host')?.scrollIntoView({block:'start',behavior:'smooth'})},
+  riskopen:()=>go('risk'),
   wcdetailopen:()=>{saveDraftNow();S.dayDetail=true;S.logSub=false;S.guideSub=false;wcPrevSub=false;render();$('#main').scrollTop=0},wcotherday:()=>{wcPrevSub=false;S.dayDetail=true;render();$('#main').scrollTop=0},wcdetailclose:()=>{S.dayDetail=false;render();$('#main').scrollTop=0},wcdetailprev:()=>{S.day=addD(S.day,-1);S.cursor=S.day;render()},wcdetailnext:()=>{S.day=addD(S.day,1);S.cursor=S.day;render()},wcdetailtoday:()=>{S.day=today();S.cursor=S.day;render()},wcdetailcopy:()=>copy(S.privacy?dayText(S.day).split(/\n(?=私記)/)[0]:dayText(S.day)),wcdetailedit:()=>{S.dayDetail=false;S.logSub=true;S.edit=true;render()},
   wccopy:(el)=>wcCopySection(el.dataset.sec),wcprevopen:()=>{saveDraftNow();wcPrevSub=true;S.guideSub=false;guideMode='prev';const items=guidePrev(),oldReview=db.days[S.day]?.reviewSummary||wcReviews[S.day];if(oldReview&&(!oldReview.source||oldReview.source===prevWorkday(S.day))){const used=new Set();guideReview={};for(const x of items){const lbl=x.category+'－'+x.project;for(const state of ['done','undone']){const i=(oldReview[state]||[]).findIndex((a,j)=>a.label===lbl&&!used.has(state+'-'+j));if(i>=0){const r=oldReview[state][i];used.add(state+'-'+i);guideReview[x.id]={status:state==='done'?'完成':'未完成',actual:r.actual??'',detail:x.detail||'',reason:'',date:mmdd(S.day)};break}}}}render();$('#main').scrollTop=0},wcprevclose:()=>{wcPrevSub=false;render();$('#main').scrollTop=0},
   mclose:()=>closeModal(),back:()=>back(),logopen:()=>{saveDraftNow();S.logSub=true;S.guideSub=false;S.edit=true;render();$('#main').scrollTop=0},logclose:()=>{saveDraftNow();S.logSub=false;render();$('#main').scrollTop=0},logsaveclose:()=>{saveDay(false);S.logSub=false;render();$('#main').scrollTop=0},guideopen:()=>{saveDraftNow();wcPrevSub=false;S.logSub=false;S.guideSub=true;S.edit=true;guideMode='today';render();$('#main').scrollTop=0},prevreview:()=>{wcPrevSub=true;S.guideSub=false;guideMode='prev';render();$('#main').scrollTop=0},guideprevopen:()=>{guideMode='prev';render();document.querySelector('#guided-host')?.scrollIntoView({block:'start',behavior:'smooth'})},guideclose:()=>{saveDraftNow();S.guideSub=false;render();$('#main').scrollTop=0},guidesaveclose:()=>{saveDay(false);S.guideSub=false;render();$('#main').scrollTop=0},savedayback:()=>saveDay(true),notesaveback:()=>{saveNoteNow();toast('已儲存');S.noteSel=null;render()},
