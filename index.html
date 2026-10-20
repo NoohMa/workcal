@@ -751,6 +751,22 @@ textarea.f.long-entry{min-height:190px;max-height:65vh;overflow-y:auto;resize:ve
 .wc-editor-footer{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0 12px}
 .wc-office-label{font-size:12px;white-space:normal;overflow-wrap:anywhere}
 @media(max-width:800px){.wc-section-grid,.wc-log-team{grid-template-columns:1fr}.wc-actions{margin-left:0}.wc-data-head{align-items:flex-start}.wc-dual-actions .btn{flex:1;min-width:130px}}
+
+/* Daily full detail, designed to match the lake-blue interface */
+.wc-detail-top{padding-bottom:8px}.wc-detail-nav{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin:14px 0}.wc-detail-nav label{font-size:13px;color:#225467;font-weight:650}.wc-detail-nav input{display:block;margin-top:5px;min-width:180px}
+.wc-detail-hero{display:flex;flex-wrap:wrap;gap:10px;padding:16px 18px;background:linear-gradient(110deg,#ddf6f4,#e9f4ff,#f5ebff);border:1px solid #cce4e5;border-radius:14px;font-weight:750;color:#17495c}
+.wc-detail-hero>span{padding:6px 10px;background:rgba(255,255,255,.8);border-radius:9px}
+.wc-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:14px 0}
+.wc-detail-card,.wc-detail-original{overflow:hidden;background:#fff;border:1px solid #d2e7e8;border-radius:14px;box-shadow:0 2px 10px rgba(30,90,100,.04)}
+.wc-detail-title{display:flex;align-items:center;gap:10px;padding:13px 15px;color:#14515d;background:#e5f8f7;border-bottom:1px solid #d5e9ea;flex-wrap:wrap}
+.wc-detail-card.leave .wc-detail-title{background:#f2ebff}.wc-detail-card.plan .wc-detail-title{background:#e6f1ff}.wc-detail-card.done .wc-detail-title{background:#e8f8e9}.wc-detail-card.undone .wc-detail-title{background:#fff3e2}.wc-detail-card.urgent .wc-detail-title{background:#ffe9e8}
+.wc-detail-ico{font-size:18px}.wc-detail-count{margin-left:auto;font-size:12px;color:#527381}.wc-detail-content{padding:8px 15px 13px}.wc-detail-row{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:11px 0;border-bottom:1px solid #eaf1f2}.wc-detail-row:last-child{border:0}.wc-detail-hours{white-space:nowrap;font-size:12px;color:#2f6478}.wc-detail-empty{padding:13px;color:#64808c}
+.wc-detail-original{margin-top:16px}.wc-detail-original .wc-detail-title{background:linear-gradient(100deg,#d9f5f2,#f2eafe)}.wc-detail-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}.wc-detail-original pre{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.9;font-size:14px;padding:18px 20px;color:#173d4c;background:linear-gradient(145deg,#fcffff,#f8faff,#fffaf5);min-height:160px}
+.wc-audit{display:flex;align-items:center;gap:12px;border:1px solid;border-radius:11px;padding:10px 14px;margin:12px 0}.wc-audit-icon{font-size:19px;font-weight:800}.wc-on-label{display:inline-flex;align-items:center;border-radius:5px;border:1px solid #d0b9eb;color:#7448a2;padding:0 4px;font-size:10px;line-height:16px;font-weight:800;background:transparent}
+.wc-log-banner{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:14px 17px;background:linear-gradient(95deg,#daf7f2,#e4f1ff,#f4e8ff);border:1px solid #c8e2e3;border-radius:12px 12px 0 0}.wc-log-banner>span{font-weight:800;color:#075c6d}.wc-log-banner small{color:#456b7b}
+:root[data-theme="light"] .ed,:root[data-theme="light"] .ed.read{background:#f8ffff!important;border-color:#b1dce2!important;box-shadow:0 4px 18px rgba(0,125,133,.07)}
+:root[data-theme="light"] .ed pre{background:linear-gradient(145deg,#f6fdfd,#fbfaff,#fffcf8)}
+@media(max-width:800px){.wc-detail-grid{grid-template-columns:1fr}.wc-detail-nav{gap:8px}.wc-detail-nav button{flex:1}.wc-detail-original pre{padding:13px;font-size:13px}.wc-detail-top h1{font-size:18px}}
 </style>
 </head>
 <body>
@@ -1412,7 +1428,7 @@ function buildSample(){
   db.sample=true;persist()}
 
 /* ---------- UI 狀態 ---------- */
-const S={page:'calendar',guideSub:false,logSub:false,calView:'month',cursor:today(),day:today(),edit:!isMobile(),dirty:false,
+const S={page:'calendar',guideSub:false,logSub:false,dayDetail:false,calView:'month',cursor:today(),day:today(),edit:!isMobile(),dirty:false,
   todoTab:'已排日',todoSel:0,archYear:'all',archProj:'all',noteSel:null,noteQ:'',projFilter:'進行中',projSel:null,projTab:'list',
   gZoom:'month',gSel:0,gOpen:{},gAll:false,statKind:'month',statAnchor:today(),statFrom:null,statTo:null,officePeriod:'month',officeYear:today().slice(0,4),officeMonth:today().slice(5,7),chartTable:{},privacy:false,railSel:new Set(),settingsTab:'basic'};
 let guideMode='today',guideItems=[],guideReview={},guideUrgents=[];
@@ -1530,18 +1546,19 @@ function render(){
   const f={calendar:pgCalendar,day:pgDay,todo:pgTodo,notes:pgNotes,projects:pgProjects,stats:pgStats,leave:pgLeaveManage,weeklyspace:pgWeekSpace,settings:pgSettings,import:pgImport}[S.page]||pgCalendar;
   const main=$('#main');const st=main.scrollTop;main.innerHTML=sampleBanner()+f();
   after[S.page]&&after[S.page]();
+  const wcDate=$('#wc-detail-date');if(wcDate)wcDate.addEventListener('change',()=>{if(/^\d{4}-\d{2}-\d{2}$/.test(wcDate.value)){S.day=wcDate.value;S.cursor=S.day;render()}});
   renderRail();
   if(render._keep)main.scrollTop=st;render._keep=false}
 const after={};
 after.weeklyspace=mountWeekSpace;
 function back(){
   if(modalStack.length){closeModal();return}
-  if(S.page==='day'&&(S.guideSub||S.logSub||wcPrevSub)){saveDraftNow();S.guideSub=false;S.logSub=false;wcPrevSub=false;render();$('#main').scrollTop=0;return}
+  if(S.page==='day'&&(S.guideSub||S.logSub||wcPrevSub||S.dayDetail)){saveDraftNow();S.guideSub=false;S.logSub=false;wcPrevSub=false;S.dayDetail=false;render();$('#main').scrollTop=0;return}
   if(S.page==='day'){saveDraftNow();const to=S.from&&S.from!=='day'?S.from:'calendar';S.cursor=S.day;go(to);return}
   if(S.page==='notes'&&S.noteSel){saveNoteNow();S.noteSel=null;render();return}
   if(S.page==='projects'&&S.projSel){S.projSel=null;render();return}
   if(S.page==='import'){go('settings');return}}
-function go(p){if(S.page==='day'&&p!=='day'){saveDraftNow();S.guideSub=false;S.logSub=false;wcPrevSub=false}S.page=p;$('#rail').classList.remove('open');render();$('#main').scrollTop=0}
+function go(p){if(S.page==='day'&&p!=='day'){saveDraftNow();S.guideSub=false;S.logSub=false;wcPrevSub=false;S.dayDetail=false}S.page=p;$('#rail').classList.remove('open');render();$('#main').scrollTop=0}
 
 /* ---------- 右欄 ---------- */
 function renderRail(){
@@ -1582,7 +1599,7 @@ function pgCalendar(){
     <div class="row"><button class="btn sm" data-act="calmove" data-n="-1" aria-label="上一頁">‹ <kbd>PgUp</kbd></button><button class="btn sm" data-act="caltoday">今天 <kbd>T</kbd></button><button class="btn sm" data-act="calmove" data-n="1" aria-label="下一頁"><kbd>PgDn</kbd> ›</button></div>
     <span class="sp"></span>
     ${calendarModeSwitch()}
-    <button class="btn pri" data-act="openday" data-d="${today()}">寫今天日誌</button>
+    <button class="btn sm" data-act="wcdaydetail" data-d="${S.cursor}">🔎 單日完整內容</button><button class="btn pri" data-act="openday" data-d="${today()}">寫今天日誌</button>
     <button class="btn rail-toggle" data-act="rail">待辦</button></div>`;
   const remBox=rem.length?`<div class="card" style="margin-bottom:14px"><div class="row" style="margin-bottom:8px"><h3>打開提醒</h3><span class="sub">${today()}（${wd(today())}）</span></div><div class="rem">${rem.map(remHTML).join('')}</div></div>`:'';
   let body='';
@@ -1594,7 +1611,7 @@ function pgCalendar(){
   else if(S.calView==='week'){const[a]=weekRange(c);const days=[...Array(7)].map((_,i)=>addD(a,i));
     body=`<div class="tbl-wrap"><div class="wk">${days.map(d=>{const I=dayInfo(d);const H=hol();return`<div class="wkcol ${d===today()?'today':''} ${d===c?'cur':''}" data-act="openday" data-d="${d}" tabindex="0">
       <div class="row"><b>${md(d)}（${wd(d)}）</b>${I.st?`<span class="dot" style="background:var(--${I.st})"></span>`:''}<span class="sp" style="flex:1"></span><span class="sub num">${I.hrs?fh(I.hrs)+'h':I.est?'預'+fh(I.est)+'h':''}</span></div>
-      ${H.h[d]?`<span class="chip late">${esc(H.h[d])}</span>`:''}${I.lv?`<span class="chip priv pv">請假 ${fh(I.lv)}hr</span>`:''}
+      ${H.h[d]?`<span class="chip late">${esc(H.h[d])}</span>`:''}${I.lv?`<span class="wc-on-label">ON</span>`:''}
       ${I.ts.map(t=>`<div class="wkt"><span class="chip ${STCLS[t.status]}">${t.isUrgent?'突發':t.status}</span> ${t.isStar?'<span class="chip star">⭐</span>':''}<b>${esc(pname(t.projectId))}</b> ${esc(t.title!==pname(t.projectId)?t.title:'')}</div>`).join('')||'<div class="sub">—</div>'}</div>`}).join('')}</div></div>`}
   else{body=`<div class="yr">${[...Array(12)].map((_,mi)=>{const f=`${y}-${pad(mi+1)}-01`;const g=(pd(f).getDay()+6)%7;const n=new Date(y,mi+1,0).getDate();
       let cells='';for(let i=0;i<g;i++)cells+='<span class="mmc e"></span>';
@@ -1603,16 +1620,62 @@ function pgCalendar(){
         cells+=`<button class="mmc ${d<today()?'past':d===today()?'current':'future'}" data-act="openday" data-d="${d}" title="${d} ${fh(I.hrs)}h" style="${d===today()?'background:#007D85;outline:1.5px solid #007D85;':'background:'+bg+';'}" aria-label="${d}">${k}</button>`}
       return`<div class="mm"><h4 data-act="calmonth" data-m="${mi+1}">${mi+1} 月</h4><div class="mmg">${cells}</div></div>`}).join('')}</div>
       <div class="legend"><span><i class="pdot" style="background:color-mix(in srgb,var(--accent) 25%,var(--surface-2))"></i>工時少</span><span><i class="pdot" style="background:color-mix(in srgb,var(--accent) 88%,var(--surface-2))"></i>工時多（含加班）</span><span><i class="pdot" style="background:var(--none-bg)"></i>工作日未填</span></div>`}
-  const legend=S.calView==='month'?`<div class="legend"><span><i class="dot" style="background:var(--done)"></i>全部完成</span><span><i class="dot" style="background:var(--plan)"></i>進行中</span><span><i class="dot" style="background:var(--late)"></i>有延遲</span><span><i class="dot" style="background:var(--pend)"></i>有突發</span><span><i class="dot" style="background:var(--none)"></i>未填</span><span>🚩 DL</span><span>💼 出差</span><span><i class="pdot" style="background:var(--priv-bg);border:1px solid var(--priv)"></i>請假（高度＝時數）</span><span>方向鍵移動・Enter 進入</span></div>`:'';
+  const legend=S.calView==='month'?`<div class="legend"><span><i class="dot" style="background:var(--done)"></i>全部完成</span><span><i class="dot" style="background:var(--plan)"></i>進行中</span><span><i class="dot" style="background:var(--late)"></i>有延遲</span><span><i class="dot" style="background:var(--pend)"></i>有突發</span><span><i class="dot" style="background:var(--none)"></i>未填</span><span>🚩 DL</span><span>💼 出差</span><span>ON 請假</span><span>方向鍵移動・Enter 進入</span></div>`:'';
   return head+remBox+body+legend}
 function calCell(d,out){
   const I=dayInfo(d);const H=hol();const off=!isWorkday(d);
   return`<button class="cell ${out?'out':''} ${off?'off':''} ${d===today()?'today':''} ${d===S.cursor?'cur':''}" data-act="openday" data-d="${d}" data-cell="${d}" aria-label="${d}" tabindex="${d===S.cursor?0:-1}">
-    ${I.lv?`<span class="lv pv" style="height:${Math.min(100,I.lv/hpd()*100)}%"></span>`:''}
+    
     <span class="dn">${+d.slice(8)}${I.st?`<span class="dot" style="background:var(--${I.st})"></span>`:''}${I.urg?'<span class="dot" style="background:var(--pend)"></span>':''}${I.warn?'<span class="chip pend" style="padding:0 4px;line-height:14px;font-size:10px">!</span>':''}</span>
     ${H.h[d]?`<span class="hn">${esc(H.h[d])}</span>`:H.w[d]?`<span class="hn" style="color:var(--plan)">補班</span>`:''}
     ${wcClock(d)?`<span class="hrs wc-office-label">${esc(wcClock(d))}${I.ot?`<span class="pv"> +${fh(I.ot)}</span>`:''}</span>`:''}
-    <span class="mk">${I.dls?`<span title="DL">🚩${I.dls>1?I.dls:''}</span>`:''}${I.trip?'<span class="pv">💼</span>':''}${I.lv?`<span class="lvt pv">假${fh(I.lv)}h</span>`:''}</span></button>`}
+    <span class="mk">${I.dls?`<span title="DL">🚩${I.dls>1?I.dls:''}</span>`:''}${I.trip?'<span class="pv">💼</span>':''}${I.lv?'<span class="wc-on-label" title="當日有請假">ON</span>':''}</span></button>`}
+
+
+/* ---------- 單日完整內容：唯讀查閱，同一資料來源，不另存副本 ---------- */
+function wcHoursAudit(D){
+ const txt=dayText(D),r=parseDay(txt),lv=(r.header.leaves||[]).reduce((a,x)=>a+(Number(x.hours)||0),0);
+ const planned=r.today.filter(x=>x.est!=null).reduce((a,x)=>a+Number(x.est),0);
+ const explicit=r.today.filter(x=>x.actual!=null).reduce((a,x)=>a+Number(x.actual),0);
+ const actualTasks=T().filter(x=>x.date===D&&x.origin==='plan'&&x.actual&&Number.isFinite(Number(x.actual.office)));
+ const hasActual=actualTasks.length>0||explicit>0;
+ const worked=actualTasks.length?actualTasks.reduce((a,x)=>a+(Number(x.actual.office)||0),0):hasActual?explicit:planned;
+ const total=worked+lv,active=!!(r.today.length||lv||(r.header.locations||[]).length);
+ if(!active)return '';
+ const abnormal=total<7||total>8;
+ const color=abnormal?'#b95325':'#067b7d';const bg=abnormal?'#fff3e7':'#e8f9f4';
+ const label=total<7?`不足 ${fh(7-total)} 小時`:total>8?`超過 ${fh(total-8)} 小時`:'符合 7～8 小時';
+ return `<div class="wc-audit" style="border-color:${color};background:${bg}"><span class="wc-audit-icon">${abnormal?'⚠':'✓'}</span><div><strong>當日工時檢核｜${esc(label)}</strong><div class="sub">${hasActual?'已記錄工作':'預估工作'} ${fh(worked)}h ＋ 請假／補休 ${fh(lv)}h ＝ ${fh(total)}h${hasActual?'':'（預估，待實際工時確認）'}</div>${abnormal?'<div class="sub">提醒：請核對工作、請假與休息時間。此提醒不阻擋存檔，也不自動認定加班。</div>':''}</div></div>`;
+}
+function wcDetailItems(items,key){
+ if(!items.length)return '<div class="wc-detail-empty">此日期沒有這類紀錄</div>';
+ return items.map(it=>`<div class="wc-detail-row"><div><b>${esc(it.cat||'工作')}｜${esc(it.project||it.title||'未命名')}</b>${it.title&&it.title!==it.project?`<div class="sub">${esc(it.title)}</div>`:''}${it.doneText?`<div class="sub">成果：${esc(it.doneText)}</div>`:''}${it.reason?`<div class="sub">未完成原因：${esc(it.reason)}</div>`:''}</div><span class="wc-detail-hours">${it.est!=null?`預 ${fh(it.est)}h`:''}${it.actual!=null?`｜實 ${fh(it.actual)}h`:''}</span></div>`).join('');
+}
+function wcDetailCard(title,icon,kind,content,extra=''){
+ return `<section class="wc-detail-card ${kind}"><div class="wc-detail-title"><span class="wc-detail-ico">${icon}</span><strong>${title}</strong>${extra}</div><div class="wc-detail-content">${content}</div></section>`;
+}
+function pgDayDetail(){
+ const D=S.day,txt=dayText(D),r=parseDay(txt);const header=r.header;
+ const loc=(header.locations||[]).map(l=>`<div class="wc-detail-row"><span>${l.trip?'💼 出差':'🏢 辦公'}｜${esc(l.place)}${l.activity?'｜'+esc(l.activity):''}</span><span class="sub">${esc(l.start||'')} ${l.end?'～'+esc(l.end):''}</span></div>`).join('')||'<div class="wc-detail-empty">沒有辦公地紀錄</div>';
+ const leave=(header.leaves||[]).map(x=>`<div class="wc-detail-row"><span>${esc(x.type)}</span><b>${fh(x.hours)}h</b></div>`).join('')||'<div class="wc-detail-empty">無請假</div>';
+ const cards=[
+ wcDetailCard('辦公地／出差','💼','office',loc),
+ wcDetailCard('請假／補休','🌿','leave',leave),
+ wcDetailCard('今日工作項目','📋','plan',wcDetailItems(r.today,'today'),`<span class="wc-detail-count">${r.today.length} 項</span>`),
+ wcDetailCard('上一工作日完成','✅','done',wcDetailItems(r.done,'done')),
+ wcDetailCard('上一工作日未完成','⏳','undone',wcDetailItems(r.undone,'undone')),
+ wcDetailCard('上一工作日突發','⚡','urgent',wcDetailItems(r.urgent,'urgent'))
+ ];
+ const privateText=txt.split('\n').findIndex(l=>/^私記/.test(N(l)));
+ const publicText=privateText>=0?txt.split('\n').slice(0,privateText).join('\n'):txt;
+ return `<div class="dayhead wc-detail-top"><button class="xbtn back" data-act="wcdetailclose" aria-label="返回每日主頁">‹</button><h1>📅 單日工作完整內容</h1><span class="sp" style="flex:1"></span>${calendarModeSwitch()}<button class="btn sm" data-act="wcdetailclose">返回每日主頁</button></div>
+ <div class="wc-detail-nav"><button class="btn" data-act="wcdetailprev">‹ 前一天</button><label>指定日期 <input id="wc-detail-date" type="date" value="${D}" aria-label="查詢工作日期" max="9999-12-31"></label><button class="btn" data-act="wcdetailnext">後一天 ›</button><button class="btn sm" data-act="wcdetailtoday">今天</button></div>
+ <div class="wc-detail-hero"><span>📅 ${D}（${wd(D)}）</span><span>👤 ${esc(header.name||db.settings.displayName||'')}</span><span>📋 今日 ${r.today.length} 項</span></div>
+ ${wcHoursAudit(D)}
+ <div class="wc-detail-grid">${cards.join('')}</div>
+ <section class="wc-detail-original"><div class="wc-detail-title"><span class="wc-detail-ico">📝</span><strong>完整工作日誌｜原始文字</strong><div class="wc-detail-actions"><button class="btn sm" data-act="wcdetailcopy">複製日誌</button><button class="btn sm pri" data-act="wcdetailedit">開啟編輯 ›</button></div></div><pre>${esc(S.privacy?publicText:txt)}</pre></section>
+ <p class="sub" style="margin:12px 0 28px">此頁預設唯讀；查詢其他日期不會改寫日誌。日期與盤點來源請以原始紀錄核對。</p>`;
+}
 
 /* ---------- 每日頁 ---------- */
 function dayText(D){return drafts[D]??db.days[D]?.rawText??template(D)}
@@ -1620,8 +1683,9 @@ function dayState(D){if(drafts[D]!=null&&drafts[D]!==db.days[D]?.rawText)return[
 function pgDay(){
   const D=S.day;const H=hol();const text=dayText(D);const[sc,sl]=dayState(D);const ro=S.privacy;
   const editMode=S.edit&&!ro;
+  if(S.dayDetail)return pgDayDetail();
   if(S.logSub)return `<div class="dayhead"><button class="xbtn back" data-act="logclose" aria-label="返回每日主頁">‹</button><h1>${md(D)}（${wd(D)}）｜完整工作日誌</h1><span class="sp" style="flex:1"></span>${calendarModeSwitch()}<button class="btn sm" data-act="logclose">返回每日主頁</button></div>
-    <div class="dash-section-head dash-output-head">▤ 完整工作日誌 <small>可直接編輯、複製、儲存</small></div>
+    <div class="wc-log-banner"><span>📝 完整工作日誌</span><small>📅 ${D}　｜　可編輯、複製、儲存；原文與 Teams 格式保持一致</small></div>
     <div class="tool"><button class="btn sm" data-act="togedit">${editMode?'閱讀模式':'編輯'}</button><button class="btn sm" data-act="copyai">複製給 AI</button><button class="btn sm" data-act="pasteback" ${ro?'disabled':''}>貼回定稿</button><button class="btn sm" data-act="teams">複製 Teams 版</button><button class="btn sm" data-act="picktodo" ${ro?'disabled':''}>帶入待辦</button></div>
     <div class="infobar" id="infobar"></div>
     <div class="ed ${editMode?'':'read'}" id="ed"><pre id="hl" aria-hidden="${editMode}"></pre>${editMode?`<textarea id="ta" spellcheck="false" aria-label="${D} 日誌內容">${esc(text)}</textarea>`:''}</div>
@@ -1631,6 +1695,7 @@ function pgDay(){
   return`<div class="dayhead"><button class="xbtn back" data-act="back" aria-label="上一頁（Esc）">‹</button><button class="btn sm" data-act="dayprev" aria-label="前一天">‹ <kbd>[</kbd></button><h1>${md(D)}（${wd(D)}）</h1><button class="btn sm" data-act="daynext" aria-label="後一天"><kbd>]</kbd> ›</button>
     <span class="sub">${D}</span>${H.h[D]?`<span class="chip late">${esc(H.h[D])}</span>`:!isWorkday(D)?'<span class="chip">假日</span>':H.w[D]?'<span class="chip plan">補班日</span>':''}
     <span class="sp" style="flex:1"></span>${calendarModeSwitch()}<button class="btn sm rail-toggle" data-act="rail">待辦</button></div>
+  ${wcHoursAudit(D)}
   <div class="dash-kpis">
     <div class="dash-kpi k-blue"><span class="k-ico">▦</span><div><span>今日預估工時</span><strong>${fh(sum(parseDay(text).today,x=>x.est||0))}<small> hr</small></strong></div></div>
     <div class="dash-kpi k-green"><span class="k-ico">✓</span><div><span>已完成項目</span><strong>${T().filter(t=>t.date===D&&['完成','已交付'].includes(t.status)).length}<small> 項</small></strong></div></div>
@@ -1645,7 +1710,7 @@ function pgDay(){
     <button class="btn sm" data-act="teams">複製 Teams 版 <kbd class="hide-m">Ctrl⇧C</kbd></button>
     <button class="btn sm" data-act="picktodo" ${ro?'disabled':''}>帶入待辦 <kbd class="hide-m">Ctrl⇧T</kbd></button>
   </div>
-  <div class="wc-log-team">${teamsConfirmHTML(D)}<section class="wc-log-entry"><div><strong>▤ 完整工作日誌</strong><p class="sub">查看、編輯及複製完整原文</p></div><button class="btn pri" data-act="logopen">開啟完整工作日誌 ›</button></section></div>
+  <div class="wc-log-team">${teamsConfirmHTML(D)}<section class="wc-log-entry"><div><strong>📝 完整工作日誌</strong><p class="sub">查閱任何單日的完整內容與原文</p></div><button class="btn pri" data-act="wcdetailopen">查看單日完整內容 ›</button><button class="btn sm" data-act="logopen">編輯原文</button></section></div>
   ${!ro?`<div id="guided-host"></div>`:''}
   <div class="wc-dual-actions"><button class="btn pri" data-act="wcprevopen">開啟盤點 ›</button></div>
   <div class="wc-section-grid">
@@ -1782,7 +1847,7 @@ function guideRender(){const host=$('#guided-host');if(!host)return;
  if(!S.guideSub&&!wcPrevSub){host.innerHTML=`<section class="guided">${guideHeaderHTML()}</section>`;host.querySelectorAll('[data-gplace],[data-gleave]').forEach(node=>{const update=()=>{const isPlace=node.hasAttribute('data-gplace'),i=+(isPlace?node.dataset.gplace:node.dataset.gleave),o=(isPlace?guidePlaces:guideLeaves)[i];if(!o)return;if(node.dataset.gfield==='placeChoice'){const wrap=host.querySelector('[data-place-other="'+i+'"]');if(wrap)wrap.style.display=node.value==='其他'?'':'none';o.place=node.value==='其他'?(host.querySelector('[data-gplace="'+i+'"][data-gfield="placeCustom"]')?.value.trim()||''):node.value}else if(node.dataset.gfield==='placeCustom')o.place=node.value.trim();else if(node.dataset.gfield==='activityOther')o.activity='其他'+(node.value.trim()?'：'+node.value.trim():'');else o[node.dataset.gfield]=node.dataset.gfield==='trip'?node.value==='1':node.dataset.gfield==='hours'?Number(node.value):node.value;if(node.dataset.gfield==='activity'){const wrap=host.querySelector('[data-other-wrap="'+i+'"]');if(wrap)wrap.style.display=node.value==='其他'?'':'none'}};node.addEventListener('input',update);node.addEventListener('change',update)});return}
  host.innerHTML=`<section class="guided"><h2>${S.guideSub?"今日工作輸入｜快速整理":"每日基本資料與昨日工作盤點"}</h2>${S.guideSub?'<div class="guided-tabs"><button class="btn pri" data-guide="tab-today">今日工作項目</button><button class="btn" data-guide="categories">＋ 分類</button></div>':''}
  ${S.guideSub?`<div class="fgrid"><label class="fl">分類<select id="gd-cat">${opts}</select></label><label class="fl">專案／工作名稱<input id="gd-project" type="text" list="gd-projects" placeholder="輸入工作名稱"><datalist id="gd-projects">${Object.values(db.projects).map(p=>`<option value="${esc(p.name)}">`).join('')}</datalist></label><label class="fl">預估工時 hr<input type="number" min="0" step="0.5" id="gd-hour" placeholder="例如 3"></label><label class="fl">內容<input id="gd-detail" type="text" placeholder="例如：公告更新、內容巡檢"></label></div><div class="g-actions"><button class="btn pri" data-guide="add">＋ 加入工作項目</button><button class="btn" data-guide="from-text">讀取現有今日項目</button></div><div id="gd-list">${guideItems.map((x,i)=>`<div class="g-item row"><span style="flex:1">${esc(x.category)}-${esc(x.project)}_${hrTok(x.hours)}${x.detail?'，'+esc(x.detail):''}</span><button class="btn sm" data-guide="remove" data-i="${i}">移除</button></div>`).join('')}</div><div class="g-actions"><button class="btn pri" data-guide="output-today">輸出到今日工作項目</button><button class="btn" data-guide="copy-today">複製條列文字</button></div>`:
- `<div class="sub">逐項確認完成狀態、實際工時與成果，並可新增突發工作。</div><div class="g-actions prev-import-actions"><button class="btn pri" data-guide="import-prev">匯入上一工作日內容</button><button class="btn" data-guide="add-urgent">＋ 新增突發工作</button></div><div class="prev-source-wrap"><div class="sub">來源：${prevWorkday(S.day)}｜匯入後可逐項確認；尚未確認前不會寫入日誌。</div>${prev.length?prev.map((x,i)=>{const r=guideReview[x.id]||{};return`<div class="g-item"><div class="row"><b style="flex:1">${esc(x.category)}－${esc(x.project)}</b><span class="sub">原預估 ${x.est==null?'未填':fh(x.est)+'hr'}</span></div>${x.detail?`<div class="sub">${esc(x.detail)}</div>`:''}<div class="fgrid"><label class="fl">結果<select data-gstatus="${x.id}"><option value="待確認" ${r.status==='待確認'?'selected':''}>待確認／略過</option><option value="完成" ${r.status==='完成'?'selected':''}>完成</option><option value="未完成" ${r.status==='未完成'?'selected':''}>未完成</option></select></label>${r.status==='完成'?`<label class="fl">實際工時 hr<input type="number" min="0" step="0.5" data-gactual="${x.id}" value="${esc(r.actual??'')}" placeholder="自行填寫"></label><label class="fl">實際完成內容<input type="text" data-gdetail="${x.id}" value="${esc(r.detail??x.detail)}"></label>`:''}${r.status==='未完成'?`<label class="fl">未完成原因<input type="text" data-greason="${x.id}" value="${esc(r.reason||'')}"></label><label class="fl">預計完成 MMDD<input type="text" data-gdate="${x.id}" value="${esc(r.date||mmdd(S.day))}"></label>`:''}</div></div>`}).join(''):'<div class="empty">上一工作日尚無規劃項目，可先使用自由文字日誌。</div>'}</div><div class="guide-urgent-wrap"><h3>上一工作日新增突發工作</h3>${guideUrgents.length?guideUrgents.map((u,i)=>`<div class="g-item"><div class="fgrid"><label class="fl">分類<select data-gurgent="${i}" data-ufield="category">${C.map(c=>`<option value="${esc(c)}" ${u.category===c?'selected':''}>${esc(c)}</option>`).join('')}</select></label><label class="fl">工作名稱<input data-gurgent="${i}" data-ufield="project" value="${esc(u.project)}" placeholder="突發工作名稱"></label><label class="fl">狀態<select data-gurgent="${i}" data-ufield="status"><option value="完成" ${u.status!=='未完成'?'selected':''}>完成</option><option value="未完成" ${u.status==='未完成'?'selected':''}>未完成</option></select></label><label class="fl">實際工時 hr<input type="number" min="0" step="0.5" data-gurgent="${i}" data-ufield="hours" value="${esc(u.hours)}"></label>${u.status==='未完成'?`<label class="fl">未完成原因<input data-gurgent="${i}" data-ufield="reason" value="${esc(u.reason||'')}"></label><label class="fl">預計完成 MMDD<input data-gurgent="${i}" data-ufield="date" value="${esc(u.date||mmdd(S.day))}"></label>`:`<label class="fl">實際完成內容<input data-gurgent="${i}" data-ufield="detail" value="${esc(u.detail)}"></label>`}</div><div class="g-actions"><button class="btn sm" data-guide="remove-urgent" data-i="${i}">移除這筆突發</button></div></div>`).join(''):'<div class="sub">目前沒有新增突發工作。</div>'}</div><div class="g-actions guide-confirm-actions"><button class="btn pri guide-wide-btn" data-guide="output-prev">確認上一工作日盤點</button><button class="btn" data-guide="copy-prev">複製條列文字</button></div>`}
+ `<div class="sub">逐項確認完成狀態、實際工時與成果，並可新增突發工作。</div><div class="g-actions prev-import-actions"><button class="btn" data-act="wcotherday">🔎 其他工作日項目</button><button class="btn" data-guide="add-urgent">＋ 新增突發工作</button></div><div class="prev-source-wrap"><div class="sub">來源：${prevWorkday(S.day)}｜已自動顯示上一工作日項目；確認盤點後才寫入日誌。</div>${prev.length?prev.map((x,i)=>{const r=guideReview[x.id]||{};return`<div class="g-item"><div class="row"><b style="flex:1">${esc(x.category)}－${esc(x.project)}</b><span class="sub">原預估 ${x.est==null?'未填':fh(x.est)+'hr'}</span></div>${x.detail?`<div class="sub">${esc(x.detail)}</div>`:''}<div class="fgrid"><label class="fl">結果<select data-gstatus="${x.id}"><option value="待確認" ${r.status==='待確認'?'selected':''}>待確認／略過</option><option value="完成" ${r.status==='完成'?'selected':''}>完成</option><option value="未完成" ${r.status==='未完成'?'selected':''}>未完成</option></select></label>${r.status==='完成'?`<label class="fl">實際工時 hr<input type="number" min="0" step="0.5" data-gactual="${x.id}" value="${esc(r.actual??'')}" placeholder="自行填寫"></label><label class="fl">實際完成內容<input type="text" data-gdetail="${x.id}" value="${esc(r.detail??x.detail)}"></label>`:''}${r.status==='未完成'?`<label class="fl">未完成原因<input type="text" data-greason="${x.id}" value="${esc(r.reason||'')}"></label><label class="fl">預計完成 MMDD<input type="text" data-gdate="${x.id}" value="${esc(r.date||mmdd(S.day))}"></label>`:''}</div></div>`}).join(''):'<div class="empty">上一工作日尚無規劃項目，可先使用自由文字日誌。</div>'}</div><div class="guide-urgent-wrap"><h3>上一工作日新增突發工作</h3>${guideUrgents.length?guideUrgents.map((u,i)=>`<div class="g-item"><div class="fgrid"><label class="fl">分類<select data-gurgent="${i}" data-ufield="category">${C.map(c=>`<option value="${esc(c)}" ${u.category===c?'selected':''}>${esc(c)}</option>`).join('')}</select></label><label class="fl">工作名稱<input data-gurgent="${i}" data-ufield="project" value="${esc(u.project)}" placeholder="突發工作名稱"></label><label class="fl">狀態<select data-gurgent="${i}" data-ufield="status"><option value="完成" ${u.status!=='未完成'?'selected':''}>完成</option><option value="未完成" ${u.status==='未完成'?'selected':''}>未完成</option></select></label><label class="fl">實際工時 hr<input type="number" min="0" step="0.5" data-gurgent="${i}" data-ufield="hours" value="${esc(u.hours)}"></label>${u.status==='未完成'?`<label class="fl">未完成原因<input data-gurgent="${i}" data-ufield="reason" value="${esc(u.reason||'')}"></label><label class="fl">預計完成 MMDD<input data-gurgent="${i}" data-ufield="date" value="${esc(u.date||mmdd(S.day))}"></label>`:`<label class="fl">實際完成內容<input data-gurgent="${i}" data-ufield="detail" value="${esc(u.detail)}"></label>`}</div><div class="g-actions"><button class="btn sm" data-guide="remove-urgent" data-i="${i}">移除這筆突發</button></div></div>`).join(''):'<div class="sub">目前沒有新增突發工作。</div>'}</div><div class="g-actions guide-confirm-actions"><button class="btn pri guide-wide-btn" data-guide="output-prev">確認上一工作日盤點</button><button class="btn" data-guide="copy-prev">複製條列文字</button></div>`}
  
  <div class="sub" style="margin-top:10px">${S.guideSub?"完成輸入後按『輸出到今日工作項目』，再返回主頁。":"完成後按『確認上一工作日盤點』，資料會同步回主頁。"}</div></section>`;
  host.querySelectorAll('[data-gplace],[data-gleave]').forEach(node=>{const update=()=>{
@@ -2602,13 +2667,14 @@ function fixLineModal(i,sec){
       else line=`${c}-${p}${e!==''?'_'+hrTok(+e):''}${t?'，'+t:''}`;
       ls[i]=line;ta.value=ls.join('\n');closeModal();ta.dispatchEvent(new Event('input'));toast('已補正，記得存檔')}}})}
 function newNote(){const id=uid();db.notes[id]={id,title:'',body:'',projectIds:[],pinned:false,createdAt:Date.now(),updatedAt:Date.now()};S.noteSel=id;persist();go('notes');setTimeout(()=>$('#n-title')?.focus(),0)}
-function openDay(d){wcPrevSub=false;S.guideSub=false;S.logSub=false;guideReview={};guideItems=[];guideUrgents=[];guideImportedDay='';guideMode='today';if(S.page==='day')saveDraftNow();else S.from=S.page;S.day=d;S.cursor=d;S.edit=!isMobile();S.page='day';render();$('#main').scrollTop=0;if(!isMobile()&&!S.privacy)setTimeout(()=>{const ta=$('#ta');if(ta){ta.focus();ta.setSelectionRange(0,0)}},0)}
+function openDay(d){S.dayDetail=false;wcPrevSub=false;S.guideSub=false;S.logSub=false;guideReview={};guideItems=[];guideUrgents=[];guideImportedDay='';guideMode='today';if(S.page==='day')saveDraftNow();else S.from=S.page;S.day=d;S.cursor=d;S.edit=!isMobile();S.page='day';render();$('#main').scrollTop=0;if(!isMobile()&&!S.privacy)setTimeout(()=>{const ta=$('#ta');if(ta){ta.focus();ta.setSelectionRange(0,0)}},0)}
 
 /* ---------- 點擊事件 ---------- */
 const ACT={
   go:el=>{if(el.dataset.p==='projects')S.projSel=null;go(el.dataset.p)},
-  openday:el=>openDay(el.dataset.d),
-  wccopy:(el)=>wcCopySection(el.dataset.sec),wcprevopen:()=>{saveDraftNow();wcPrevSub=true;S.guideSub=false;guideMode='prev';render();$('#main').scrollTop=0},wcprevclose:()=>{wcPrevSub=false;render();$('#main').scrollTop=0},
+  openday:el=>openDay(el.dataset.d),wcdaydetail:el=>{openDay(el.dataset.d);S.dayDetail=true;render()},
+  wcdetailopen:()=>{saveDraftNow();S.dayDetail=true;S.logSub=false;S.guideSub=false;wcPrevSub=false;render();$('#main').scrollTop=0},wcotherday:()=>{wcPrevSub=false;S.dayDetail=true;render();$('#main').scrollTop=0},wcdetailclose:()=>{S.dayDetail=false;render();$('#main').scrollTop=0},wcdetailprev:()=>{S.day=addD(S.day,-1);S.cursor=S.day;render()},wcdetailnext:()=>{S.day=addD(S.day,1);S.cursor=S.day;render()},wcdetailtoday:()=>{S.day=today();S.cursor=S.day;render()},wcdetailcopy:()=>copy(S.privacy?dayText(S.day).split(/\n(?=私記)/)[0]:dayText(S.day)),wcdetailedit:()=>{S.dayDetail=false;S.logSub=true;S.edit=true;render()},
+  wccopy:(el)=>wcCopySection(el.dataset.sec),wcprevopen:()=>{saveDraftNow();wcPrevSub=true;S.guideSub=false;guideMode='prev';const items=guidePrev(),oldReview=db.days[S.day]?.reviewSummary||wcReviews[S.day];if(oldReview&&(!oldReview.source||oldReview.source===prevWorkday(S.day))){const used=new Set();guideReview={};for(const x of items){const lbl=x.category+'－'+x.project;for(const state of ['done','undone']){const i=(oldReview[state]||[]).findIndex((a,j)=>a.label===lbl&&!used.has(state+'-'+j));if(i>=0){const r=oldReview[state][i];used.add(state+'-'+i);guideReview[x.id]={status:state==='done'?'完成':'未完成',actual:r.actual??'',detail:x.detail||'',reason:'',date:mmdd(S.day)};break}}}}render();$('#main').scrollTop=0},wcprevclose:()=>{wcPrevSub=false;render();$('#main').scrollTop=0},
   mclose:()=>closeModal(),back:()=>back(),logopen:()=>{saveDraftNow();S.logSub=true;S.guideSub=false;S.edit=true;render();$('#main').scrollTop=0},logclose:()=>{saveDraftNow();S.logSub=false;render();$('#main').scrollTop=0},logsaveclose:()=>{saveDay(false);S.logSub=false;render();$('#main').scrollTop=0},guideopen:()=>{saveDraftNow();wcPrevSub=false;S.logSub=false;S.guideSub=true;S.edit=true;guideMode='today';render();$('#main').scrollTop=0},prevreview:()=>{wcPrevSub=true;S.guideSub=false;guideMode='prev';render();$('#main').scrollTop=0},guideprevopen:()=>{guideMode='prev';render();document.querySelector('#guided-host')?.scrollIntoView({block:'start',behavior:'smooth'})},guideclose:()=>{saveDraftNow();S.guideSub=false;render();$('#main').scrollTop=0},guidesaveclose:()=>{saveDay(false);S.guideSub=false;render();$('#main').scrollTop=0},savedayback:()=>saveDay(true),notesaveback:()=>{saveNoteNow();toast('已儲存');S.noteSel=null;render()},
   palette:()=>openPalette(),search:()=>openSearch(),help:()=>helpModal(),
   privacy:()=>{S.privacy=!S.privacy;render()},
@@ -2618,7 +2684,7 @@ const ACT={
   resetall:()=>confirmBox('清除全部資料（含設定以外的所有紀錄），無法還原。確定？',()=>{db=emptyDb(db.settings);weekStore={};drafts={};persist();render()},'全部清除'),
   remgo:el=>{const g=JSON.parse(el.dataset.go);doAct(g)},
   calmove:el=>{const n=+el.dataset.n;const c=S.cursor;if(S.calView==='month')S.cursor=iso(new Date(+c.slice(0,4),+c.slice(5,7)-1+n,1));else if(S.calView==='week')S.cursor=addD(c,7*n);else S.cursor=`${+c.slice(0,4)+n}${c.slice(4)}`;render()},
-  caltoday:()=>{S.cursor=today();render()},calview:el=>{if(S.page==='day'){saveDraftNow();S.cursor=S.day;S.guideSub=false;S.logSub=false;wcPrevSub=false;S.calView=el.dataset.v;go('calendar')}else{S.calView=el.dataset.v;render()}},calmonth:el=>{S.cursor=`${S.cursor.slice(0,4)}-${pad(el.dataset.m)}-01`;S.calView='month';render()},
+  caltoday:()=>{S.cursor=today();render()},calview:el=>{if(S.page==='day'){saveDraftNow();S.cursor=S.day;S.guideSub=false;S.logSub=false;wcPrevSub=false;S.dayDetail=false;S.calView=el.dataset.v;go('calendar')}else{S.calView=el.dataset.v;render()}},calmonth:el=>{S.cursor=`${S.cursor.slice(0,4)}-${pad(el.dataset.m)}-01`;S.calView='month';render()},
   dayprev:()=>openDay(addD(S.day,-1)),daynext:()=>openDay(addD(S.day,1)),
   togedit:()=>{saveDraftNow();S.edit=!S.edit;render._keep=true;render();if(S.edit)setTimeout(()=>$('#ta')?.focus(),0)},
   copyai:()=>copy($('#ta')?.value??dayText(S.day)),pasteback:()=>pasteModal(),teams:()=>{saveDraftNow();teamsModal(S.day)},picktodo:()=>pickTodoModal(),saveday:()=>saveDay(false),
