@@ -2229,25 +2229,57 @@ function historyImportModal(){
   $('#hist-backup',ov).onclick=()=>backupModal();
   $('#hist-export',ov).onclick=()=>historyExportDays();
   const result=$('#hist-results',ov),commit=$('#hist-commit',ov);
+  let bulkMode="last";
   const read=async file=>{try{const doc=JSON.parse(await file.text());if(doc.format!=='workcal-history-v1'||!Array.isArray(doc.records))throw Error('格式不符');
     const seen=new Set();for(const rec of doc.records){if(!/^\d{4}-\d{2}-\d{2}$/.test(rec.date)||seen.has(rec.date)||!Array.isArray(rec.variants)||!rec.variants.length)throw Error('日期或版本格式錯誤');seen.add(rec.date);for(const v of rec.variants){if(typeof v.text!=='string'||!v.text.includes('今日工作項目'))throw Error('日誌缺少今日工作項目')}}
-    historyPack=doc;historyChoices={};for(const r of doc.records)historyChoices[r.date]=db.days[r.date]?.rawText?'skip':(r.variants.every(v=>v.private)?'skip':'skip'); // 審核後逐筆勾選，安全預設全部略過
+    historyPack=doc;historyChoices={};for(const r of doc.records)historyChoices[r.date]='skip'; // 不執行自動匯入，等使用者選擇批次規則
     show();commit.disabled=false;
    }catch(e){historyPack=null;commit.disabled=true;result.textContent='無法讀取：'+e.message}}
+  const safeVersions=r=>r.variants.map((v,j)=>({v,j})).filter(x=>!x.v.private && typeof x.v.text==='string');
+  const chooseBulk=mode=>{
+    if(!historyPack)return;
+    bulkMode=mode;
+    for(const r of historyPack.records){
+      r._chosen='0';historyChoices[r.date]='skip';
+      if(db.days[r.date]?.rawText)continue;
+      const valid=safeVersions(r);
+      if(!valid.length)continue;
+      if(mode==='single' && r.variants.length!==1)continue;
+      const selected=mode==='first'?valid[0]:valid[valid.length-1];
+      r._chosen=String(selected.j);historyChoices[r.date]='write';
+    }
+    show();
+  };
   const show=()=>{
-    const items=historyPack.records;const count=items.filter(x=>historyChoices[x.date]!=='skip').length;
-    result.innerHTML=`<div class="row"><b>${items.length} 天、${items.reduce((n,x)=>n+x.variants.length,0)} 個候選版本</b><span class="chip">選擇匯入 ${count} 天</span><span class="sub">已存在日誌 ${items.filter(x=>db.days[x.date]?.rawText).length} 天</span></div><p class="sub">建議先檢查 3～5 天。按「檢視」可看原文；已有日期必須明確選取覆蓋。</p><div class="tbl-wrap" style="max-height:46vh;overflow:auto"><table class="t"><thead><tr><th>日期</th><th>現有資料</th><th>選擇版本</th><th>動作</th><th>預覽</th></tr></thead><tbody>${items.map((r,i)=>`<tr><td>${r.date}</td><td>${db.days[r.date]?.rawText?'已存在':'空白'}</td><td><select data-hver="${i}">${r.variants.map((v,j)=>`<option value="${j}">${esc(v.label||'版本 '+(j+1))}${v.private?'（含私記）':''}</option>`).join('')}</select></td><td><select data-hact="${i}"><option value="skip">略過（預設）</option><option value="write" ${db.days[r.date]?.rawText?'disabled':''}>新增</option><option value="overwrite" ${db.days[r.date]?.rawText?'':'disabled'}>覆蓋已存在的日誌</option></select></td><td><button class="btn sm" data-hview="${i}">檢視</button></td></tr>`).join('')}</tbody></table></div>`;
-    items.forEach((r,i)=>{const action=$(`[data-hact="${i}"]`,result),ver=$(`[data-hver="${i}"]`,result);action.value=historyChoices[r.date]==='overwrite'?'overwrite':historyChoices[r.date]==='write'?'write':'skip';ver.value=r._chosen||'0';action.onchange=()=>{historyChoices[r.date]=action.value;show()};ver.onchange=()=>{r._chosen=ver.value;show()};$(`[data-hview="${i}"]`,result).onclick=()=>{const v=r.variants[+(r._chosen||0)];openModal({title:r.date+' 原文預覽',wide:true,body:`<pre style="max-height:55vh;overflow:auto;white-space:pre-wrap;word-break:break-word">${esc(v.text)}</pre>${v.private?'<p class="sub">此版本含私記，請確認內容後再匯入。</p>':''}`,foot:'<button class="btn" data-act="mclose">關閉</button>'})}});
+    const items=historyPack.records;
+    const chosen=items.filter(r=>historyChoices[r.date]!=='skip');
+    const existing=items.filter(r=>!!db.days[r.date]?.rawText).length;
+    const multi=items.filter(r=>r.variants.length>1).length;
+    const privateOnly=items.filter(r=>safeVersions(r).length===0).length;
+    const skipped=items.length-chosen.length;
+    commit.disabled=!chosen.length;
+    result.innerHTML=`<div class="stack" style="gap:12px"><div class="row"><b>${items.length} 天、${items.reduce((n,x)=>n+x.variants.length,0)} 個候選版本</b><span class="chip">預計新增 ${chosen.filter(r=>historyChoices[r.date]==='write').length} 天</span><span class="chip">預計覆蓋 ${chosen.filter(r=>historyChoices[r.date]==='overwrite').length} 天</span></div><div class="row"><span class="sub">略過 ${skipped} 天｜已存在 ${existing} 天｜多版本 ${multi} 天｜只有私人版本 ${privateOnly} 天</span></div><div class="card stack" style="padding:12px"><b>批次選取（選取後仍須按下方確認匯入）</b><div class="row" style="gap:10px;flex-wrap:wrap"><button type="button" class="btn pri" id="hist-bulk-last">批次選最後一份公開版本</button><button type="button" class="btn" id="hist-bulk-single">僅選單一版本</button><button type="button" class="btn" id="hist-bulk-first">批次選第一份公開版本</button><button type="button" class="btn" id="hist-bulk-none">全部取消選取</button></div><p class="sub">批次選取會略過已有日誌的日期與含私記的候選版本，不會自動覆蓋。多版本的「最後一份」僅指轉換檔中的排列順序，並不代表最新定稿。需要時可在下表單日調整。</p></div><div class="tbl-wrap" style="max-height:46vh;overflow:auto"><table class="t"><thead><tr><th>日期</th><th>現有資料</th><th>選擇版本</th><th>動作</th><th>預覽</th></tr></thead><tbody>${items.map((r,i)=>`<tr><td>${esc(r.date)}</td><td>${db.days[r.date]?.rawText?'已存在':'空白'}</td><td><select data-hver="${i}">${r.variants.map((v,j)=>`<option value="${j}">${esc(v.label||'版本 '+(j+1))}${v.private?'（含私記）':''}</option>`).join('')}</select></td><td><select data-hact="${i}"><option value="skip">略過</option><option value="write" ${db.days[r.date]?.rawText?'disabled':''}>新增</option><option value="overwrite" ${db.days[r.date]?.rawText?'':'disabled'}>覆蓋已存在的日誌</option></select></td><td><button type="button" class="btn sm" data-hview="${i}">檢視</button></td></tr>`).join('')}</tbody></table></div></div>`;
+    $('#hist-bulk-last',result).onclick=()=>chooseBulk('last');
+    $('#hist-bulk-single',result).onclick=()=>chooseBulk('single');
+    $('#hist-bulk-first',result).onclick=()=>chooseBulk('first');
+    $('#hist-bulk-none',result).onclick=()=>{bulkMode='none';items.forEach(r=>historyChoices[r.date]='skip');show()};
+    items.forEach((r,i)=>{const action=$(`[data-hact="${i}"]`,result),ver=$(`[data-hver="${i}"]`,result);
+      action.value=historyChoices[r.date]||'skip';ver.value=r._chosen||'0';
+      action.onchange=()=>{historyChoices[r.date]=action.value;show()};
+      ver.onchange=()=>{r._chosen=ver.value;show()};
+      $(`[data-hview="${i}"]`,result).onclick=()=>{const v=r.variants[+(r._chosen||0)];openModal({title:r.date+' 原文預覽',wide:true,body:`<pre style="max-height:55vh;overflow:auto;white-space:pre-wrap;word-break:break-word">${esc(v.text)}</pre>${v.private?'<p class="sub">此版本含私記，請確認內容後再匯入。</p>':''}`,foot:'<button class="btn" data-act="mclose">關閉</button>'})}
+    });
   };
   $('#hist-file',ov).onchange=e=>{if(e.target.files[0])read(e.target.files[0])};
   commit.onclick=()=>{if(!historyPack)return;const chosen=historyPack.records.filter(r=>historyChoices[r.date]!=='skip');if(!chosen.length){toast('尚未選取要匯入的日期');return}
-    if(!confirm(`即將匯入 ${chosen.length} 天；請確認已下載備份。是否繼續？`))return;
-    let count=0;try{for(const r of chosen.sort((a,b)=>a.date.localeCompare(b.date))){const action=historyChoices[r.date],existing=!!db.days[r.date]?.rawText;
-      if((action==='write'&&existing)||(action==='overwrite'&&!existing))continue;
+    const overwriteCount=chosen.filter(r=>historyChoices[r.date]==='overwrite').length;
+    if(!confirm(`匯入前最後確認：預計處理 ${chosen.length} 天，其中覆蓋既有日誌 ${overwriteCount} 天。\n請先下載完整備份。\n確定繼續？`))return;
+    let count=0,skipped=0;try{for(const r of chosen.sort((a,b)=>a.date.localeCompare(b.date))){const action=historyChoices[r.date],existing=!!db.days[r.date]?.rawText;
+      if((action==='write'&&existing)||(action==='overwrite'&&!existing)){skipped++;continue;}
       const text=r.variants[+(r._chosen||0)].text;
       // Imported history stays as original text first; parsing tasks from previous-workday sections requires chronological caution.
       applyDay(r.date,text);count++}
-      persist();closeModal();toast(`已匯入 ${count} 天，請檢查統計及原始日誌`);render()
+      persist();closeModal();toast(`已匯入 ${count} 天，略過 ${skipped} 天；請抽查歷史日誌`);render();alert(`歷史匯入完成\n成功：${count} 天\n執行時因衝突略過：${skipped} 天\n未選取：${historyPack.records.length-chosen.length} 天\n建議抽查不同月份的日誌與工時。`)
     }catch(e){persist();toast(`匯入中斷：已處理 ${count} 天，${e.message}`)}};
  }});
 }
