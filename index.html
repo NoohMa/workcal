@@ -454,7 +454,7 @@ body{background:linear-gradient(150deg,#BCEBE8 0%,#E0F8F3 45%,#E8FAF7 100%)}
 /* Guided entry */
 .guided{margin-bottom:14px;border:1px solid #8ED6CF;border-radius:12px;background:#F5FFFD;padding:14px;color:#123E42}
 .guided h2{color:#08666D;margin:0 0 10px}.guided .fl{color:#275E61}
-.guided-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.guided .g-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.guided-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.guided .g-actions{display:flex;flex-wrap:wrap;gap:14px;margin-top:18px;margin-bottom:12px}.guided .guide-confirm-actions{gap:16px;margin-top:22px;margin-bottom:18px}.guided .guide-wide-btn{min-width:210px;padding:12px 24px}.guided .prev-import-actions{margin:20px 0 18px;gap:16px}.guided .prev-import-actions .btn{padding:11px 22px;min-width:195px}.guided .guide-urgent-wrap{margin-top:20px}.guided .guide-urgent-wrap h3{margin-bottom:12px}
 .guided .g-item{border:1px solid #B2DCD7;border-radius:8px;padding:10px;margin:8px 0;background:#FFF}
 .guided .g-item .row{margin-bottom:6px}.guided textarea{min-height:50px}
 .guided .g-output{white-space:pre-wrap;overflow-wrap:anywhere;background:#E3F8F5;border-radius:8px;padding:10px;margin-top:10px;color:#11424A;font:13px/1.65 var(--mono)}
@@ -871,7 +871,18 @@ const hpd=()=>+db.settings.hoursPerDay||8;
 function leaveHours(d){return sum(db.days[d]?.leaves||[],l=>l.hours)}
 function isWorkday(d){const H=hol();if(H.w[d])return true;if(H.h[d])return false;const g=pd(d).getDay();return g!==0&&g!==6}
 function isWorkingDay(d){return isWorkday(d)&&leaveHours(d)<hpd()}
-function prevWorkday(d){let x=addD(d,-1);for(let i=0;i<40;i++){if(isWorkingDay(x))return x;x=addD(x,-1)}return addD(d,-1)}
+function prevWorkday(d){
+ // 依最後有「今日工作項目」的日期尋找；全天假或只有私記不可當成工作日。
+ // 有半日請假但也有實際工作項目時，仍符合工作日來源。
+ const prior=new Set([...Object.keys(db.days||{}),...T().filter(t=>t.date&&t.origin==='plan').map(t=>t.date)]);
+ for(const x of [...prior].filter(x=>x<d).sort().reverse()){
+  const plan=T().some(t=>t.date===x&&t.origin==='plan');
+  const raw=db.days[x]?.rawText||'';
+  if(plan||(raw&&parseDay(raw).today.length))return x;
+ }
+ // 無任何可辨識的歷史工作項目時保留原工作日曆預設，且介面提示來源待確認。
+ let x=addD(d,-1);for(let i=0;i<40;i++){if(isWorkingDay(x))return x;x=addD(x,-1)}return addD(d,-1)
+}
 function nextWorkday(d){let x=addD(d,1);for(let i=0;i<40;i++){if(isWorkingDay(x))return x;x=addD(x,1)}return addD(d,1)}
 function workdaysBetween(a,b){let n=0,x=a;while(x<=b){if(isWorkingDay(x))n++;x=addD(x,1);if(n>2000)break}return n}
 
@@ -938,6 +949,7 @@ function parseItem(raw,sec){
   if(mi<=0){main=core[0];notes=core.slice(1)}else{projSeg=core[0];main=core[mi];notes=core.filter((_,i)=>i!==0&&i!==mi)}
   let name=main,content='',mm;
   const reA=new RegExp('^(.*?)[_\\s]*預\\s*'+NUM+'\\s*'+UNIT+'?\\s*[,、]?\\s*實\\s*(?:'+NUM+'(?:\\s*[-~]\\s*'+NUM+')?\\s*'+UNIT+'?|(_+)\\s*'+UNIT+'?)\\s*[,]?\\s*(.*)$');
+  const reUrgent=new RegExp('^(.*?)_\\s*實\\s*'+NUM+'\\s*'+UNIT+'\\s*[,]?\\s*(.*)$');
   const reB=new RegExp('^(.*?)_\\s*'+NUM+'\\s*'+UNIT+'\\s*[,]?\\s*(.*)$');
   const reC=new RegExp('^(.*?\\D)'+NUM+'\\s*'+UNIT+'(?![a-zA-Z])\\s*[,]?\\s*(.*)$');
   const reLead=new RegExp('^'+NUM+'\\s*'+UNIT+'(?:\\s*[-~]\\s*'+NUM+'\\s*'+UNIT+'?)?\\s*[,]?\\s*(.*)$');
@@ -945,6 +957,7 @@ function parseItem(raw,sec){
     name=mm[1];it.est=toH(mm[2],mm[3]||mm[6]||'hr');
     if(mm[7]){it.actualMissing=true}else{const a1=toH(mm[4],mm[6]||mm[3]||'hr');it.actual=mm[5]?Math.max(a1,toH(mm[5],mm[6]||'hr')):a1;if(mm[5])it.note=`實際 ${mm[4]}-${mm[5]}`}
     content=mm[9]||''}
+  else if(sec==='urgent'&&(mm=main.match(reUrgent))){name=mm[1];it.actual=toH(mm[2],mm[3]);content=mm[4]||''}
   else if((mm=main.match(reB))){name=mm[1];it.est=toH(mm[2],mm[3]);content=mm[4]||''}
   else if((mm=main.match(reC))&&mm[1].replace(/[\s,]/g,'')){name=mm[1];it.est=toH(mm[2],mm[3]);content=mm[4]||''}
   else{it.soft='缺工時'}
@@ -1369,7 +1382,8 @@ function buildSample(){
 const S={page:'calendar',guideSub:false,logSub:false,calView:'month',cursor:today(),day:today(),edit:!isMobile(),dirty:false,
   todoTab:'已排日',todoSel:0,archYear:'all',archProj:'all',noteSel:null,noteQ:'',projFilter:'進行中',projSel:null,projTab:'list',
   gZoom:'month',gSel:0,gOpen:{},gAll:false,statKind:'month',statAnchor:today(),statFrom:null,statTo:null,officePeriod:'month',officeYear:today().slice(0,4),officeMonth:today().slice(5,7),chartTable:{},privacy:false,railSel:new Set(),settingsTab:'basic'};
-let guideMode='today',guideItems=[],guideReview={};
+let guideMode='today',guideItems=[],guideReview={},guideUrgents=[];
+let guideImportedDay='';
 let guideHeaderDay='',guidePlaces=[],guideLeaves=[];
 let liveParse=null;
 /* Teams 確認狀態採獨立儲存，避免更動原日誌資料結構 */
@@ -1605,8 +1619,8 @@ function pgDay(){
     <div class="dash-work-col"><div class="dash-section-head">▣ 今日工作項目 <small>工作狀態即時檢視</small></div>
     <div class="dash-quick"><span>需要新增或轉換文字時再進入子層</span><button class="btn pri" data-act="guideopen">產生條列文字 ›</button></div>
     <div class="dash-mini-list">${parseDay(text).today.length?parseDay(text).today.map(x=>`<div class="dash-mini-item"><span>${esc(x.cat)}－${esc(x.project)}${x.title&&x.title!==x.project?'｜'+esc(x.title):''}</span><small>${x.est==null?'未填':fh(x.est)+'hr'}</small></div>`).join(''):'<div class="empty">尚未安排今日工作</div>'}</div></div>
-    <div class="dash-prev-col"><div class="dash-section-head">✓ 昨日工作項目確認 <small>上一工作日自動帶入</small></div>
-    <div id="guide-prev-shortcut" class="dash-quick"><span>逐項確認完成狀態與實際工時</span><button class="btn sm" data-act="prevreview">開啟昨日確認</button></div><div class="dash-mini-list" id="dash-mini-list">${guidePrev().length?guidePrev().slice(0,5).map(x=>`<div class="dash-mini-item"><span>${esc(x.project)}${x.detail?'｜'+esc(x.detail):''}</span><small>預${fh(x.est)}hr</small></div>`).join(''):'<div class="empty">上一工作日尚無項目</div>'}</div></div>
+    <div class="dash-prev-col"><div class="dash-section-head">✓ 上一工作日盤點 <small>可匯入最近有工作紀錄的日期</small></div>
+    <div id="guide-prev-shortcut" class="dash-quick"><span>逐項確認完成狀態與實際工時</span><button class="btn sm" data-act="prevreview">開啟上一工作日盤點</button></div><div class="dash-mini-list" id="dash-mini-list">${guidePrev().length?guidePrev().slice(0,5).map(x=>`<div class="dash-mini-item"><span>${esc(x.project)}${x.detail?'｜'+esc(x.detail):''}</span><small>預${fh(x.est)}hr</small></div>`).join(''):'<div class="empty">上一工作日尚無項目</div>'}</div></div>
   </div>
   <div class="dash-section-head dash-output-head" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">▤ 完整工作日誌 <small>已移至獨立子層</small><button class="btn pri" data-act="logopen">開啟完整工作日誌 ›</button></div>
   <div class="sub" style="padding:8px 2px 14px">可以在子層檢視、修正、複製及儲存完整原文；主頁保留工作項目與狀態摘要。</div>`}
@@ -1624,7 +1638,14 @@ function guideCommit(section,lines){
  const ta=$('#ta');if(ta){ta.value=text;ta.dispatchEvent(new Event('input'))}else{applyDay(S.day,text);delete drafts[S.day];persist();render()}
  toast('文字已帶入日誌，將自動儲存');
 }
-function guidePrev(){const D=prevWorkday(S.day);return T().filter(t=>t.date===D&&t.origin==='plan').map(t=>({id:t.id,category:t.category,project:pname(t.projectId),detail:taskContent(t)===pname(t.projectId)?'':taskContent(t),est:t.estHours,actual:t.actual?.office,status:'待確認'}))}
+function guidePrev(){
+ const D=prevWorkday(S.day);
+ const plans=T().filter(t=>t.date===D&&t.origin==='plan');
+ if(plans.length)return plans.map(t=>({id:t.id,category:t.category,project:pname(t.projectId),detail:taskContent(t)===pname(t.projectId)?'':taskContent(t),est:t.estHours,actual:t.actual?.office,status:'待確認'}));
+ // 匯入的歷史文字可能還沒轉成待辦；僅將原文工作項目帶入供人工確認。
+ const todayItems=parseDay(db.days[D]?.rawText||'').today;
+ return todayItems.map((it,i)=>({id:'raw-'+D+'-'+i,category:it.cat,project:it.project,detail:it.title===it.project?'':it.title,est:it.est,actual:null,status:'待確認'}));
+}
 function guideInitHeader(){
  if(guideHeaderDay===S.day)return;
  const r=parseDay(guideSource()).header;
@@ -1665,16 +1686,16 @@ function guideHeaderHTML(){
  guideInitHeader();
  const loc=guidePlaces.map((x,i)=>`<div class="g-item"><div class="fgrid">${placePicker(i,x.place)}<label class="fl">工作性質<select data-gplace="${i}" data-gfield="trip"><option value="0" ${!x.trip?'selected':''}>一般辦公</option><option value="1" ${x.trip?'selected':''}>出差</option></select></label><label class="fl">實際工作項目<select data-gplace="${i}" data-gfield="activity"><option value="" ${!x.activity?'selected':''}>請選擇（選填）</option>${['授課','助教','導師','考官','跟課','聽課','會議','異地辦公','其他'].concat(x.activity&&!['授課','助教','導師','考官','跟課','聽課','會議','異地辦公','其他'].includes(x.activity)?[x.activity]:[]).map(a=>`<option value="${esc(a)}" ${(a==='其他'?String(x.activity||'').startsWith('其他'):x.activity===a)?'selected':''}>${esc(a)}${a==='授課／助教／導師／考官'||a==='跟課／聽課'?'（歷史資料）':''}</option>`).join('')}</select></label><label class="fl" data-other-wrap="${i}" style="${String(x.activity||'').startsWith('其他')?'':'display:none'}">其他工作項目<input data-gplace="${i}" data-gfield="activityOther" value="${esc(String(x.activity||'').startsWith('其他：')?x.activity.slice(3):'')}" placeholder="請輸入工作項目"></label><label class="fl">開始時間<input type="time" data-gplace="${i}" data-gfield="start" value="${esc(x.start||'08:30')}"></label><label class="fl">結束時間<input type="time" data-gplace="${i}" data-gfield="end" value="${esc(x.end||'17:30')}"></label></div><button class="btn sm" data-guide="remove-place" data-i="${i}">移除這段辦公地</button></div>`).join('');
  const leave=guideLeaves.map((x,i)=>`<div class="g-item"><div class="fgrid"><label class="fl">假別<select data-gleave="${i}" data-gfield="type">${['特休','補休','事假','病假','公假','其他'].map(y=>`<option ${x.type===y?'selected':''}>${y}</option>`).join('')}${!['特休','補休','事假','病假','公假','其他'].includes(x.type)?`<option selected>${esc(x.type)}</option>`:''}</select></label><label class="fl">請假時數 hr<input type="number" min="0" step="0.5" data-gleave="${i}" data-gfield="hours" value="${esc(x.hours)}"></label></div><button class="btn sm" data-guide="remove-leave" data-i="${i}">移除這筆請假</button></div>`).join('');
- return `<div class="guide-header"><h2>當日基本資料</h2><div class="sub">辦公地可分時段、請假可多筆；填寫後按「儲存基本資料」，同步更新當日日誌及統計。</div><div class="row" style="justify-content:space-between;margin:10px 0 6px"><b>辦公地／出差</b><button class="btn sm" data-guide="add-place">＋ 新增時段</button></div>${loc||'<div class="sub">尚未設定辦公地</div>'}<div class="row" style="justify-content:space-between;margin:12px 0 6px"><b>請假</b><button class="btn sm" data-guide="add-leave">＋ 新增請假</button></div>${leave||'<div class="sub">無請假</div>'}<div class="g-actions"><button class="btn pri" data-guide="save-header">儲存基本資料</button><span class="sub">儲存後同步更新當日首頁及統計</span></div></div>`;
+ return `<div class="guide-header"><h2>當日基本資料</h2><div class="sub">辦公地可分時段、請假可多筆；填寫後按「儲存基本資料」，同步更新當日日誌及統計。</div><div class="row" style="justify-content:space-between;margin:10px 0 6px"><b>辦公地／出差</b><button class="btn sm" data-guide="add-place">＋ 新增時段</button></div>${loc||'<div class="sub">尚未設定辦公地</div>'}<div class="row" style="justify-content:space-between;margin:12px 0 6px"><b>請假</b><button class="btn sm" data-guide="add-leave">＋ 新增請假</button></div>${leave||'<div class="sub">無請假</div>'}<div class="g-actions guide-confirm-actions"><button class="btn pri guide-wide-btn" data-guide="save-header">儲存基本資料</button><span class="sub">儲存後同步更新當日首頁及統計</span></div></div>`;
 }
 function guideRender(){const host=$('#guided-host');if(!host)return;
  guideInitHeader();const C=categories();const opts=C.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
- const prev=guidePrev();if(!Object.keys(guideReview).length)prev.forEach(x=>guideReview[x.id]={status:'待確認',actual:x.actual??'',reason:'',date:mmdd(S.day),detail:x.detail});
- host.innerHTML=`<section class="guided"><h2>${S.guideSub?"產生條列文字｜快速輸入":"每日基本資料與昨日工作盤點"}</h2>${S.guideSub?"":guideHeaderHTML()}<div class="guided-tabs">${S.guideSub?'<button class="btn pri" data-guide="tab-today">今日工作項目</button><button class="btn" data-guide="categories">＋ 分類</button>':'<button class="btn pri" data-guide="tab-prev">昨日工作盤點</button><button class="btn" data-act="guideopen">＋ 產生條列文字</button>'}</div>
+ const prev=guidePrev();
+ host.innerHTML=`<section class="guided"><h2>${S.guideSub?"產生條列文字｜快速輸入":"每日基本資料與昨日工作盤點"}</h2>${S.guideSub?"":guideHeaderHTML()}<div class="guided-tabs">${S.guideSub?'<button class="btn pri" data-guide="tab-today">今日工作項目</button><button class="btn" data-guide="categories">＋ 分類</button>':'<button class="btn pri" data-guide="tab-prev">上一工作日盤點</button><button class="btn" data-act="guideopen">＋ 產生條列文字</button>'}</div>
  ${S.guideSub?`<div class="fgrid"><label class="fl">分類<select id="gd-cat">${opts}</select></label><label class="fl">專案／工作名稱<input id="gd-project" type="text" list="gd-projects" placeholder="輸入工作名稱"><datalist id="gd-projects">${Object.values(db.projects).map(p=>`<option value="${esc(p.name)}">`).join('')}</datalist></label><label class="fl">預估工時 hr<input type="number" min="0" step="0.5" id="gd-hour" placeholder="例如 3"></label><label class="fl">內容<input id="gd-detail" type="text" placeholder="例如：公告更新、內容巡檢"></label></div><div class="g-actions"><button class="btn pri" data-guide="add">＋ 加入工作項目</button><button class="btn" data-guide="from-text">讀取現有今日項目</button></div><div id="gd-list">${guideItems.map((x,i)=>`<div class="g-item row"><span style="flex:1">${esc(x.category)}-${esc(x.project)}_${hrTok(x.hours)}${x.detail?'，'+esc(x.detail):''}</span><button class="btn sm" data-guide="remove" data-i="${i}">移除</button></div>`).join('')}</div><div class="g-actions"><button class="btn pri" data-guide="output-today">輸出到今日工作項目</button><button class="btn" data-guide="copy-today">複製條列文字</button></div>`:
- `<div class="sub">來源：上一工作日 ${prevWorkday(S.day)}。逐項選擇完成、未完成或略過，填寫工時／原因後按「確認昨日盤點」儲存。</div>${prev.length?prev.map((x,i)=>{const r=guideReview[x.id]||{};return`<div class="g-item"><div class="row"><b style="flex:1">${esc(x.category)}－${esc(x.project)}</b><span class="sub">原預估 ${x.est==null?'未填':fh(x.est)+'hr'}</span></div><div class="sub">${esc(x.detail)}</div><div class="fgrid"><label class="fl">結果<select data-gstatus="${x.id}"><option value="待確認" ${r.status==='待確認'?'selected':''}>待確認／略過</option><option value="完成" ${r.status==='完成'?'selected':''}>完成</option><option value="未完成" ${r.status==='未完成'?'selected':''}>未完成</option></select></label>${r.status==='完成'?`<label class="fl">實際工時 hr<input type="number" min="0" step="0.5" data-gactual="${x.id}" value="${esc(r.actual??'')}" placeholder="自行填寫"></label><label class="fl">實際完成內容<input type="text" data-gdetail="${x.id}" value="${esc(r.detail??x.detail)}"></label>`:''}${r.status==='未完成'?`<label class="fl">未完成原因<input type="text" data-greason="${x.id}" value="${esc(r.reason||'')}"></label><label class="fl">預計完成 MMDD<input type="text" data-gdate="${x.id}" value="${esc(r.date||mmdd(S.day))}"></label>`:''}</div></div>`}).join(''):'<div class="empty">上一工作日尚無規劃項目，可先使用自由文字日誌。</div>'}<div class="g-actions"><button class="btn pri" data-guide="output-prev">確認昨日盤點</button><button class="btn" data-guide="copy-prev">複製條列文字</button></div>`}
+ `<div class="sub">逐項確認完成狀態、實際工時與成果，並可新增突發工作。</div><div class="g-actions prev-import-actions"><button class="btn pri" data-guide="import-prev">匯入上一工作日內容</button><button class="btn" data-guide="add-urgent">＋ 新增突發工作</button></div><div class="sub">來源：${prevWorkday(S.day)}｜匯入後可逐項確認；尚未確認前不會寫入日誌。</div>${prev.length?prev.map((x,i)=>{const r=guideReview[x.id]||{};return`<div class="g-item"><div class="row"><b style="flex:1">${esc(x.category)}－${esc(x.project)}</b><span class="sub">原預估 ${x.est==null?'未填':fh(x.est)+'hr'}</span></div><div class="sub">${esc(x.detail)}</div><div class="fgrid"><label class="fl">結果<select data-gstatus="${x.id}"><option value="待確認" ${r.status==='待確認'?'selected':''}>待確認／略過</option><option value="完成" ${r.status==='完成'?'selected':''}>完成</option><option value="未完成" ${r.status==='未完成'?'selected':''}>未完成</option></select></label>${r.status==='完成'?`<label class="fl">實際工時 hr<input type="number" min="0" step="0.5" data-gactual="${x.id}" value="${esc(r.actual??'')}" placeholder="自行填寫"></label><label class="fl">實際完成內容<input type="text" data-gdetail="${x.id}" value="${esc(r.detail??x.detail)}"></label>`:''}${r.status==='未完成'?`<label class="fl">未完成原因<input type="text" data-greason="${x.id}" value="${esc(r.reason||'')}"></label><label class="fl">預計完成 MMDD<input type="text" data-gdate="${x.id}" value="${esc(r.date||mmdd(S.day))}"></label>`:''}</div></div>`}).join(''):'<div class="empty">上一工作日尚無規劃項目，可先使用自由文字日誌。</div>'}<div class="guide-urgent-wrap"><h3>上一工作日新增突發工作</h3>${guideUrgents.length?guideUrgents.map((u,i)=>`<div class="g-item"><div class="fgrid"><label class="fl">分類<select data-gurgent="${i}" data-ufield="category">${C.map(c=>`<option value="${esc(c)}" ${u.category===c?'selected':''}>${esc(c)}</option>`).join('')}</select></label><label class="fl">工作名稱<input data-gurgent="${i}" data-ufield="project" value="${esc(u.project)}" placeholder="突發工作名稱"></label><label class="fl">實際工時 hr<input type="number" min="0" step="0.5" data-gurgent="${i}" data-ufield="hours" value="${esc(u.hours)}"></label><label class="fl">實際完成內容<input data-gurgent="${i}" data-ufield="detail" value="${esc(u.detail)}"></label></div><div class="g-actions"><button class="btn sm" data-guide="remove-urgent" data-i="${i}">移除這筆突發</button></div></div>`).join(''):'<div class="sub">目前沒有新增突發工作。</div>'}</div><div class="g-actions guide-confirm-actions"><button class="btn pri guide-wide-btn" data-guide="output-prev">確認上一工作日盤點</button><button class="btn" data-guide="copy-prev">複製條列文字</button></div>`}
  ${S.guideSub?'<div class="g-actions guide-final-actions"><button class="btn pri" data-guide="output-all">輸出完整日誌</button><button class="btn" data-guide="copy-all">複製完整日誌</button></div>':''}
- <div class="sub" style="margin-top:8px">基本資料請按「儲存基本資料」；昨日盤點請按「確認昨日盤點」。兩者完成後會同步更新日誌與首頁。</div></section>`;
+ <div class="sub" style="margin-top:8px">基本資料請按「儲存基本資料」；上一工作日盤點請按「確認上一工作日盤點」。兩者完成後會同步更新日誌與首頁。</div></section>`;
  host.querySelectorAll('[data-gplace],[data-gleave]').forEach(node=>{const update=()=>{
   const isPlace=node.hasAttribute('data-gplace'),i=+(isPlace?node.dataset.gplace:node.dataset.gleave),o=(isPlace?guidePlaces:guideLeaves)[i];if(!o)return;
   if(node.dataset.gfield==='placeChoice'){const wrap=host.querySelector('[data-place-other="'+i+'"]');if(wrap)wrap.style.display=node.value==='其他'?'':'none';o.place=node.value==='其他'?(host.querySelector('[data-gplace="'+i+'"][data-gfield="placeCustom"]')?.value.trim()||''):node.value}
@@ -1683,11 +1704,23 @@ function guideRender(){const host=$('#guided-host');if(!host)return;
   else o[node.dataset.gfield]=node.dataset.gfield==='trip'?node.value==='1':node.dataset.gfield==='hours'?Number(node.value):node.value;
   if(node.dataset.gfield==='activity'){const wrap=host.querySelector('[data-other-wrap="'+i+'"]');if(wrap)wrap.style.display=node.value==='其他'?'':'none'}
  };node.addEventListener('input',update);node.addEventListener('change',update)});
+ host.querySelectorAll('[data-gurgent]').forEach(el=>{const update=()=>{const u=guideUrgents[+el.dataset.gurgent];if(u)u[el.dataset.ufield]=el.value};el.addEventListener('input',update);el.addEventListener('change',update)});
  host.querySelectorAll('[data-gstatus],[data-gactual],[data-gdetail],[data-greason],[data-gdate]').forEach(el=>el.addEventListener('change',()=>{const id=el.dataset.gstatus||el.dataset.gactual||el.dataset.gdetail||el.dataset.greason||el.dataset.gdate;const key=el.dataset.gstatus?'status':el.dataset.gactual?'actual':el.dataset.gdetail?'detail':el.dataset.greason?'reason':'date';guideReview[id]=guideReview[id]||{};guideReview[id][key]=el.value;if(key==='status')guideRender()}));
 }
+function guideOutputUrgent(){return guideUrgents.filter(u=>u.project.trim()).map(u=>`${u.category}-${u.project.trim()}_實${hrTok(Number(u.hours))}${u.detail.trim()?'，'+u.detail.trim():''}`)}
 function guideOutputPrev(){const done=[],undone=[];for(const x of guidePrev()){const r=guideReview[x.id]||{};const details=(r.detail||x.detail||'').trim();if(r.status==='完成')done.push(`${x.category}-${x.project}_預${x.est!=null?hrTok(x.est):'＿hr'}，實${r.actual!==''&&r.actual!=null?hrTok(+r.actual):'＿hr'}${details?'，'+details:''}`);
  if(r.status==='未完成')undone.push(`${x.category}-${x.project}｜${details||x.project}_${x.est!=null?hrTok(x.est):'＿hr'}，因${r.reason||'待填原因'}，擬${r.date||mmdd(S.day)}完成`)}return{done,undone}}
 function guideAction(type,el){
+ if(type==='import-prev'){
+  const D=prevWorkday(S.day), prev=guidePrev();
+  if(!prev.length){toast('上一工作日 '+D+' 沒有可匯入的工作項目');return}
+  if(Object.keys(guideReview).length&&guideImportedDay&&guideImportedDay!==D&&!confirm('重新匯入將重設目前盤點結果，確定繼續？'))return;
+  guideReview={};prev.forEach(x=>guideReview[x.id]={status:'待確認',actual:'',reason:'',date:mmdd(S.day),detail:x.detail});
+  guideImportedDay=D;guideRender();toast('已匯入 '+D+' 的 '+prev.length+' 項工作，請確認完成狀態');return;
+ }
+ if(type==='add-urgent'){guideUrgents.push({category:'突發',project:'',hours:'',detail:''});guideRender();return}
+ if(type==='remove-urgent'){if(confirm('確認移除這筆尚未確認的突發工作？')){guideUrgents.splice(+el.dataset.i,1);guideRender()}return}
+
  if(type==='save-header'){
   const before=guideSource(),text=guideMergeHeader(before);
   if(text!==before&&db.days[S.day]?.rawText&&before!==template(S.day)&&!confirm('確認更新當日日誌的辦公地與請假欄位？其餘文字會保留。'))return;
@@ -1713,12 +1746,13 @@ function guideAction(type,el){
  if(type==='output-today'||type==='copy-today'){const lines=guideItems.map(x=>`${x.category}-${x.project}_${hrTok(x.hours)}${x.detail?'，'+x.detail:''}`);if(!lines.length){toast('請先加入工作項目');return}if(type==='copy-today')copy('今日工作項目\n'+lines.join('\n'));else guideCommit('today',lines);return}
  if(type==='output-prev'||type==='copy-prev'){
   const {done,undone}=guideOutputPrev();
-  if(!done.length&&!undone.length){toast('請先選擇至少一項完成或未完成的工作');return}
-  if(type==='copy-prev'){copy('昨日完成\n'+(done.join('\n')||'無')+'\n\n昨日未完成\n'+(undone.join('\n')||'無'));return}
+  if(!done.length&&!undone.length&&!guideOutputUrgent().length){toast('請先確認工作項目或新增突發工作');return}
+  if(type==='copy-prev'){copy('昨日完成\n'+(done.join('\n')||'無')+'\n\n昨日未完成\n'+(undone.join('\n')||'無')+'\n\n昨日新增突發工作\n'+(guideOutputUrgent().join('\n')||'無'));return}
   for(const x of guidePrev()){const r=guideReview[x.id]||{};if(r.status==='完成'&&(r.actual===''||r.actual==null||!Number.isFinite(Number(r.actual))||Number(r.actual)<0)){toast('請填寫「'+x.project+'」的有效實際工時');return}if(r.status==='未完成'&&!String(r.reason||'').trim()){toast('請填寫「'+x.project+'」的未完成原因');return}}
-  const before=guideSource();let text=guideReplaceSection(before,'done',done);text=guideReplaceSection(text,'undone',undone);
-  if(text!==before&&db.days[S.day]?.rawText&&before!==template(S.day)&&!confirm('確認將昨日盤點寫入今日日誌的「昨日完成／未完成」段落？其他段落會保留。'))return;
-  applyDay(S.day,text);delete drafts[S.day];persist();render();toast('昨日盤點已確認並儲存，首頁與日誌已更新');return;
+  for(const u of guideUrgents){if(!u.project.trim()||u.hours===''||!Number.isFinite(Number(u.hours))||Number(u.hours)<0){toast('請完整填寫突發工作的名稱及有效實際工時');return}}
+  const before=guideSource();let text=guideReplaceSection(before,'done',done);text=guideReplaceSection(text,'undone',undone);text=guideReplaceSection(text,'urgent',guideOutputUrgent());
+  if(text!==before&&db.days[S.day]?.rawText&&before!==template(S.day)&&!confirm('確認將上一工作日盤點寫入今日日誌的「昨日完成／未完成」段落？其他段落會保留。'))return;
+  applyDay(S.day,text);delete drafts[S.day];guideUrgents=[];persist();render();toast('上一工作日盤點已確認並儲存，首頁與日誌已更新');return;
  }
 }
 function promptCategory(){openModal({title:'新增工作分類',body:`<label class="fl">分類名稱<input id="gc-name" type="text" placeholder="例如：行政、支援" autofocus></label><p class="sub">新增後可用於日誌解析、待辦、專案與統計。</p>`,foot:'<button class="btn" data-act="mclose">取消</button><button class="btn pri" id="gc-save">新增分類</button>',onMount:ov=>{$('#gc-save',ov).onclick=()=>{const name=$('#gc-name',ov).value.trim();if(!name||/[-｜|_\n]/.test(name)){toast('名稱不能空白或含分隔符號');return}db.settings.workCategories=categories().concat(name).filter((x,i,a)=>a.indexOf(x)===i);persist();closeModal();guideRender();toast('分類已新增')}}})}
@@ -2470,7 +2504,7 @@ function fixLineModal(i,sec){
       else line=`${c}-${p}${e!==''?'_'+hrTok(+e):''}${t?'，'+t:''}`;
       ls[i]=line;ta.value=ls.join('\n');closeModal();ta.dispatchEvent(new Event('input'));toast('已補正，記得存檔')}}})}
 function newNote(){const id=uid();db.notes[id]={id,title:'',body:'',projectIds:[],pinned:false,createdAt:Date.now(),updatedAt:Date.now()};S.noteSel=id;persist();go('notes');setTimeout(()=>$('#n-title')?.focus(),0)}
-function openDay(d){S.guideSub=false;S.logSub=false;guideReview={};guideItems=[];guideMode='today';if(S.page==='day')saveDraftNow();else S.from=S.page;S.day=d;S.cursor=d;S.edit=!isMobile();S.page='day';render();$('#main').scrollTop=0;if(!isMobile()&&!S.privacy)setTimeout(()=>{const ta=$('#ta');if(ta){ta.focus();ta.setSelectionRange(0,0)}},0)}
+function openDay(d){S.guideSub=false;S.logSub=false;guideReview={};guideItems=[];guideUrgents=[];guideImportedDay='';guideMode='today';if(S.page==='day')saveDraftNow();else S.from=S.page;S.day=d;S.cursor=d;S.edit=!isMobile();S.page='day';render();$('#main').scrollTop=0;if(!isMobile()&&!S.privacy)setTimeout(()=>{const ta=$('#ta');if(ta){ta.focus();ta.setSelectionRange(0,0)}},0)}
 
 /* ---------- 點擊事件 ---------- */
 const ACT={
