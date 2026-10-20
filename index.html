@@ -1642,34 +1642,66 @@ function calCell(d,out){
 
 
 /* ---------- 單日完整內容：唯讀查閱，同一資料來源，不另存副本 ---------- */
-let wcLastHoursAlert='';
+// 跨欄位工時檢核：只提示異常，不修改或阻擋原始紀錄。
+const wcHourAlertCache=new Map();
+function wcTimeMinutes(v){
+ const m=String(v||'').match(/^([01]\d|2[0-3]):([0-5]\d)$/);
+ return m?(+m[1])*60+(+m[2]):null;
+}
+function wcAuditData(D){
+ const r=parseDay(dayText(D));
+ const leaves=r.header.leaves||[], locations=r.header.locations||[];
+ const leave=leaves.reduce((a,l)=>a+(Number(l.hours)||0),0);
+ const validPlanned=r.today.filter(x=>x.est!=null&&Number.isFinite(Number(x.est)));
+ const planned=validPlanned.reduce((a,x)=>a+Number(x.est),0);
+ const finished=T().filter(t=>t.date===D&&t.origin==='plan'&&t.actual&&t.actual.office!=null&&Number.isFinite(Number(t.actual.office)));
+ // 實際工時未完整時不將部分實績與全部預排混成單一確定值。
+ const actual=finished.reduce((a,t)=>a+Number(t.actual.office),0);
+ const allHaveActual=!!validPlanned.length&&finished.length>=validPlanned.length;
+ const work=allHaveActual?actual:planned;
+ const source=allHaveActual?'實際':'預排';
+ const errors=[];
+ if(!(r.today.length||leaves.length||locations.length))return {errors,planned,leave,work,source,total:0};
+ const total=work+leave;
+ if(total<7-1e-5)errors.push(`工作${source} ${fh(work)}h ＋ 請假／補休 ${fh(leave)}h＝${fh(total)}h，低於 7h，差 ${fh(7-total)}h`);
+ if(total>8+1e-5)errors.push(`工作${source} ${fh(work)}h ＋ 請假／補休 ${fh(leave)}h＝${fh(total)}h，超出 8h 共 ${fh(total-8)}h`);
+ if(leave>8+1e-5)errors.push(`請假／補休共 ${fh(leave)}h，超過單日 8h，請確認是否有重複登記`);
+ const segments=[];
+ for(const loc of locations){
+  if(!loc.start&&!loc.end)continue;
+  const start=wcTimeMinutes(loc.start),end=wcTimeMinutes(loc.end);
+  if(start===null||end===null||end<=start){errors.push(`辦公地「${loc.place||'未命名'}」起訖時間不完整或順序錯誤`);continue}
+  segments.push({start,end,place:loc.place||'未命名'});
+ }
+ segments.sort((a,b)=>a.start-b.start||a.end-b.end);
+ let merged=0,end=-1,overlap=false;
+ for(const seg of segments){
+  if(seg.start<end)overlap=true;
+  merged+=Math.max(0,seg.end-Math.max(end,seg.start));
+  end=Math.max(end,seg.end);
+ }
+ if(overlap)errors.push('辦公地／出差時段互相重疊，請確認是否重複填寫；工時檢核已去除重疊時段');
+ if(segments.length){
+  const span=merged/60;
+  if(work>span+1e-5)errors.push(`工作${source} ${fh(work)}h 超過辦公地有效時段跨度 ${fh(span)}h`);
+  // 上班時段通常含午休，但沒有精確休息設定，不能自動扣除固定一小時。
+  if(leave>=7&&span>=7&&work>0)errors.push(`請假 ${fh(leave)}h，卻仍記錄 ${fh(span)}h 的辦公地時段及 ${fh(work)}h 工作，請確認請假與出勤是否衝突`);
+  if(leave>0&&work>0&&work+leave>span+1e-5)errors.push(`工作加請假 ${fh(total)}h，超過辦公地時段跨度 ${fh(span)}h，請確認請假時段及休息時間`);
+ }
+ return {errors:[...new Set(errors)],planned,leave,work,source,total};
+}
 function wcHoursAlert(D){
- const r=parseDay(dayText(D)), lv=(r.header.leaves||[]).reduce((n,x)=>n+(Number(x.hours)||0),0);
- const tasks=r.today||[];
- const actuals=T().filter(t=>t.date===D&&t.origin==='plan'&&t.actual&&Number.isFinite(Number(t.actual.office)));
- const work=actuals.length?actuals.reduce((n,t)=>n+Number(t.actual.office),0):tasks.reduce((n,t)=>n+(Number(t.est)||0),0);
- if(!tasks.length&&!lv)return;
- const total=work+lv, msg=total<7?'不足 '+fh(7-total)+'h':total>8?'超過 '+fh(total-8)+'h':'';
- if(!msg){wcLastHoursAlert='';return}
- const key=D+'|'+work+'|'+lv+'|'+msg;
- if(key===wcLastHoursAlert)return;
- wcLastHoursAlert=key;
- toast('當日工時'+msg+'，請確認工作及請假紀錄（提醒不阻擋儲存）');
+ const data=wcAuditData(D), signature=data.errors.join('|');
+ if(!signature){wcHourAlertCache.delete(D);return}
+ if(wcHourAlertCache.get(D)===signature)return;
+ wcHourAlertCache.set(D,signature);
+ // 用系統確認視窗清楚列出異常。按確定只關閉提醒，不覆蓋資料。
+ const message=`${D} 工時／出勤檢核提醒：\n\n`+data.errors.map((x,i)=>`${i+1}. ${x}`).join('\n')+'\n\n資料已保留，請確認工作、請假及辦公地紀錄。';
+ alert(message);
 }
 function wcHoursAudit(D){
- const txt=dayText(D),r=parseDay(txt),lv=(r.header.leaves||[]).reduce((a,x)=>a+(Number(x.hours)||0),0);
- const planned=r.today.filter(x=>x.est!=null).reduce((a,x)=>a+Number(x.est),0);
- const explicit=r.today.filter(x=>x.actual!=null).reduce((a,x)=>a+Number(x.actual),0);
- const actualTasks=T().filter(x=>x.date===D&&x.origin==='plan'&&x.actual&&Number.isFinite(Number(x.actual.office)));
- const hasActual=actualTasks.length>0||explicit>0;
- const worked=actualTasks.length?actualTasks.reduce((a,x)=>a+(Number(x.actual.office)||0),0):hasActual?explicit:planned;
- const total=worked+lv,active=!!(r.today.length||lv||(r.header.locations||[]).length);
- if(!active)return '';
- const abnormal=total<7||total>8;
- if(!abnormal)return '';
- const color=abnormal?'#b95325':'#067b7d';const bg=abnormal?'#fff3e7':'#e8f9f4';
- const label=total<7?`不足 ${fh(7-total)} 小時`:total>8?`超過 ${fh(total-8)} 小時`:'符合 7～8 小時';
- return `<div class="wc-audit" style="border-color:${color};background:${bg}"><span class="wc-audit-icon">${abnormal?'⚠':'✓'}</span><div><strong>當日工時檢核｜${esc(label)}</strong><div class="sub">${hasActual?'已記錄工作':'預估工作'} ${fh(worked)}h ＋ 請假／補休 ${fh(lv)}h ＝ ${fh(total)}h${hasActual?'':'（預估，待實際工時確認）'}</div>${abnormal?'<div class="sub">提醒：請核對工作、請假與休息時間。此提醒不阻擋存檔，也不自動認定加班。</div>':''}</div></div>`;
+ // 正常或異常皆只在儲存完成時提示；畫面不常駐警示卡。
+ return '';
 }
 function wcDetailItems(items,key){
  if(!items.length)return '<div class="wc-detail-empty">此日期沒有這類紀錄</div>';
@@ -1755,7 +1787,7 @@ function guideReplaceSection(text,key,lines){
 }
 function guideCommit(section,lines){
  let text=guideSource();text=guideReplaceSection(text,section,lines);
- const ta=$('#ta');if(ta){ta.value=text;ta.dispatchEvent(new Event('input'))}else{applyDay(S.day,text);delete drafts[S.day];persist();render()}
+ const ta=$('#ta');if(ta){ta.value=text;ta.dispatchEvent(new Event('input'))}else{applyDay(S.day,text);delete drafts[S.day];persist();render();wcHoursAlert(S.day)}
  toast('文字已帶入日誌，將自動儲存');
 }
 function guidePrev(){
@@ -1915,7 +1947,7 @@ function guideAction(type,el){
  if(type==='save-header'){
   const before=guideSource(),text=guideMergeHeader(before);
   if(text!==before&&db.days[S.day]?.rawText&&before!==template(S.day)&&!confirm('確認更新當日日誌的辦公地與請假欄位？其餘文字會保留。'))return;
-  applyDay(S.day,text);delete drafts[S.day];persist();render();toast('基本資料已儲存，當日首頁與統計已更新');wcHoursAlert(S.day);return;
+  applyDay(S.day,text);delete drafts[S.day];persist();render();wcHoursAlert(S.day);toast('基本資料已儲存，當日首頁與統計已更新');return;
  }
  if(type==='add-place'){
   if(guidePlaces.length>=4){toast('辦公地最多四段');return}
@@ -1947,7 +1979,7 @@ function guideAction(type,el){
   for(const x of guidePrev()){const r=guideReview[x.id]||{};if(r.status==='完成'||r.status==='未完成')reviewed[r.status==='完成'?'done':'undone'].push({label:x.category+'－'+x.project,status:r.status,est:x.est,actual:r.actual!==''&&r.actual!=null?Number(r.actual):null})}
   for(const u of guideUrgents)reviewed.urgent.push({label:u.category+'－'+u.project,status:u.status,est:null,actual:u.hours===''?null:Number(u.hours),origin:'urgent'});
   wcReviews[S.day]=reviewed;wcSaveReview();
-  applyDay(S.day,text);db.days[S.day].reviewSummary=reviewed;delete drafts[S.day];guideUrgents=[];persist();wcPrevSub=false;render();toast('上一工作日盤點已確認並儲存，首頁與日誌已更新');wcHoursAlert(prevWorkday(S.day));return;
+  applyDay(S.day,text);db.days[S.day].reviewSummary=reviewed;delete drafts[S.day];guideUrgents=[];persist();wcPrevSub=false;render();wcHoursAlert(S.day);toast('上一工作日盤點已確認並儲存，首頁與日誌已更新');return;
  }
 }
 function promptCategory(){openModal({title:'新增工作分類',body:`<label class="fl">分類名稱<input id="gc-name" type="text" placeholder="例如：行政、支援" autofocus></label><p class="sub">新增後可用於日誌解析、待辦、專案與統計。</p>`,foot:'<button class="btn" data-act="mclose">取消</button><button class="btn pri" id="gc-save">新增分類</button>',onMount:ov=>{$('#gc-save',ov).onclick=()=>{const name=$('#gc-name',ov).value.trim();if(!name||/[-｜|_\n]/.test(name)){toast('名稱不能空白或含分隔符號');return}db.settings.workCategories=categories().concat(name).filter((x,i,a)=>a.indexOf(x)===i);persist();closeModal();guideRender();toast('分類已新增')}}})}
@@ -1963,7 +1995,7 @@ after.day=()=>{
 };
 let daySaveT=null;
 function autoSaveDay(){clearTimeout(daySaveT);const ta=$('#ta');if(!ta||S.page!=='day')return;const D=S.day;
-  if(ta.value!==db.days[D]?.rawText&&(S.dirty||db.days[D]?.rawText)){applyDay(D,ta.value)}delete drafts[D];persist();S.dirty=false;
+  const changed=ta.value!==db.days[D]?.rawText&&(S.dirty||db.days[D]?.rawText);if(changed){applyDay(D,ta.value)}delete drafts[D];persist();S.dirty=false;if(changed)wcHoursAlert(D);
   const st=$('#daystate');if(st){const n=new Date();st.className='state saved';st.innerHTML=`<i></i>已自動儲存 ${pad(n.getHours())}:${pad(n.getMinutes())}`}}
 function saveDraftNow(){if(S.page==='day'&&$('#ta'))autoSaveDay();S.dirty=false}
 function hlHTML(text,r,read){
@@ -2018,7 +2050,7 @@ function previewHTML(r){
       ${r.privLines.length>r.ot.length?`<div class="sub" style="margin-top:6px">另有 ${r.privLines.length-r.ot.length} 行純文字私記</div>`:''}</div>`}
 function saveDay(andBack){
   clearTimeout(daySaveT);const D=S.day;const ta=$('#ta');const text=ta?ta.value:dayText(D);
-  applyDay(D,text);delete drafts[D];S.dirty=false;persist();toast(`${md(D)} 已儲存`);
+  applyDay(D,text);delete drafts[D];S.dirty=false;persist();wcHoursAlert(D);toast(`${md(D)} 已儲存`);
   if(andBack){const to=S.from&&S.from!=='day'?S.from:'calendar';S.cursor=D;go(to);return}
   render._keep=true;render()}
 
