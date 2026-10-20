@@ -1603,7 +1603,7 @@ function pgCalendar(){
         cells+=`<button class="mmc ${d<today()?'past':d===today()?'current':'future'}" data-act="openday" data-d="${d}" title="${d} ${fh(I.hrs)}h" style="${d===today()?'background:#007D85;outline:1.5px solid #007D85;':'background:'+bg+';'}" aria-label="${d}">${k}</button>`}
       return`<div class="mm"><h4 data-act="calmonth" data-m="${mi+1}">${mi+1} 月</h4><div class="mmg">${cells}</div></div>`}).join('')}</div>
       <div class="legend"><span><i class="pdot" style="background:color-mix(in srgb,var(--accent) 25%,var(--surface-2))"></i>工時少</span><span><i class="pdot" style="background:color-mix(in srgb,var(--accent) 88%,var(--surface-2))"></i>工時多（含加班）</span><span><i class="pdot" style="background:var(--none-bg)"></i>工作日未填</span></div>`}
-  const legend=S.calView==='month'?`<div class="legend"><span><i class="dot" style="background:var(--done)"></i>全部完成</span><span><i class="dot" style="background:var(--plan)"></i>進行中</span><span><i class="dot" style="background:var(--late)"></i>有延遲</span><span><i class="dot" style="background:var(--pend)"></i>有突發</span><span><i class="dot" style="background:var(--none)"></i>未填</span><span>🚩 DL</span><span>🚄 出差</span><span><i class="pdot" style="background:var(--priv-bg);border:1px solid var(--priv)"></i>請假（高度＝時數）</span><span>方向鍵移動・Enter 進入</span></div>`:'';
+  const legend=S.calView==='month'?`<div class="legend"><span><i class="dot" style="background:var(--done)"></i>全部完成</span><span><i class="dot" style="background:var(--plan)"></i>進行中</span><span><i class="dot" style="background:var(--late)"></i>有延遲</span><span><i class="dot" style="background:var(--pend)"></i>有突發</span><span><i class="dot" style="background:var(--none)"></i>未填</span><span>🚩 DL</span><span>💼 出差</span><span><i class="pdot" style="background:var(--priv-bg);border:1px solid var(--priv)"></i>請假（高度＝時數）</span><span>方向鍵移動・Enter 進入</span></div>`:'';
   return head+remBox+body+legend}
 function calCell(d,out){
   const I=dayInfo(d);const H=hol();const off=!isWorkday(d);
@@ -1612,7 +1612,7 @@ function calCell(d,out){
     <span class="dn">${+d.slice(8)}${I.st?`<span class="dot" style="background:var(--${I.st})"></span>`:''}${I.urg?'<span class="dot" style="background:var(--pend)"></span>':''}${I.warn?'<span class="chip pend" style="padding:0 4px;line-height:14px;font-size:10px">!</span>':''}</span>
     ${H.h[d]?`<span class="hn">${esc(H.h[d])}</span>`:H.w[d]?`<span class="hn" style="color:var(--plan)">補班</span>`:''}
     ${wcClock(d)?`<span class="hrs wc-office-label">${esc(wcClock(d))}${I.ot?`<span class="pv"> +${fh(I.ot)}</span>`:''}</span>`:''}
-    <span class="mk">${I.dls?`<span title="DL">🚩${I.dls>1?I.dls:''}</span>`:''}${I.trip?'<span class="pv">🚄</span>':''}${I.lv?`<span class="lvt pv">假${fh(I.lv)}h</span>`:''}</span></button>`}
+    <span class="mk">${I.dls?`<span title="DL">🚩${I.dls>1?I.dls:''}</span>`:''}${I.trip?'<span class="pv">💼</span>':''}${I.lv?`<span class="lvt pv">假${fh(I.lv)}h</span>`:''}</span></button>`}
 
 /* ---------- 每日頁 ---------- */
 function dayText(D){return drafts[D]??db.days[D]?.rawText??template(D)}
@@ -1647,7 +1647,7 @@ function pgDay(){
   </div>
   <div class="wc-log-team">${teamsConfirmHTML(D)}<section class="wc-log-entry"><div><strong>▤ 完整工作日誌</strong><p class="sub">查看、編輯及複製完整原文</p></div><button class="btn pri" data-act="logopen">開啟完整工作日誌 ›</button></section></div>
   ${!ro?`<div id="guided-host"></div>`:''}
-  <div class="wc-dual-actions"><button class="btn pri" data-act="wcprevopen">開啟盤點 ›</button><button class="btn" data-act="guideopen">開啟輸入 ›</button></div>
+  <div class="wc-dual-actions"><button class="btn pri" data-act="wcprevopen">開啟盤點 ›</button></div>
   <div class="wc-section-grid">
     <section class="wc-data-card"><div class="wc-data-head"><strong>▣ 今日工作項目</strong><span class="sub">${parseDay(text).today.length} 項</span><div class="wc-actions"><button class="btn sm" data-act="wccopy" data-sec="today" ${wcLines('today',D).length?'':'disabled'}>複製條列</button><button class="btn sm pri" data-act="guideopen">開啟輸入 ›</button></div></div><div class="wc-data-body">${wcLinesHtml('today',D)}</div></section>
     ${(db.days[D]?.reviewSummary||wcReviews[D])?wcPrevCards(D):['done','undone','urgent'].map(k=>wcSectionCard(k,{done:'上一工作日完成',undone:'上一工作日未完成',urgent:'上一工作日突發工作'}[k],D)).join('')}
@@ -1687,22 +1687,33 @@ function wcLines(key,D){
  return txt.slice(begin+1,end).map(x=>x.trim()).filter(x=>x&&x!=='無');
 }
 function wcLinesHtml(key,D){
- const lines=wcLines(key,D);
+ const lines=wcDisplayLines(key,D);
  if(!lines.length)return '<div class="sub" style="padding:10px 0">無資料</div>';
  return lines.map(x=>`<div class="wc-data-line"><span>${esc(x)}</span></div>`).join('');
 }
+function wcDisplayLines(key,D){
+ const base=wcLines(key,D);
+ if(key!=='done'&&key!=='undone')return base;
+ // 突發原文只保存一次，在完成／未完成看板和複製結果依狀態引用。
+ const surprise=wcLines('urgent',D).filter(line=>{
+   const unfinished=/，未完成(?:，|$)/.test(line);
+   const finished=/，完成(?:，|$)/.test(line);
+   return key==='undone'?unfinished:finished&&!unfinished;
+ });
+ return base.concat(surprise);
+}
 function wcCopySection(key){
- const lines=wcLines(key,S.day);
+ const lines=wcDisplayLines(key,S.day);
  if(!lines.length){toast('本區目前沒有可複製的內容');return}
  copy(SEC_NAME[key]+'\n'+lines.join('\n'));
 }
 function wcSectionCard(key,label,D,extra=''){
- const lines=wcLines(key,D);
+ const lines=wcDisplayLines(key,D);
  return `<section class="wc-data-card"><div class="wc-data-head"><strong>${label}</strong><span class="sub">${lines.length} 項</span>${extra}<div class="wc-actions"><button class="btn sm" data-act="wccopy" data-sec="${key}" ${lines.length?'':'disabled'}>複製條列</button></div></div><div class="wc-data-body">${wcLinesHtml(key,D)}</div></section>`;
 }
 function wcClock(d){
  const info=dayInfo(d), dd=dayText(d), loc=parseDay(dd).header.locations||[];
- const lines=loc.filter(x=>x.place).map(x=>String(x.place).trim());
+ const lines=loc.filter(x=>x.place).map(x=>(x.trip?'💼 ':'')+String(x.place).trim());
  const names=[...new Set(lines)];
  const hours=(info.hrs>0?info.hrs:info.est>0?info.est:0);
  if(!names.length)return info.hrs||info.est?`${info.hrs?fh(info.hrs)+'h':'預'+fh(info.est)+'h'}`:'';
@@ -1715,7 +1726,7 @@ function wcReadUrgentReview(raw){
  return wcLines('urgent',S.day).map(l=>({category:'突發',project:l,status:/未完成|因.*擬/.test(l)?'未完成':'完成',hours:'',detail:''}));
 }
 function dayOfficePlaces(raw){
- const locs=(parseDay(raw).header.locations||[]).map(x=>String(x.place||'').trim()).filter(Boolean);
+ const locs=(parseDay(raw).header.locations||[]).map(x=>(x.trip?'💼 ':'')+String(x.place||'').trim()).filter(x=>x.replace('💼','').trim());
  return [...new Set(locs)];
 }
 function prevMiniHTML(){
@@ -1789,7 +1800,7 @@ const WC_REVIEW_KEY='workcal.review.summary.v1';
 let wcReviews={};try{wcReviews=JSON.parse(localStorage.getItem(WC_REVIEW_KEY)||'{}')||{}}catch(e){wcReviews={}}
 function wcSaveReview(){try{localStorage.setItem(WC_REVIEW_KEY,JSON.stringify(wcReviews))}catch(e){toast('盤點摘要存檔失敗')}}
 function wcPrevCards(D){const R=db.days[D]?.reviewSummary||wcReviews[D];if(!R)return '';
- return ['done','undone','urgent'].map(k=>{const items=R[k]||[];const title={done:'上一工作日完成',undone:'上一工作日未完成',urgent:'上一工作日突發工作'}[k];const html=items.map(x=>`<div class="wc-data-line"><span>${esc(x.label)}${x.status?'｜'+esc(x.status):''}</span><small>${x.est!=null?'預'+fh(x.est)+'h｜':''}實${x.actual!=null?fh(x.actual)+'h':'—'}</small></div>`).join('')||'<div class="sub" style="padding:10px 0">無資料</div>';return `<section class="wc-data-card"><div class="wc-data-head"><strong>${title}</strong><span class="sub">${items.length} 項</span><div class="wc-actions"><button class="btn sm" data-act="wccopy" data-sec="${k}" ${items.length?'':'disabled'}>複製條列</button></div></div><div class="wc-data-body">${html}</div></section>`}).join('')}
+ return ['done','undone','urgent'].map(k=>{const items=k==='urgent'?(R.urgent||[]):(R[k]||[]).concat((R.urgent||[]).filter(u=>u.status===(k==='done'?'完成':'未完成')));const title={done:'上一工作日完成',undone:'上一工作日未完成',urgent:'上一工作日突發工作'}[k];const html=items.map(x=>`<div class="wc-data-line"><span>${esc(x.label)}${x.status?'｜'+esc(x.status):''}</span><small>${x.est!=null?'預'+fh(x.est)+'h｜':''}實${x.actual!=null?fh(x.actual)+'h':'—'}</small></div>`).join('')||'<div class="sub" style="padding:10px 0">無資料</div>';return `<section class="wc-data-card"><div class="wc-data-head"><strong>${title}</strong><span class="sub">${items.length} 項</span><div class="wc-actions"><button class="btn sm" data-act="wccopy" data-sec="${k}" ${items.length?'':'disabled'}>複製條列</button></div></div><div class="wc-data-body">${html}</div></section>`}).join('')}
 function guideOutputUrgent(){return guideUrgents.filter(u=>u.project.trim()).map(u=>u.status==='未完成'?`${u.category}-${u.project.trim()}_實${hrTok(Number(u.hours))}，未完成，因${(u.reason||'').trim()}，擬${u.date||mmdd(S.day)}完成`:`${u.category}-${u.project.trim()}_實${hrTok(Number(u.hours))}，完成${u.detail.trim()?'，'+u.detail.trim():''}`)}
 function guideOutputPrev(){const done=[],undone=[];for(const x of guidePrev()){const r=guideReview[x.id]||{};const details=(r.detail||x.detail||'').trim();if(r.status==='完成')done.push(`${x.category}-${x.project}_預${x.est!=null?hrTok(x.est):'＿hr'}，實${r.actual!==''&&r.actual!=null?hrTok(+r.actual):'＿hr'}${details?'，'+details:''}`);
  if(r.status==='未完成')undone.push(`${x.category}-${x.project}｜${details||x.project}_${x.est!=null?hrTok(x.est):'＿hr'}，因${r.reason||'待填原因'}，擬${r.date||mmdd(S.day)}完成`)}return{done,undone}}
@@ -1837,7 +1848,7 @@ function guideAction(type,el){
   if(text!==before&&db.days[S.day]?.rawText&&before!==template(S.day)&&!confirm('確認將上一工作日盤點寫入今日日誌的「昨日完成／未完成」段落？其他段落會保留。'))return;
   const reviewed={done:[],undone:[],urgent:[],source:prevWorkday(S.day)};
   for(const x of guidePrev()){const r=guideReview[x.id]||{};if(r.status==='完成'||r.status==='未完成')reviewed[r.status==='完成'?'done':'undone'].push({label:x.category+'－'+x.project,status:r.status,est:x.est,actual:r.actual!==''&&r.actual!=null?Number(r.actual):null})}
-  for(const u of guideUrgents)reviewed.urgent.push({label:u.category+'－'+u.project,status:u.status,est:null,actual:u.hours===''?null:Number(u.hours)});
+  for(const u of guideUrgents)reviewed.urgent.push({label:u.category+'－'+u.project,status:u.status,est:null,actual:u.hours===''?null:Number(u.hours),origin:'urgent'});
   wcReviews[S.day]=reviewed;wcSaveReview();
   applyDay(S.day,text);db.days[S.day].reviewSummary=reviewed;delete drafts[S.day];guideUrgents=[];persist();wcPrevSub=false;render();toast('上一工作日盤點已確認並儲存，首頁與日誌已更新');return;
  }
@@ -1882,7 +1893,7 @@ function infoHTML(r){
   const err=r.warnings.filter(w=>w.level==='err').length;
   return [`<span class="chip ${est>avail?'late':'plan'} num">今日預估 ${fh(est)} / 可用 ${fh(avail)} hr</span>`,
     lv?`<span class="chip priv pv">請假 ${(r.header.leaves||[]).map(l=>esc(l.type)+' '+fh(l.hours)+'hr').join('、')}</span>`:'',
-    (r.header.locations||[]).length?`<span class="chip pv">辦公地 ${(r.header.locations||[]).map(l=>esc(l.place)+(l.trip?'🚄':'')).join('→')}</span>`:'',
+    (r.header.locations||[]).length?`<span class="chip pv">辦公地 ${(r.header.locations||[]).map(l=>esc(l.place)+(l.trip?'💼':'')).join('→')}</span>`:'',
     `<span class="chip ${r.today.length>lim&&lim?'pend':''}">項目 ${r.today.length}${lim?` / 上限 ${lim}`:''}</span>`,
     stars===1?'<span class="chip star">⭐ 主星已指定</span>':stars>1?`<span class="chip pend">⭐ ${stars} 顆主星</span>`:r.today.length?'<span class="chip">未指定 ⭐</span>':'',
     err?`<span class="chip pend">待確認 ${err} 行</span>`:'',
