@@ -705,6 +705,13 @@ body{background:linear-gradient(150deg,#BCEBE8 0%,#E0F8F3 45%,#E8FAF7 100%)}
 /* Long-form fields: generous first view, grow to viewport cap, then scroll. */
 textarea.f.long-entry{min-height:190px;max-height:65vh;overflow-y:auto;resize:vertical;line-height:1.65}
 @media(max-width:700px){textarea.f.long-entry{min-height:145px;max-height:52vh;font-size:16px}}
+
+/* Annual calendar: show date numbers, with clear past/future contrast. */
+.yr .mmg button.mmc{display:grid;place-items:center;font-size:clamp(10px,0.85vw,12px);font-weight:600;line-height:1;min-width:0;text-align:center;}
+:root:not([data-theme="dark"]) .yr .mmg button.mmc.past{color:#73939B !important;}
+:root:not([data-theme="dark"]) .yr .mmg button.mmc.future{color:#173F51 !important;}
+:root:not([data-theme="dark"]) .yr .mmg button.mmc.current{color:#FFFFFF !important;background:#007D85 !important;font-weight:800;outline:1.5px solid #007D85;}
+.yr .mmg button.mmc:focus-visible{outline:2px solid #007D85;outline-offset:1px;}
 </style>
 </head>
 <body>
@@ -1536,7 +1543,7 @@ function pgCalendar(){
       let cells='';for(let i=0;i<g;i++)cells+='<span class="mmc e"></span>';
       for(let k=1;k<=n;k++){const d=`${y}-${pad(mi+1)}-${pad(k)}`;const I=dayInfo(d);const v=Math.min(1,(I.hrs+I.ot)/(hpd()+2));
         const bg=I.hrs||I.ot?`color-mix(in srgb,var(--accent) ${Math.round(18+v*70)}%,var(--surface-2))`:(!isWorkday(d)?'none':I.st==='none'?'var(--none-bg)':'var(--surface-2)');
-        cells+=`<button class="mmc" data-act="openday" data-d="${d}" title="${d} ${fh(I.hrs)}h" style="background:${bg};${d===today()?'outline:1.5px solid var(--accent)':''}" aria-label="${d}"></button>`}
+        cells+=`<button class="mmc ${d<today()?'past':d===today()?'current':'future'}" data-act="openday" data-d="${d}" title="${d} ${fh(I.hrs)}h" style="${d===today()?'background:#007D85;outline:1.5px solid #007D85;':'background:'+bg+';'}" aria-label="${d}">${k}</button>`}
       return`<div class="mm"><h4 data-act="calmonth" data-m="${mi+1}">${mi+1} 月</h4><div class="mmg">${cells}</div></div>`}).join('')}</div>
       <div class="legend"><span><i class="pdot" style="background:color-mix(in srgb,var(--accent) 25%,var(--surface-2))"></i>工時少</span><span><i class="pdot" style="background:color-mix(in srgb,var(--accent) 88%,var(--surface-2))"></i>工時多（含加班）</span><span><i class="pdot" style="background:var(--none-bg)"></i>工作日未填</span></div>`}
   const legend=S.calView==='month'?`<div class="legend"><span><i class="dot" style="background:var(--done)"></i>全部完成</span><span><i class="dot" style="background:var(--plan)"></i>進行中</span><span><i class="dot" style="background:var(--late)"></i>有延遲</span><span><i class="dot" style="background:var(--pend)"></i>有突發</span><span><i class="dot" style="background:var(--none)"></i>未填</span><span>🚩 DL</span><span>🚄 出差</span><span><i class="pdot" style="background:var(--priv-bg);border:1px solid var(--priv)"></i>請假（高度＝時數）</span><span>方向鍵移動・Enter 進入</span></div>`:'';
