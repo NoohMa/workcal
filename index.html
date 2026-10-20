@@ -673,6 +673,8 @@ body{background:linear-gradient(150deg,#BCEBE8 0%,#E0F8F3 45%,#E8FAF7 100%)}
 :root[data-theme="light"] :is(.md-box,.md-f){background:#FFFFFF !important;}
 
 
+/* Selected day in mini calendar: preserve white text over global button rules. */
+:root:not([data-theme="dark"]) .mini-calendar button.mini-date.active{background:#007D85 !important;color:#FFFFFF !important;}
 /* WORKCAL modal surface hierarchy / input borders — 2026-10-19 */
 :root[data-theme="light"] .ov .md-box{
   overflow:hidden; border:1px solid #98CBCD !important; border-top:1px solid #98CBCD !important;
@@ -1351,7 +1353,7 @@ function buildSample(){
 /* ---------- UI 狀態 ---------- */
 const S={page:'calendar',guideSub:false,logSub:false,calView:'month',cursor:today(),day:today(),edit:!isMobile(),dirty:false,
   todoTab:'已排日',todoSel:0,archYear:'all',archProj:'all',noteSel:null,noteQ:'',projFilter:'進行中',projSel:null,projTab:'list',
-  gZoom:'month',gSel:0,gOpen:{},gAll:false,statKind:'month',statAnchor:today(),statFrom:null,statTo:null,chartTable:{},privacy:false,railSel:new Set(),settingsTab:'basic'};
+  gZoom:'month',gSel:0,gOpen:{},gAll:false,statKind:'month',statAnchor:today(),statFrom:null,statTo:null,officePeriod:'month',officeYear:today().slice(0,4),officeMonth:today().slice(5,7),chartTable:{},privacy:false,railSel:new Set(),settingsTab:'basic'};
 let guideMode='today',guideItems=[],guideReview={};
 let guideHeaderDay='',guidePlaces=[],guideLeaves=[];
 let liveParse=null;
@@ -2098,7 +2100,21 @@ function pgStats(){
   const delT=tbl(['原因','次數'],tg.map(([k2,v])=>[esc(k2),v]));
   // 請假／辦公地
   const lvT=tbl(['假別','時數','天數'],Object.entries(s.leaves).map(([k2,v])=>[esc(k2),fh(v),fh(v/hpd())]));
-  const locT=tbl(['地點','天數'],Object.entries(s.locs).sort(by(x=>x[1],-1)).map(([k2,v])=>[esc(k2),v]));
+  // 辦公地／出差採獨立年月篩選，和整頁統計期間分開。
+  const officeYears=[...new Set([...Object.keys(db.days).map(d=>d.slice(0,4)),new Date().getFullYear().toString(),S.officeYear].filter(y=>/^\d{4}$/.test(y)))].sort((a,b)=>b.localeCompare(a));
+  const oy=S.officeYear,om=S.officeMonth,officeAnnual=S.officePeriod==='year';
+  const ofrom=officeAnnual?`${oy}-01-01`:`${oy}-${om}-01`;
+  const oto=officeAnnual?`${oy}-12-31`:iso(new Date(+oy,+om,0));
+  const os=calcStats(ofrom,oto);
+  const locT=tbl(['地點','天數'],Object.entries(os.locs).filter(([name])=>name.trim()).sort(by(x=>x[1],-1)).map(([name,count])=>[esc(name),count]));
+  const officeDates=Object.keys(db.days).filter(d=>d>=ofrom&&d<=oto&&(db.days[d].locations||[]).some(x=>x.place?.trim()));
+  const officeDays=new Set(officeDates).size;
+  const officeControl=`<div class="row" style="margin:8px 0 12px;align-items:center;gap:8px;flex-wrap:wrap">
+    <div class="seg"><button type="button" data-office-period="month" aria-pressed="${!officeAnnual}">月統計</button><button type="button" data-office-period="year" aria-pressed="${officeAnnual}">年統計</button></div>
+    <select aria-label="辦公地統計年份" id="office-year" style="width:auto;min-width:92px">${officeYears.map(y=>`<option value="${y}" ${oy===y?'selected':''}>${y} 年</option>`).join('')}</select>
+    ${officeAnnual?'':`<select aria-label="辦公地統計月份" id="office-month" style="width:auto;min-width:82px">${Array.from({length:12},(_,i)=>String(i+1).padStart(2,'0')).map(m=>`<option value="${m}" ${om===m?'selected':''}>${+m} 月</option>`).join('')}</select>`}
+  </div>`;
+  const officeSummary=`<p class="sub" style="margin:8px 0 0">${oy} 年${officeAnnual?'':` ${+om} 月`}｜有辦公地紀錄 ${officeDays} 天｜出差 ${os.trips} 天</p><p class="sub" style="margin:4px 0 0">同一天不同地點各計 1 天；出差天數依日期去重，因此各地點天數加總可能超過實際出勤天數。</p>`;
   return head+kpis+`<div class="grid g2">
     ${chartCard('series','工時走勢',series,seriesT)}
     ${chartCard('proj','專案工時排行（哪件事做最多）',projChart,projT)}
@@ -2108,10 +2124,15 @@ function pgStats(){
     <div class="card pv"><h3 style="margin-bottom:8px">加班與補休</h3><dl class="kv"><dt>無償加班</dt><dd>${fh(s.unpaid)}hr</dd><dt>申報加班</dt><dd>${fh(s.decl)}hr</dd><dt>轉補休（本期）</dt><dd>${fh(s.comp)}hr</dd>
       <dt>${to.slice(0,4)} 補休累積</dt><dd>${fh(s.compEarned)}hr</dd><dt>${to.slice(0,4)} 補休已用</dt><dd>${fh(s.compUsed)}hr</dd><dt>補休餘額</dt><dd><b>${fh(s.compEarned-s.compUsed)}hr</b></dd></dl></div>
     <div class="card pv"><div class="row"><h3 style="margin-bottom:8px">請假</h3><span class="sp"></span><button class="btn sm" data-act="go" data-p="leave">假勤額度管理 ›</button></div><div class="tbl-wrap">${lvT}</div></div>
-    <div class="card pv"><h3 style="margin-bottom:8px">辦公地</h3><div class="tbl-wrap">${locT}</div><p class="sub" style="margin:8px 0 0">出差 ${s.trips} 天</p></div>
+    <div class="card pv"><h3 style="margin-bottom:8px">辦公地／出差｜年月查詢</h3>${officeControl}<div class="tbl-wrap">${locT}</div>${officeSummary}</div>
   </div>`}
 after.leave=()=>{$$('[data-leaves]').forEach(el=>el.addEventListener('change',()=>{const k=el.dataset.leaves;db.settings[k]=el.value;persist();render()}))};
-after.stats=()=>{const f=$('#st-f'),t=$('#st-t');if(f){const u=()=>{S.statFrom=f.value;S.statTo=t.value;render._keep=true;render()};f.onchange=u;t.onchange=u}};
+after.stats=()=>{const f=$('#st-f'),t=$('#st-t');if(f){const u=()=>{S.statFrom=f.value;S.statTo=t.value;render._keep=true;render()};f.onchange=u;t.onchange=u}
+  $$('[data-office-period]').forEach(btn=>btn.onclick=()=>{S.officePeriod=btn.dataset.officePeriod;render._keep=true;render()});
+  const year=$('#office-year'),month=$('#office-month');
+  if(year)year.onchange=()=>{S.officeYear=year.value;render._keep=true;render()};
+  if(month)month.onchange=()=>{S.officeMonth=month.value;render._keep=true;render()};
+};
 function drill(q){const from=q.from,to=q.to;let ts=T().filter(t=>t.date&&t.date>=from&&t.date<=to&&t.status!=='待辦');let title='明細';let ots=[];
   if(q.type==='project'){ts=ts.filter(t=>q.id==='_none'?false:t.projectId===q.id);ots=db.ot.filter(o=>o.date>=from&&o.date<=to&&(o.projectId||'_none')===q.id);title=`${q.id==='_none'?'未對應專案':pname(q.id)}｜明細`}
   if(q.type==='cat'){ts=ts.filter(t=>t.category===q.id);title=`${q.id}｜明細`}
