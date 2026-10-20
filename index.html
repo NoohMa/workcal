@@ -2089,7 +2089,7 @@ function pgSettings(){const s=db.settings;const tab=S.settingsTab;
     <h3>AI 資料包提示詞</h3><textarea class="f" data-s="aiPrompt" rows="9">${esc(s.aiPrompt)}</textarea><div class="row"><span class="sub">{期間} 會換成實際日期</span><span class="sp" style="flex:1"></span><button class="btn sm" data-act="resetprompt">還原預設</button></div></div>`;
   if(tab==='holiday')body=`<div class="card stack"><p class="sub" style="margin:0">一行一天：<span class="mono">YYYY-MM-DD 名稱</span>。名稱含「補班」視為補班日。內建 2024–2026 依人事總處公告整理，2027 標「待核」者請公告後核對。</p>
     <textarea class="f mono" data-s="holidaysText" rows="18" style="font-size:12px">${esc(s.holidaysText)}</textarea><div class="row"><button class="btn sm" data-act="resetholi">還原內建</button></div></div>`;
-  if(tab==='data')body=`<div class="grid g2"><div class="card stack"><h3>匯入</h3><button class="btn" data-act="go" data-p="import">匯入舊日誌（記事本）</button><button class="btn" data-act="importjson">還原 JSON 備份</button></div>
+  if(tab==='data')body=`<div class="grid g2"><div class="card stack"><h3>匯入</h3><button class="btn" data-act="go" data-p="import">匯入舊日誌（記事本）</button><button class="btn" data-act="historyimport">歷史 Word 轉換資料（預覽匯入）</button><button class="btn" data-act="importjson">還原 JSON 備份</button></div>
     <div class="card stack"><h3>匯出與備份</h3><button class="btn" data-act="backup">完整備份（JSON）</button><div class="row"><button class="btn sm" data-act="csv" data-k="tasks">任務 CSV</button><button class="btn sm" data-act="csv" data-k="days">每日 CSV</button><button class="btn sm" data-act="csv" data-k="projects">專案 CSV</button></div><span class="sub">上次備份：${s.lastBackup||'從未'}</span></div>
     <div class="card stack"><h3>範例與重設</h3><button class="btn" data-act="loadsample">重新載入範例資料</button><button class="btn danger" data-act="resetall">清除全部資料</button><span class="sub">資料目前只存在這個瀏覽器；正式版接上 Firebase 後才會跨裝置同步。</span></div></div>`;
   return`<div class="ph"><h1>設定</h1></div><div class="tabs">${tabs.map(([k,l])=>`<button class="tab" data-act="settab" data-v="${k}" aria-pressed="${tab===k}">${l}</button>`).join('')}</div>${body}`}
@@ -2105,6 +2105,38 @@ function importJsonModal(){openModal({title:'還原 JSON 備份',wide:true,body:
   foot:`<button class="btn" data-act="mclose">取消</button><button class="btn danger" id="ij-ok">取代並還原</button>`,
   onMount:ov=>{$('#ij-f',ov).onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('#ij-x',ov).value=r.result};r.readAsText(f)};
     $('#ij-ok',ov).onclick=()=>{try{const d=JSON.parse($('#ij-x',ov).value);if(!d.days||!d.tasks)throw 0;d.settings=Object.assign(structuredClone(DEF_SET),d.settings||{});d.ot=d.ot||[];db=d;weekStore=db.weekly||{};drafts={};HOL_SRC=null;persist();closeModal();applyTheme();toast('已還原');render()}catch(e){toast('內容不是有效的備份')}}}})}
+
+
+/* ---------- 歷史資料安全匯入：workcal-history-v1 ---------- */
+let historyPack=null,historyChoices={};
+function historyExportDays(){const days=Object.keys(db.days).sort(),a=days.map(d=>({date:d,text:db.days[d].rawText||''}));const blob=new Blob([JSON.stringify({format:'workcal-history-export-v1',records:a},null,2)],{type:'application/json'});const u=URL.createObjectURL(blob);const b=document.createElement('a');b.href=u;b.download=`workcal-history-${today()}.json`;b.click();setTimeout(()=>URL.revokeObjectURL(u),3000)}
+function historyImportModal(){
+ openModal({title:'歷史日誌匯入｜先預覽再確認',wide:true,body:`<p class="sub">請選擇使用 OneNote 轉換工具產生的 <b>workcal-history-v1 JSON</b>。原始 Word 請先使用隨附的轉換工具處理。<b>既有日期預設略過、私人版本預設略過</b>。匯入前建議下載完整 JSON 備份。</p><div class="row"><input id="hist-file" type="file" accept=".json,application/json"><button class="btn" id="hist-backup">先下載完整備份</button><button class="btn" id="hist-export">匯出所有日誌 JSON</button></div><div id="hist-results" class="stack" style="margin-top:12px"><span class="sub">尚未選擇匯入檔</span></div>`,foot:`<button class="btn" data-act="mclose">取消</button><button class="btn pri" id="hist-commit" disabled>確認匯入選定日期</button>`,onMount:ov=>{
+  $('#hist-backup',ov).onclick=()=>backupModal();
+  $('#hist-export',ov).onclick=()=>historyExportDays();
+  const result=$('#hist-results',ov),commit=$('#hist-commit',ov);
+  const read=async file=>{try{const doc=JSON.parse(await file.text());if(doc.format!=='workcal-history-v1'||!Array.isArray(doc.records))throw Error('格式不符');
+    const seen=new Set();for(const rec of doc.records){if(!/^\d{4}-\d{2}-\d{2}$/.test(rec.date)||seen.has(rec.date)||!Array.isArray(rec.variants)||!rec.variants.length)throw Error('日期或版本格式錯誤');seen.add(rec.date);for(const v of rec.variants){if(typeof v.text!=='string'||!v.text.includes('今日工作項目'))throw Error('日誌缺少今日工作項目')}}
+    historyPack=doc;historyChoices={};for(const r of doc.records)historyChoices[r.date]=db.days[r.date]?.rawText?'skip':(r.variants.every(v=>v.private)?'skip':'skip'); // 審核後逐筆勾選，安全預設全部略過
+    show();commit.disabled=false;
+   }catch(e){historyPack=null;commit.disabled=true;result.textContent='無法讀取：'+e.message}}
+  const show=()=>{
+    const items=historyPack.records;const count=items.filter(x=>historyChoices[x.date]!=='skip').length;
+    result.innerHTML=`<div class="row"><b>${items.length} 天、${items.reduce((n,x)=>n+x.variants.length,0)} 個候選版本</b><span class="chip">選擇匯入 ${count} 天</span><span class="sub">已存在日誌 ${items.filter(x=>db.days[x.date]?.rawText).length} 天</span></div><p class="sub">建議先檢查 3～5 天。按「檢視」可看原文；已有日期必須明確選取覆蓋。</p><div class="tbl-wrap" style="max-height:46vh;overflow:auto"><table class="t"><thead><tr><th>日期</th><th>現有資料</th><th>選擇版本</th><th>動作</th><th>預覽</th></tr></thead><tbody>${items.map((r,i)=>`<tr><td>${r.date}</td><td>${db.days[r.date]?.rawText?'已存在':'空白'}</td><td><select data-hver="${i}">${r.variants.map((v,j)=>`<option value="${j}">${esc(v.label||'版本 '+(j+1))}${v.private?'（含私記）':''}</option>`).join('')}</select></td><td><select data-hact="${i}"><option value="skip">略過（預設）</option><option value="write" ${db.days[r.date]?.rawText?'disabled':''}>新增</option><option value="overwrite" ${db.days[r.date]?.rawText?'':'disabled'}>覆蓋已存在的日誌</option></select></td><td><button class="btn sm" data-hview="${i}">檢視</button></td></tr>`).join('')}</tbody></table></div>`;
+    items.forEach((r,i)=>{const action=$(`[data-hact="${i}"]`,result),ver=$(`[data-hver="${i}"]`,result);action.value=historyChoices[r.date]==='overwrite'?'overwrite':historyChoices[r.date]==='write'?'write':'skip';ver.value=r._chosen||'0';action.onchange=()=>{historyChoices[r.date]=action.value;show()};ver.onchange=()=>{r._chosen=ver.value;show()};$(`[data-hview="${i}"]`,result).onclick=()=>{const v=r.variants[+(r._chosen||0)];openModal({title:r.date+' 原文預覽',wide:true,body:`<pre style="max-height:55vh;overflow:auto;white-space:pre-wrap;word-break:break-word">${esc(v.text)}</pre>${v.private?'<p class="sub">此版本含私記，請確認內容後再匯入。</p>':''}`,foot:'<button class="btn" data-act="mclose">關閉</button>'})}});
+  };
+  $('#hist-file',ov).onchange=e=>{if(e.target.files[0])read(e.target.files[0])};
+  commit.onclick=()=>{if(!historyPack)return;const chosen=historyPack.records.filter(r=>historyChoices[r.date]!=='skip');if(!chosen.length){toast('尚未選取要匯入的日期');return}
+    if(!confirm(`即將匯入 ${chosen.length} 天；請確認已下載備份。是否繼續？`))return;
+    let count=0;try{for(const r of chosen.sort((a,b)=>a.date.localeCompare(b.date))){const action=historyChoices[r.date],existing=!!db.days[r.date]?.rawText;
+      if((action==='write'&&existing)||(action==='overwrite'&&!existing))continue;
+      const text=r.variants[+(r._chosen||0)].text;
+      // Imported history stays as original text first; parsing tasks from previous-workday sections requires chronological caution.
+      applyDay(r.date,text);count++}
+      persist();closeModal();toast(`已匯入 ${count} 天，請檢查統計及原始日誌`);render()
+    }catch(e){persist();toast(`匯入中斷：已處理 ${count} 天，${e.message}`)}};
+ }});
+}
 
 /* ---------- 舊日誌匯入 ---------- */
 let IMP=null;
@@ -2298,7 +2330,7 @@ const ACT={
   charttbl:el=>{S.chartTable[el.dataset.id]=!S.chartTable[el.dataset.id];render._keep=true;render()},drill:el=>drill(JSON.parse(el.dataset.q)),
   weekadd:()=>weekAdd(),weekcarry:()=>weekCarry(),weekremove:el=>weekRemove(+el.dataset.i),weekbring:el=>weekBring(+el.dataset.i),weekcopy:()=>copy(weekReportText()),weekprev:()=>{weekAnchor=addD(weekAnchor,-7);render()},weeknext:()=>{weekAnchor=addD(weekAnchor,7);render()},weekreload:()=>{weekDraft=weekReportText();render()},weekly:()=>weeklyModal(),aipack:()=>aiModal(),settab:el=>{S.settingsTab=el.dataset.v;render()},
   resetprompt:()=>{db.settings.aiPrompt=DEF_PROMPT;persist();render();toast('已還原')},resetholi:()=>{db.settings.holidaysText=HOLI_TEXT;HOL_SRC=null;persist();render();toast('已還原')},
-  backup:()=>backupModal(),importjson:()=>importJsonModal(),
+  backup:()=>backupModal(),importjson:()=>importJsonModal(),historyimport:()=>historyImportModal(),
   csv:el=>{const k=el.dataset.k;textModal(`${{tasks:'任務',days:'每日',projects:'專案'}[k]} CSV`,{tasks:csvTasks,days:csvDays,projects:csvProjects}[k](),'<p class="sub" style="margin:0">複製後貼到 Excel，或存成 .csv 檔。</p>')},
   impsample:()=>{$('#im-x').value=IMP_SAMPLE;$('#im-y').value=2024},
   impparse:()=>{const text=$('#im-x').value;const y=+$('#im-y').value||2024;db.settings.importStartYear=y;persist();IMP={text,chunks:splitImport(text,y)};if(!IMP.chunks.length){toast('找不到日期行');return}render._keep=true;render()},
