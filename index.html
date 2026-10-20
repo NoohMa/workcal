@@ -773,6 +773,8 @@ textarea.f.long-entry{min-height:190px;max-height:65vh;overflow-y:auto;resize:ve
 .wc-dual-actions .btn{min-width:210px;min-height:44px;flex:none;padding:10px 20px}
 .guide-header .guide-confirm-actions .guide-wide-btn{min-width:0;width:auto;padding:10px 23px}
 @media(max-width:540px){.wc-dual-actions .btn{flex:1 1 190px;min-width:0}}
+
+.risk-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:14px 0}.risk-stat{background:#edf9f8;border:1px solid #d1e8e8;border-radius:12px;padding:16px}.risk-stat span{display:block;font-size:12px;color:#426875}.risk-stat b{font-size:25px;color:#075c65}.risk-light{padding:4px 8px;border-radius:15px;font-size:12px;font-weight:750;white-space:nowrap}.risk-light.r3{background:#ffe2e5;color:#a51f31}.risk-light.r2{background:#fff0dd;color:#9d5800}.risk-light.r1{background:#fff8d9;color:#816600}.risk-light.r0{background:#e7f5f3;color:#12645f}.risk-line,.risk-item{border:1px solid #dce9ea;border-radius:10px;padding:12px;background:#fcffff}.risk-line{display:flex;align-items:center;gap:12px;margin:8px 0;flex-wrap:wrap}.risk-line small{display:block;color:#526d77;margin-top:4px}.risk-item p{margin:7px 0}.risk-sims{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.risk-sim{background:#f1f9fb;border:1px solid #d6e8eb;border-radius:10px;padding:12px}.risk-sim>*{display:block;margin-bottom:6px}.risk-fields{border:1px solid #d7e9ea;padding:12px;border-radius:12px;background:#f7fbfb}@media(max-width:750px){.risk-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.risk-sims{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -1538,7 +1540,7 @@ function pgWeekSpace(){const [a,b]=weekRange(weekAnchor),w=wkData(),total=w.item
 function mountWeekSpace(){const x=$('#wk-report');if(weekDraft){x.value=weekDraft;weekDraft=''}$('#wk-save').onclick=()=>{wkData().report=x.value;weekSave();toast('已保存本週個人回報')};$('#wk-copy').onclick=()=>copy(x.value)}
 
 /* ---------- 外殼 ---------- */
-const PAGES=[['calendar','月曆','cal'],['todo','待辦','todo'],['notes','筆記','note'],['projects','專案','proj'],['stats','統計','stat'],['leave','假勤','stat'],['weeklyspace','週工作','stat'],['settings','設定','set']];
+const PAGES=[['calendar','月曆','cal'],['todo','待辦','todo'],['risk','風險決策','stat'],['notes','筆記','note'],['projects','專案','proj'],['stats','統計','stat'],['leave','假勤','stat'],['weeklyspace','週工作','stat'],['settings','設定','set']];
 function renderNav(){
   const cur=S.page==='day'?'calendar':S.page==='import'?'settings':S.page;
   $('#nav').innerHTML=`<div class="brand"><b>工作日誌</b><span>本機測試版</span></div>`+PAGES.map(([k,l,i],n)=>`<button class="navbtn" data-act="go" data-p="${k}" ${cur===k?'aria-current="page"':''}>${ICO[i]}${l}<span class="k">Alt+${n+1}</span></button>`).join('')+
@@ -1552,7 +1554,7 @@ function isInner(){return S.page==='day'||S.page==='import'||(S.page==='notes'&&
 function render(){
   document.body.classList.toggle('privacy',S.privacy);document.body.classList.toggle('inner',isInner());
   renderNav();
-  const f={calendar:pgCalendar,day:pgDay,todo:pgTodo,notes:pgNotes,projects:pgProjects,stats:pgStats,leave:pgLeaveManage,weeklyspace:pgWeekSpace,settings:pgSettings,import:pgImport}[S.page]||pgCalendar;
+  const f={calendar:pgCalendar,day:pgDay,todo:pgTodo,risk:pgRisk,notes:pgNotes,projects:pgProjects,stats:pgStats,leave:pgLeaveManage,weeklyspace:pgWeekSpace,settings:pgSettings,import:pgImport}[S.page]||pgCalendar;
   const main=$('#main');const st=main.scrollTop;main.innerHTML=sampleBanner()+f();
   after[S.page]&&after[S.page]();
   const wcDate=$('#wc-detail-date');if(wcDate)wcDate.addEventListener('change',()=>{if(/^\d{4}-\d{2}-\d{2}$/.test(wcDate.value)){S.day=wcDate.value;S.cursor=S.day;render()}});
@@ -2125,6 +2127,8 @@ function taskForm(t,isNew){
   <div class="fgrid">
   <label class="fl">延遲原因分類<select id="tf-rt"><option value="">—</option>${REASONS.map(x=>`<option ${t.delayReasonTag===x?'selected':''}>${x}</option>`).join('')}</select></label>
   <label class="fl">延遲原因說明<input type="text" id="tf-rx" value="${esc(t.delayReasonText)}"></label></div>
+  <div class="risk-fields"><h3>▣ 工作風險評估</h3><p class="sub">未填為「待評估」，不會視為低風險。數值將與截止日、排程及工時一起判讀。</p><div class="fgrid">
+  ${[['ri','importance','重要程度'],['rh','impact','未完成影響'],['rl','likelihood','無法如期完成可能性']].map(([id,key,label])=>`<label class="fl">${label}<select id="tf-${id}">${[['','待評估'],['高','高'],['中','中'],['低','低']].map(([v,l])=>`<option value="${v}" ${(t.riskProfile?.[key]||'')===v?'selected':''}>${l}</option>`).join('')}</select></label>`).join('')}</div></div>
   <div id="tf-warn"></div>
   ${!isNew&&(t.dlHistory||[]).length?`<div><h3 style="margin-bottom:4px">DL 改期紀錄</h3>${t.dlHistory.map(h=>`<div class="sub">${h.changedAt}：${h.from} → ${h.to}${h.reason?`（${esc(h.reason)}）`:''}</div>`).join('')}</div>`:''}
   ${!isNew&&t.rawLine?`<div class="sub">日誌原文：<span class="mono">${esc(t.rawLine)}</span></div>`:''}`}
@@ -2154,7 +2158,7 @@ function openTask(id,opts={}){
         const dl=$('#tf-dl',ov).value||null;if(dl!==o.dl){if(o.dl&&dl)o.dlHistory.push({from:o.dl,to:dl,reason:$('#tf-dlr',ov).value.trim(),changedAt:today()});o.dl=dl}
         let st=$('#tf-st',ov).value;o.isStar=$('#tf-star',ov).value==='1';
         o.doneCriteria=$('#tf-dc',ov).value.trim();o.stopLoss=$('#tf-sl',ov).value.trim();o.deliverTo=$('#tf-to',ov).value.trim();o.outcome=$('#tf-out',ov).value.trim();
-        o.delayReasonTag=$('#tf-rt',ov).value;o.delayReasonText=$('#tf-rx',ov).value.trim();
+        o.delayReasonTag=$('#tf-rt',ov).value;o.delayReasonText=$('#tf-rx',ov).value.trim();o.riskProfile={importance:$('#tf-ri',ov).value,impact:$('#tf-rh',ov).value,likelihood:$('#tf-rl',ov).value};
         const nd=$('#tf-date',ov).value||null;
         if(st==='已交付'&&!o.deliveredAt)o.deliveredAt=today();
         if(['已交付','放棄'].includes(st)&&(o.source==='todo'||o.source==='carry'))o.archived=true;
@@ -2661,6 +2665,51 @@ after.import=()=>{
   $$('[data-ima]').forEach(el=>el.onchange=()=>{IMP.chunks[+el.dataset.ima].action=el.value});
   $('#im-all')?.addEventListener('change',e=>{const v=e.target.value;if(!v)return;IMP.chunks.forEach(c=>{if(c.exist)c.action=v});$('#im-prev').innerHTML=impPreview();after.import()})};
 
+/* ---------- 工作風險與情境決策 V2 (純規則、模擬不改正式資料) ---------- */
+const RANK={'低':1,'中':2,'高':3},RLEVEL=['一般','黃色','橘色','紅色'];
+let riskDraft=null,riskHorizon=7;
+function riskRecord(t){const r=t.riskProfile||{};return {importance:r.importance||'',impact:r.impact||'',likelihood:r.likelihood||''}}
+function riskOpen(t){return !t.archived&&!['完成','已交付','放棄'].includes(t.status)}
+function riskRemaining(t){let est=Number(t.estHours);if(!Number.isFinite(est)||t.estHours==null)return null;
+ const actual=Number(t.actual?.office);return Math.max(0,est-(t.actual?.office!=null&&Number.isFinite(actual)?actual:0))}
+function riskCapacity(a,b){if(b<a)return 0;let n=0;for(let d=a;d<=b;d=addD(d,1)){if(isWorkday(d)){const day=db.days[d],leave=(day?.leaves||[]).reduce((sum,l)=>sum+(Number(l.hours)||0),0);n+=Math.max(0,hpd()-leave)}}return Math.round(n*10)/10}
+function assessRisk(t){const r=riskRecord(t),pending=Object.values(r).some(v=>!RANK[v]),remain=riskRemaining(t),dl=t.dl||null,days=dl?diffD(today(),dl):null;
+ const isLate=days!==null&&days<0;let score=(RANK[r.importance]||0)+(RANK[r.impact]||0)*2+(RANK[r.likelihood]||0)*2;
+ const why=[];if(pending)why.push('風險維度尚未完整評估');
+ if(isLate){score+=4;why.push('已逾期 '+Math.abs(days)+' 天')}
+ else if(days!==null&&days<=2){score+=3;why.push('距截止日 '+days+' 天')}
+ else if(days!==null&&days<=7){score+=1;why.push('7 天內到期')}
+ else if(!dl)why.push('未設定 DL，仍依影響與可能性評估');
+ if(r.impact==='高')why.push('未完成影響高');
+ if(r.likelihood==='高')why.push('無法如期完成可能性高');
+ if(remain===null)why.push('剩餘工時未知，排程判讀受限');
+ let capacity=null;if(dl&&days!==null&&days>=0){capacity=riskCapacity(today(),dl);if(remain!==null&&remain>capacity){score+=4;why.push('剩餘 '+remain+'h，大於期限前全部可用 '+capacity+'h')}}
+ if(t.date&&dl&&t.date>dl){score+=3;why.push('排入日期晚於截止日')}
+ const level=Math.max(score>=15?3:score>=11?2:score>=7?1:0,r.impact==='高'?2:0);
+ const advice=[];if(isLate)advice.push('確認交付影響並重新排程或向相關人員協調');
+ if(r.impact==='高')advice.push('優先核實影響範圍及對其他工作的相依關係');
+ if(remain!==null&&capacity!==null&&remain>capacity)advice.push('工時缺口 '+(remain-capacity).toFixed(1)+'h，需調整順序、範圍或取得支援');
+ if(!dl)advice.push('確認是否需要管理期限或設定下次追蹤日');
+ if(!advice.length)advice.push('依既有排程追蹤，確認風險維度及進度');
+ return {t,r,pending,remain,days,isLate,score,level,why,advice,capacity}}
+function allRisk(){return T().filter(riskOpen).map(assessRisk).sort((a,b)=>b.level-a.level||b.score-a.score)}
+function riskStatusText(t){return t.riskState?.status||'尚未處理'}
+function riskAction(id){const t=db.tasks[id];if(!t)return;const z=t.riskState||{};
+ openModal({title:'風險處理｜'+esc(t.title),body:`<div class="stack"><label class="fl">處理方式<select id="rk-status">${['尚未處理','立即處理','重新安排','等待他人回覆','已向主管反映','接受風險','風險已解除'].map(x=>`<option ${z.status===x?'selected':''}>${x}</option>`).join('')}</select></label><label class="fl">追蹤日期<input id="rk-date" type="date" value="${z.followUp||''}"></label><label class="fl">措施、原因及後續結果<textarea id="rk-note" rows="6">${esc(z.note||'')}</textarea></label><p class="sub">接受風險不代表完成；解除後仍保留原歷程。此操作不修改任務完成狀態。</p></div>`,foot:'<button class="btn" data-act="mclose">取消</button><button class="btn pri" id="rk-save">儲存風險紀錄</button>',onMount:ov=>{$('#rk-save',ov).onclick=()=>{const status=$('#rk-status',ov).value,note=$('#rk-note',ov).value.trim(),followUp=$('#rk-date',ov).value;const before=t.riskState||{};t.riskHistory=t.riskHistory||[];if(before.status!==status||before.note!==note||before.followUp!==followUp)t.riskHistory.push({at:new Date().toISOString(),from:before.status||'尚未處理',to:status,note,followUp});t.riskState={status,note,followUp,updatedAt:new Date().toISOString()};persist();closeModal();render();toast('風險紀錄已儲存')}}})}
+function riskAvailableWindow(days){let d=today(),end=addD(d,days-1);return riskCapacity(d,end)}
+function riskModels(){const all=allRisk(),cap=riskAvailableWindow(riskHorizon);const byRisk=[...all].sort((a,b)=>b.score-a.score);const byDl=[...all].sort((a,b)=>(a.t.dl||'9999').localeCompare(b.t.dl||'9999'));const byShort=[...all].sort((a,b)=>(a.remain??999)-(b.remain??999));return [{key:'critical',label:'A｜優先高風險',order:byRisk},{key:'deadline',label:'B｜優先近期 DL',order:byDl},{key:'short',label:'C｜優先可完成工作',order:byShort},{key:'support',label:'D｜假設增加支援 4h',order:byRisk,capacity:cap+4}].map(m=>{let left=m.capacity??cap,done=[],late=[],unknown=[];for(const x of m.order){if(x.remain===null){unknown.push(x.t.title);continue}if(x.remain<=left){left-=x.remain;done.push(x.t.id)}else late.push(x.t.id)}return {...m,cap:m.capacity??cap,done,late,unknown,left:Math.round(left*10)/10,shortage:Math.round(Math.max(0,m.order.reduce((n,x)=>n+(x.remain||0),0)-(m.capacity??cap))*10)/10}})}
+function riskScenario(){riskDraft=riskModels();render();document.querySelector('#risk-sim')?.scrollIntoView({block:'start',behavior:'smooth'})}
+function riskApply(){if(!riskDraft)riskDraft=riskModels();const key=$('#risk-choice')?.value,model=riskDraft.find(m=>m.key===key);if(!model)return;const order=model.done.map(id=>db.tasks[id]).filter(Boolean);if(!order.length){toast('此情境沒有可安排的工作');return}
+ const changes=[];let date=today();for(const t of order){while(!isWorkday(date))date=addD(date,1);changes.push({id:t.id,title:t.title,old:t.date||'未排日',date});date=addD(date,1)}
+ const body=`<p>僅將模擬中可安排的 ${changes.length} 項工作排入日期；原 DL 不變。請逐筆核對：</p><div class="stack">${changes.map(x=>`<div>${esc(x.title)}：${x.old} → ${x.date}</div>`).join('')}</div><p class="sub">按確認前不會修改正式資料。此排程為簡化示意，並未納入個別工作相依關係或一天多項任務分配。</p>`;
+ openModal({title:'確認套用情境',body,foot:'<button class="btn" data-act="mclose">取消模擬</button><button class="btn pri" id="risk-apply-ok">確認調整排程</button>',onMount:ov=>{$('#risk-apply-ok',ov).onclick=()=>{const changed=[];for(const x of changes){const t=db.tasks[x.id];if(!t)continue;const old=t.date||null;if(old&&old!==x.date&&db.days[old]?.rawText&&t.rawLine){applyDay(old,removeLine(db.days[old].rawText,t.rawLine))}scheduleTask(t.id,x.date,true);t.riskHistory=t.riskHistory||[];t.riskHistory.push({at:new Date().toISOString(),from:old||'未排日',to:x.date,note:'由情境模擬確認調整排程'});changed.push(x.title)}riskDraft=null;persist();closeModal();render();toast('已確認調整 '+changed.length+' 項排程')}}})}
+function riskTrendRows(){const byMonth={};for(const t of T()){const d=t.deliveredAt||t.date||t.updatedAt&&new Date(t.updatedAt).toISOString().slice(0,10)||null;if(!d)continue;const m=d.slice(0,7);(byMonth[m]??=[]).push(t)}return Object.keys(byMonth).sort().reverse().slice(0,12).map(m=>{const a=byMonth[m],over=a.filter(t=>t.dl&&t.deliveredAt&&t.deliveredAt>t.dl).length;const delayed=a.filter(t=>t.dl&&t.deliveredAt&&t.deliveredAt>t.dl).map(t=>diffD(t.dl,t.deliveredAt));return {month:m,total:a.length,over,mean:delayed.length?(delayed.reduce((n,v)=>n+v,0)/delayed.length).toFixed(1):'—'}})}
+function pgRisk(){const all=allRisk(),red=all.filter(x=>x.level===3),late=all.filter(x=>x.isLate),soon=all.filter(x=>x.days!==null&&x.days>=0&&x.days<=7),pending=all.filter(x=>x.pending),cap=riskAvailableWindow(7),total=all.reduce((n,x)=>n+(x.remain||0),0),models=riskDraft||riskModels();return `<div class="pagehead"><h1>工作風險與決策</h1><p class="sub">依既有待辦與工時資料計算；風險、預測及情境模擬皆可追溯。決策由你確認。</p></div><div class="risk-kpis"><div class="risk-stat"><span>高風險</span><b>${red.length}</b></div><div class="risk-stat"><span>7 天內到期</span><b>${soon.length}</b></div><div class="risk-stat"><span>已逾期</span><b>${late.length}</b></div><div class="risk-stat"><span>本週工時缺口（估）</span><b>${Math.max(0,total-cap).toFixed(1)}h</b></div></div>
+ <div class="card stack"><div class="row"><h2>今日最值得關注</h2><span class="sub">待評估 ${pending.length} 項｜未有 DL 也納入</span></div>${all.length?all.slice(0,5).map(x=>`<div class="risk-line"><span class="risk-light r${x.level}">${RLEVEL[x.level]}</span><span style="flex:1"><b>${esc(x.t.title)}</b><small>${esc(x.why.join('；'))}</small></span><button class="btn sm" data-act="riskedit" data-id="${x.t.id}">開啟原待辦</button></div>`).join(''):'<p class="sub">目前沒有進行中的待辦。</p>'}</div>
+ <div class="card stack"><h2>風險清單與處理追蹤</h2>${all.length?all.map(x=>`<div class="risk-item"><div class="row" style="gap:10px;flex-wrap:wrap"><span class="risk-light r${x.level}">${RLEVEL[x.level]}</span><b style="flex:1">${esc(x.t.title)}</b><button class="btn sm" data-act="riskedit" data-id="${x.t.id}">編輯任務</button><button class="btn sm" data-act="riskaction" data-id="${x.t.id}">處理／追蹤</button></div><p class="sub">${esc(pname(x.t.projectId))}｜DL ${x.t.dl||'未設定'}｜剩餘 ${x.remain===null?'未知':x.remain+'h'}｜${x.pending?'待評估':'已評估'}｜${esc(riskStatusText(x.t))}</p><p class="sub">原因：${esc(x.why.join('；'))}</p><p class="sub">建議：${esc(x.advice.join('；'))}</p>${x.t.riskHistory?.length?`<details><summary>處理歷程（${x.t.riskHistory.length} 筆）</summary>${x.t.riskHistory.map(h=>`<p class="sub">${esc(h.at.slice(0,16))} ${esc(h.from)} → ${esc(h.to)} ${esc(h.note||'')}</p>`).join('')}</details>`:''}</div>`).join(''):'<p class="sub">無進行中風險。</p>'}</div>
+ <div class="card stack" id="risk-sim"><div class="row"><h2>情境模擬｜${riskHorizon} 天</h2><button class="btn" data-act="riskscenario">重新模擬</button></div><p class="sub">可用時間 ${cap}h；已知剩餘工作量 ${total.toFixed(1)}h。未知工時另列；模擬不變更正式任務。方案 D 的額外 4h 為假設，未經核准不得視為實際可用。</p><div class="risk-sims">${models.map(m=>`<div class="risk-sim"><b>${m.label}</b><div>預估缺口 ${m.shortage}h</div><div>可安排 ${m.done.length} 項｜可能延後 ${m.late.length} 項</div><small>剩餘可用 ${m.left}h｜工時未知 ${m.unknown.length} 項</small></div>`).join('')}</div><label class="fl">選擇模擬方案<select id="risk-choice">${models.map(m=>`<option value="${m.key}">${m.label}</option>`).join('')}</select><div class="row"><button class="btn pri" data-act="riskapply">預覽排程變更並確認</button><button class="btn" data-act="riskreset">取消模擬</button></div></div>
+ <div class="card stack"><h2>歷史趨勢｜有來源資料的月份</h2><p class="sub">以下按任務已有的排程／交付日期歸月，屬觀察資料；缺乏歷史風險快照時不會臆測每月高風險數或解除率。</p><div class="tbl-wrap"><table class="t"><thead><tr><th>月份</th><th>有記錄任務</th><th>逾期交付</th><th>平均延誤</th></tr></thead><tbody>${riskTrendRows().map(x=>`<tr><td>${x.month}</td><td>${x.total}</td><td>${x.over}</td><td>${x.mean==='—'?'—':x.mean+' 天'}</td></tr>`).join('')||'<tr><td colspan="4">尚無可統計的歷史紀錄</td></tr>'}</tbody></table></div></div><p class="sub">版本限制：資料儲存在此瀏覽器。跨裝置同步及關閉 App 後的推播須另行連接後端與通知服務；本版未聲稱已支援。</p>`}
+
 /* ---------- 搜尋／指令面板／快捷鍵說明 ---------- */
 function searchAll(q){q=q.trim();if(!q)return[];const out=[];const has=s=>String(s||'').toLowerCase().includes(q.toLowerCase());
   T().forEach(t=>{if(has(t.title)||has(pname(t.projectId))||(t.subItems||[]).some(s=>has(s.text))||has(t.delayReasonText)||has(t.outcome)||has(t.doneText)||has(t.deliverTo))out.push({g:'任務',l:`${t.date?md(t.date)+' ':''}${pname(t.projectId)}｜${t.title}`,act:['task',t.id]})});
@@ -2735,7 +2784,7 @@ function openDay(d){S.dayDetail=false;wcPrevSub=false;S.guideSub=false;S.logSub=
 
 /* ---------- 點擊事件 ---------- */
 const ACT={
-  go:el=>{if(el.dataset.p==='projects')S.projSel=null;go(el.dataset.p)},
+  go:el=>{if(el.dataset.p==='projects')S.projSel=null;go(el.dataset.p)},riskopen:()=>go('risk'),riskedit:el=>openTask(el.dataset.id),riskaction:el=>riskAction(el.dataset.id),riskscenario:()=>riskScenario(),riskapply:()=>riskApply(),riskreset:()=>{riskDraft=null;render()},
   openday:el=>openDay(el.dataset.d),wcdaydetail:el=>{openDay(el.dataset.d);S.dayDetail=true;render()},
   wcdetailopen:()=>{saveDraftNow();S.dayDetail=true;S.logSub=false;S.guideSub=false;wcPrevSub=false;render();$('#main').scrollTop=0},wcotherday:()=>{wcPrevSub=false;S.dayDetail=true;render();$('#main').scrollTop=0},wcdetailclose:()=>{S.dayDetail=false;render();$('#main').scrollTop=0},wcdetailprev:()=>{S.day=addD(S.day,-1);S.cursor=S.day;render()},wcdetailnext:()=>{S.day=addD(S.day,1);S.cursor=S.day;render()},wcdetailtoday:()=>{S.day=today();S.cursor=S.day;render()},wcdetailcopy:()=>copy(S.privacy?dayText(S.day).split(/\n(?=私記)/)[0]:dayText(S.day)),wcdetailedit:()=>{S.dayDetail=false;S.logSub=true;S.edit=true;render()},
   wccopy:(el)=>wcCopySection(el.dataset.sec),wcprevopen:()=>{saveDraftNow();wcPrevSub=true;S.guideSub=false;guideMode='prev';const items=guidePrev(),oldReview=db.days[S.day]?.reviewSummary||wcReviews[S.day];if(oldReview&&(!oldReview.source||oldReview.source===prevWorkday(S.day))){const used=new Set();guideReview={};for(const x of items){const lbl=x.category+'－'+x.project;for(const state of ['done','undone']){const i=(oldReview[state]||[]).findIndex((a,j)=>a.label===lbl&&!used.has(state+'-'+j));if(i>=0){const r=oldReview[state][i];used.add(state+'-'+i);guideReview[x.id]={status:state==='done'?'完成':'未完成',actual:r.actual??'',detail:x.detail||'',reason:'',date:mmdd(S.day)};break}}}}render();$('#main').scrollTop=0},wcprevclose:()=>{wcPrevSub=false;render();$('#main').scrollTop=0},
