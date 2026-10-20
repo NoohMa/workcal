@@ -1324,7 +1324,7 @@ function buildSample(){
   db.sample=true;persist()}
 
 /* ---------- UI 狀態 ---------- */
-const S={page:'calendar',calView:'month',cursor:today(),day:today(),edit:!isMobile(),dirty:false,
+const S={page:'calendar',guideSub:false,calView:'month',cursor:today(),day:today(),edit:!isMobile(),dirty:false,
   todoTab:'未排日',todoSel:0,archYear:'all',archProj:'all',noteSel:null,noteQ:'',projFilter:'進行中',projSel:null,projTab:'list',
   gZoom:'month',gSel:0,gOpen:{},gAll:false,statKind:'month',statAnchor:today(),statFrom:null,statTo:null,chartTable:{},privacy:false,railSel:new Set(),settingsTab:'basic'};
 let guideMode='today',guideItems=[],guideReview={};
@@ -1352,7 +1352,7 @@ function checkMorningReminder(){
  const saved=db.days[D]?.rawText||'';
  if(saved&&parseDay(saved).today.length>0)return;
  reminderShown.add(D);
- openModal({title:'09:30 工作日誌提醒',body:`<p>今天 ${D} 尚未登打今日工作項目。</p><p class="sub">可直接進入今日工作項目，完成後再複製並上傳 Teams。</p>`,foot:'<button class="btn" data-act="mclose">稍後再填</button><button class="btn pri" id="rem-edit">前往今日工作</button>',onMount:ov=>{$('#rem-edit',ov).onclick=()=>{closeModal();openDay(D);setTimeout(()=>$('#guided-host')?.scrollIntoView({block:'start',behavior:'smooth'}),60)}}});
+ openModal({title:'09:30 工作日誌提醒',body:`<p>今天 ${D} 尚未登打今日工作項目。</p><p class="sub">可直接進入今日工作項目，完成後再複製並上傳 Teams。</p>`,foot:'<button class="btn" data-act="mclose">稍後再填</button><button class="btn pri" id="rem-edit">前往今日工作</button>',onMount:ov=>{$('#rem-edit',ov).onclick=()=>{closeModal();openDay(D);S.guideSub=true;render();setTimeout(()=>$('#guided-host')?.scrollIntoView({block:'start',behavior:'smooth'}),60)}}});
 }
 
 
@@ -1446,11 +1446,12 @@ const after={};
 after.weeklyspace=mountWeekSpace;
 function back(){
   if(modalStack.length){closeModal();return}
+  if(S.page==='day'&&S.guideSub){saveDraftNow();S.guideSub=false;render();$('#main').scrollTop=0;return}
   if(S.page==='day'){saveDraftNow();const to=S.from&&S.from!=='day'?S.from:'calendar';S.cursor=S.day;go(to);return}
   if(S.page==='notes'&&S.noteSel){saveNoteNow();S.noteSel=null;render();return}
   if(S.page==='projects'&&S.projSel){S.projSel=null;render();return}
   if(S.page==='import'){go('settings');return}}
-function go(p){if(S.page==='day'&&p!=='day'){saveDraftNow()}S.page=p;$('#rail').classList.remove('open');render();$('#main').scrollTop=0}
+function go(p){if(S.page==='day'&&p!=='day'){saveDraftNow();S.guideSub=false}S.page=p;$('#rail').classList.remove('open');render();$('#main').scrollTop=0}
 
 /* ---------- 右欄 ---------- */
 function renderRail(){
@@ -1528,7 +1529,14 @@ function dayState(D){if(drafts[D]!=null&&drafts[D]!==db.days[D]?.rawText)return[
 function pgDay(){
   const D=S.day;const H=hol();const text=dayText(D);const[sc,sl]=dayState(D);const ro=S.privacy;
   const editMode=S.edit&&!ro;
-  return`<div class="dayhead"><button class="xbtn back" data-act="back" aria-label="上一頁（Esc）">‹</button><button class="btn sm" data-act="dayprev" aria-label="前一天">‹ <kbd>[</kbd></button><h1>${md(D)}（${wd(D)}）</h1><button class="btn sm" data-act="daynext" aria-label="後一天"><kbd>]</kbd> ›</button>
+  if(S.guideSub)return `<div class="dayhead"><button class="xbtn back" data-act="guideclose" aria-label="返回每日主頁">‹</button><h1>${md(D)}（${wd(D)}）｜條列文字編輯</h1><span class="sp" style="flex:1"></span><button class="btn sm" data-act="guideclose">返回每日主頁</button></div>
+  <div id="guided-host"></div>
+  <div class="dash-section-head dash-output-head">▤ 產生條列文字 <small>可直接修正，修改會自動儲存</small></div>
+  <div class="infobar" id="infobar"></div>
+  <div class="ed ${editMode?'':'read'}" id="ed"><pre id="hl" aria-hidden="${editMode}"></pre>${editMode?`<textarea id="ta" spellcheck="false" aria-label="${D} 日誌內容">${esc(text)}</textarea>`:''}</div>
+  <div class="prev grid g2" id="preview"></div>
+  <div class="savebar"><span class="state ${sc}" id="daystate"><i></i>${sl}</span><button class="btn pri" data-act="guidesaveclose" ${ro?'disabled':''}>儲存並返回每日主頁</button></div>`;
+  return`<div class="dayhead><button class="xbtn back" data-act="back" aria-label="上一頁（Esc）">‹</button><button class="btn sm" data-act="dayprev" aria-label="前一天">‹ <kbd>[</kbd></button><h1>${md(D)}（${wd(D)}）</h1><button class="btn sm" data-act="daynext" aria-label="後一天"><kbd>]</kbd> ›</button>
     <span class="sub">${D}</span>${H.h[D]?`<span class="chip late">${esc(H.h[D])}</span>`:!isWorkday(D)?'<span class="chip">假日</span>':H.w[D]?'<span class="chip plan">補班日</span>':''}
     <span class="sp" style="flex:1"></span><button class="btn sm rail-toggle" data-act="rail">待辦</button></div>
   <div class="dash-kpis">
@@ -1546,16 +1554,15 @@ function pgDay(){
   </div>
   ${teamsConfirmHTML(D)}
   <div class="dash-workspace">
-    <div class="dash-work-col"><div class="dash-section-head">▣ 今日工作項目 <small>選項輸入・條列輸出</small></div>
-    ${!ro?`<div id="guided-host"></div>`:''}</div>
-    <div class="dash-prev-col"><div class="dash-section-head">✓ 昨日工作項目確認 <small>上一工作日自動帶入</small></div>
-    <div id="guide-prev-shortcut" class="dash-quick"><span>逐項確認完成狀態、實際工時及延後事項</span><button class="btn sm" data-guide="tab-prev">開啟昨日確認</button></div><div class="dash-mini-list" id="dash-mini-list">${guidePrev().length?guidePrev().slice(0,5).map(x=>`<div class="dash-mini-item"><span>${esc(x.project)}${x.detail?'｜'+esc(x.detail):''}</span><small>預${fh(x.est)}hr</small></div>`).join(''):'<div class="empty">上一工作日尚無項目</div>'}</div></div>
+    <div class="dash-work-col"><div class="dash-section-head">▣ 今日工作摘要 <small>詳細內容於子層編輯</small></div>
+      <div class="dash-quick"><span>今日安排 ${parseDay(text).today.length} 項，預估 ${fh(sum(parseDay(text).today,x=>x.est||0))} hr</span><button class="btn pri" data-act="guideopen">進入條列文字編輯 ›</button></div>
+      <div class="dash-mini-list">${parseDay(text).today.length?parseDay(text).today.slice(0,5).map(x=>`<div class="dash-mini-item"><span>${esc(x.cat)}－${esc(x.project)}${x.title&&x.title!==x.project?'｜'+esc(x.title):''}</span><small>${x.est==null?'未填':fh(x.est)+'hr'}</small></div>`).join(''):'<div class="empty">尚未安排今日工作</div>'}</div>
+    </div>
+    <div class="dash-prev-col"><div class="dash-section-head">✓ 昨日工作確認 <small>上一工作日項目</small></div>
+      <div class="dash-quick"><span>待確認 ${guidePrev().length} 項</span><button class="btn sm" data-act="guideprevopen">進入昨日確認 ›</button></div>
+      <div class="dash-mini-list">${guidePrev().length?guidePrev().slice(0,5).map(x=>`<div class="dash-mini-item"><span>${esc(x.project)}${x.detail?'｜'+esc(x.detail):''}</span><small>預${fh(x.est)}hr</small></div>`).join(''):'<div class="empty">上一工作日尚無項目</div>'}</div></div>
   </div>
-  <div class="dash-section-head dash-output-head">▤ 產生條列文字 <small>可自由編輯、複製、儲存</small></div>
-  <div class="infobar" id="infobar"></div>
-  <div class="ed ${editMode?'':'read'}" id="ed"><pre id="hl" aria-hidden="${editMode}"></pre>${editMode?`<textarea id="ta" spellcheck="false" aria-label="${D} 日誌內容">${esc(text)}</textarea>`:''}</div>
-  <div class="prev grid g2" id="preview"></div>
-  <div class="savebar"><span class="state ${sc}" id="daystate"><i></i>${sl}</span><button class="btn pri" data-act="savedayback" ${ro?'disabled':''}>儲存並返回</button></div>`}
+  <div class="dash-quick" style="margin-top:12px"><span>日誌已保存於同一日期；Teams 複製與上傳確認仍可在此操作。</span><button class="btn sm" data-act="guideopen">檢視／修改完整日誌</button></div>`}
 
 /* ---------- 選項式工作日誌：輸出原始文字，延用現有解析與儲存 ---------- */
 function guideSource(){return $('#ta')?.value??dayText(S.day)}
@@ -1654,6 +1661,7 @@ function guideAction(type,el){
 }
 function promptCategory(){openModal({title:'新增工作分類',body:`<label class="fl">分類名稱<input id="gc-name" type="text" placeholder="例如：行政、支援" autofocus></label><p class="sub">新增後可用於日誌解析、待辦、專案與統計。</p>`,foot:'<button class="btn" data-act="mclose">取消</button><button class="btn pri" id="gc-save">新增分類</button>',onMount:ov=>{$('#gc-save',ov).onclick=()=>{const name=$('#gc-name',ov).value.trim();if(!name||/[-｜|_\n]/.test(name)){toast('名稱不能空白或含分隔符號');return}db.settings.workCategories=categories().concat(name).filter((x,i,a)=>a.indexOf(x)===i);persist();closeModal();guideRender();toast('分類已新增')}}})}
 after.day=()=>{
+  if(!S.guideSub)return;
   if(!S.privacy)guideRender();
   const D=S.day;const ta=$('#ta');
   const upd=()=>{const text=ta?ta.value:dayText(S.day);liveParse=parseDay(text);$('#hl').innerHTML=hlHTML(text,liveParse,!ta)+'\n ';$('#preview').innerHTML=previewHTML(liveParse);$('#infobar').innerHTML=infoHTML(liveParse)};
@@ -2288,13 +2296,13 @@ function fixLineModal(i,sec){
       else line=`${c}-${p}${e!==''?'_'+hrTok(+e):''}${t?'，'+t:''}`;
       ls[i]=line;ta.value=ls.join('\n');closeModal();ta.dispatchEvent(new Event('input'));toast('已補正，記得存檔')}}})}
 function newNote(){const id=uid();db.notes[id]={id,title:'',body:'',projectIds:[],pinned:false,createdAt:Date.now(),updatedAt:Date.now()};S.noteSel=id;persist();go('notes');setTimeout(()=>$('#n-title')?.focus(),0)}
-function openDay(d){guideReview={};guideItems=[];guideMode='today';if(S.page==='day')saveDraftNow();else S.from=S.page;S.day=d;S.cursor=d;S.edit=!isMobile();S.page='day';render();$('#main').scrollTop=0;if(!isMobile()&&!S.privacy)setTimeout(()=>{const ta=$('#ta');if(ta){ta.focus();ta.setSelectionRange(0,0)}},0)}
+function openDay(d){S.guideSub=false;guideReview={};guideItems=[];guideMode='today';if(S.page==='day')saveDraftNow();else S.from=S.page;S.day=d;S.cursor=d;S.edit=!isMobile();S.page='day';render();$('#main').scrollTop=0;if(!isMobile()&&!S.privacy)setTimeout(()=>{const ta=$('#ta');if(ta){ta.focus();ta.setSelectionRange(0,0)}},0)}
 
 /* ---------- 點擊事件 ---------- */
 const ACT={
   go:el=>{if(el.dataset.p==='projects')S.projSel=null;go(el.dataset.p)},
   openday:el=>openDay(el.dataset.d),
-  mclose:()=>closeModal(),back:()=>back(),savedayback:()=>saveDay(true),notesaveback:()=>{saveNoteNow();toast('已儲存');S.noteSel=null;render()},
+  mclose:()=>closeModal(),back:()=>back(),guideopen:()=>{S.guideSub=true;S.edit=true;render();$('#main').scrollTop=0},guideprevopen:()=>{S.guideSub=true;S.edit=true;guideMode='prev';render();$('#main').scrollTop=0},guideclose:()=>{saveDraftNow();S.guideSub=false;render();$('#main').scrollTop=0},guidesaveclose:()=>{saveDay(false);S.guideSub=false;render();$('#main').scrollTop=0},savedayback:()=>saveDay(true),notesaveback:()=>{saveNoteNow();toast('已儲存');S.noteSel=null;render()},
   palette:()=>openPalette(),search:()=>openSearch(),help:()=>helpModal(),
   privacy:()=>{S.privacy=!S.privacy;render()},
   rail:()=>$('#rail').classList.toggle('open'),
