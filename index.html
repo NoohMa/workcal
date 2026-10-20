@@ -695,6 +695,14 @@ body{background:linear-gradient(150deg,#BCEBE8 0%,#E0F8F3 45%,#E8FAF7 100%)}
 :root[data-theme="light"] :is(.md-b,.guided,.guide-header,.week-panel,.card) :is(input,textarea)::placeholder{color:#597680 !important}
 :root[data-theme="light"] .ov .md-box .xbtn{border-color:#A8D2D5 !important;background:#FFFFFF !important;color:#174753 !important}
 @media(max-width:1023px){:root[data-theme="light"] .ov .md-box{border-radius:14px !important}}
+/* 逾期待辦警示：無論目前選擇哪個分頁，都持續顯示 */
+.todo-alert{color:#c92336;font-size:14px;margin-left:4px;vertical-align:middle;animation:todoPulse 1.6s ease-in-out infinite}
+@keyframes todoPulse{50%{opacity:.45}}
+.tabs .tab[data-t="逾期"]:has(.todo-alert){border-color:#e3a6ab;color:#a2192b}
+
+/* Long-form fields: generous first view, grow to viewport cap, then scroll. */
+textarea.f.long-entry{min-height:190px;max-height:65vh;overflow-y:auto;resize:vertical;line-height:1.65}
+@media(max-width:700px){textarea.f.long-entry{min-height:145px;max-height:52vh;font-size:16px}}
 </style>
 </head>
 <body>
@@ -1325,7 +1333,7 @@ function buildSample(){
 
 /* ---------- UI 狀態 ---------- */
 const S={page:'calendar',guideSub:false,logSub:false,calView:'month',cursor:today(),day:today(),edit:!isMobile(),dirty:false,
-  todoTab:'未排日',todoSel:0,archYear:'all',archProj:'all',noteSel:null,noteQ:'',projFilter:'進行中',projSel:null,projTab:'list',
+  todoTab:'已排日',todoSel:0,archYear:'all',archProj:'all',noteSel:null,noteQ:'',projFilter:'進行中',projSel:null,projTab:'list',
   gZoom:'month',gSel:0,gOpen:{},gAll:false,statKind:'month',statAnchor:today(),statFrom:null,statTo:null,chartTable:{},privacy:false,railSel:new Set(),settingsTab:'basic'};
 let guideMode='today',guideItems=[],guideReview={};
 let guideHeaderDay='',guidePlaces=[],guideLeaves=[];
@@ -1557,6 +1565,7 @@ function pgDay(){
     <button class="btn sm" data-act="picktodo" ${ro?'disabled':''}>帶入待辦 <kbd class="hide-m">Ctrl⇧T</kbd></button>
   </div>
   ${teamsConfirmHTML(D)}
+  ${!ro?`<div id="guided-host"></div>`:''}
   <div class="dash-workspace">
     <div class="dash-work-col"><div class="dash-section-head">▣ 今日工作項目 <small>工作狀態即時檢視</small></div>
     <div class="dash-quick"><span>需要新增或轉換文字時再進入子層</span><button class="btn pri" data-act="guideopen">產生條列文字 ›</button></div>
@@ -1564,7 +1573,6 @@ function pgDay(){
     <div class="dash-prev-col"><div class="dash-section-head">✓ 昨日工作項目確認 <small>上一工作日自動帶入</small></div>
     <div id="guide-prev-shortcut" class="dash-quick"><span>逐項確認完成狀態與實際工時</span><button class="btn sm" data-act="prevreview">開啟昨日確認</button></div><div class="dash-mini-list" id="dash-mini-list">${guidePrev().length?guidePrev().slice(0,5).map(x=>`<div class="dash-mini-item"><span>${esc(x.project)}${x.detail?'｜'+esc(x.detail):''}</span><small>預${fh(x.est)}hr</small></div>`).join(''):'<div class="empty">上一工作日尚無項目</div>'}</div></div>
   </div>
-  ${!ro?`<div id="guided-host"></div>`:''}
   <div class="dash-section-head dash-output-head" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">▤ 完整工作日誌 <small>已移至獨立子層</small><button class="btn pri" data-act="logopen">開啟完整工作日誌 ›</button></div>
   <div class="sub" style="padding:8px 2px 14px">可以在子層檢視、修正、複製及儲存完整原文；主頁保留工作項目與狀態摘要。</div>`}
 
@@ -1752,7 +1760,7 @@ function pgTodo(){
   const G=todoGroups();const list=G[S.todoTab]||[];if(S.todoSel>=list.length)S.todoSel=Math.max(0,list.length-1);
   const years=[...new Set(T().filter(t=>t.archived).map(t=>(t.deliveredAt||t.date||'').slice(0,4)).filter(Boolean))].sort().reverse();
   return`<div class="ph"><h1>待辦</h1><span class="sp"></span><button class="btn pri" data-act="newtodo">＋ 新增 <kbd>N</kbd></button></div>
-  <div class="tabs" role="tablist">${Object.keys(G).map(k=>`<button class="tab" data-act="todotab" data-t="${k}" aria-pressed="${S.todoTab===k}">${k}<span class="c">${G[k].length}</span></button>`).join('')}</div>
+  <div class="tabs" role="tablist">${Object.keys(G).map(k=>`<button class="tab" data-act="todotab" data-t="${k}" aria-label="${k}${k==='逾期'&&G[k].length?'，有 ' + G[k].length + ' 筆逾期待辦':''}" aria-pressed="${S.todoTab===k}">${k}<span class="c">${G[k].length}</span>${k==='逾期'&&G[k].length?'<span class="todo-alert" aria-label="有逾期待辦">●</span>':''}</button>`).join('')}</div>
   ${S.todoTab==='封存'?`<div class="row" style="margin-bottom:10px"><select data-act="archyear" style="width:auto"><option value="all">全部年份</option>${years.map(y=>`<option ${S.archYear===y?'selected':''}>${y}</option>`).join('')}</select>
     <select data-act="archproj" style="width:auto"><option value="all">全部專案</option>${Object.values(db.projects).map(p=>`<option value="${p.id}" ${S.archProj===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div>`:''}
   ${list.length?`<div class="list" id="todolist" tabindex="0" aria-label="待辦清單（↑↓ 選擇）">${list.map((t,i)=>todoRow(t,i)).join('')}</div>`:`<div class="empty">${S.todoTab==='未排日'?'沒有未排日的待辦。按 N 新增一筆。':S.todoTab==='封存'?'封存區是空的。交付或放棄的待辦會自動移到這裡。':'這裡沒有項目。'}</div>`}
@@ -1772,13 +1780,24 @@ function todoRow(t,i){
 after.todo=()=>{const l=$('#todolist');if(l&&!isMobile()&&!modalStack.length&&document.activeElement===document.body)l.focus()};
 function curTodo(){const G=todoGroups();return(G[S.todoTab]||[])[S.todoSel]}
 
+function expandLongEntry(el){
+  if(!el)return;
+  const computed=getComputedStyle(el);
+  const min=parseFloat(computed.minHeight)||0;
+  const max=Math.max(min,Math.round(window.innerHeight*(window.innerWidth<=700?.52:.65)));
+  // Preserve user drag sizing; grow only when text requires more space.
+  const target=Math.min(max,Math.max(min,el.scrollHeight));
+  if(el.clientHeight+2<target)el.style.height=target+'px';
+}
 function taskForm(t,isNew){
   const projs=Object.values(db.projects);
   return`<div class="fgrid">
   <label class="fl">分類<select id="tf-cat">${categories().map(c=>`<option ${t.category===c?'selected':''}>${c}</option>`).join('')}</select></label>
   <label class="fl">專案<input type="text" id="tf-proj" list="tf-pl" value="${esc(t.projectId?pname(t.projectId):'')}" placeholder="輸入或選擇，新名稱自動建立"><datalist id="tf-pl">${projs.map(p=>`<option value="${esc(p.name)}">`).join('')}</datalist></label></div>
   <label class="fl">任務名稱<input type="text" id="tf-title" value="${esc(t.title)}" autofocus></label>
-  <label class="fl">子項（一行一項）<textarea class="f" id="tf-subs" rows="3">${esc((t.subItems||[]).map(s=>(s.status==='完成'?'[x] ':'')+s.text).join('\n'))}</textarea></label>
+  <label class="fl">子項（一行一項）<textarea class="f long-entry" id="tf-subs" rows="9">${esc((t.subItems||[]).map(s=>(s.status==='完成'?'[x] ':'')+s.text).join('\n'))}</textarea></label>
+  <label class="fl">進度紀錄（日期｜內容，一行一筆）<textarea class="f long-entry" id="tf-progress" rows="9" placeholder="2026-10-20｜完成接待分工初稿">${esc((t.progressLog||[]).map(x=>x.date+'｜'+x.text).join('\n'))}</textarea></label>
+  <div class="sub">子項用於拆解工作；進度紀錄用於保留各日期的執行成果。兩者分開儲存。</div>
   <div class="fgrid">
   <label class="fl">預估工時（hr）<input type="number" step="0.5" min="0" id="tf-est" value="${t.estHours??''}"></label>
   ${isNew?'':`<label class="fl">實際工時（hr）<input type="number" step="0.5" min="0" id="tf-act" value="${t.actual?.office??''}"></label>`}
@@ -1804,6 +1823,7 @@ function openTask(id,opts={}){
   openModal({title:isNew?'新增待辦':'編輯任務',body:taskForm(t,isNew),
     foot:`${isNew?'':`<button class="btn danger" id="tf-del">${t.archived?'永久刪除':'封存'}</button><span style="flex:1"></span>`}${isNew?'<button class="btn" data-act="mclose">取消</button>':'<span class="state saved" id="tf-st"><i></i>修改即自動儲存</span>'}<button class="btn pri" id="tf-ok">${isNew?'新增':'儲存並返回'}</button>`,
     onMount:ov=>{
+      $$('.long-entry',ov).forEach(el=>{expandLongEntry(el);el.addEventListener('input',()=>expandLongEntry(el))});
       const chk=()=>{const w=[];const dl=$('#tf-dl',ov).value;const pid=findProject($('#tf-proj',ov).value)?.id;const p=pid&&P(pid);
         if(dl&&p?.dl&&dl>p.dl)w.push(`任務 DL（${dl}）晚於專案 DL（${p.dl}）`);
         if(dl&&!isNew&&t.dl&&dl!==t.dl)$('#tf-dlr-w',ov).hidden=false;
@@ -1817,6 +1837,7 @@ function openTask(id,opts={}){
         o.category=$('#tf-cat',ov).value;o.projectId=resolveProject($('#tf-proj',ov).value.trim()||'（未指定）',o.category);o.title=title;
         const subs=$('#tf-subs',ov).value.split('\n').map(x=>x.trim()).filter(Boolean);
         o.subItems=subs.map(x=>{const d=/^\[x\]\s*/i.test(x);const tx=x.replace(/^\[x\]\s*/i,'');const old=(o.subItems||[]).find(s=>s.text===tx);return{id:old?.id||uid(),text:tx,status:d?'完成':(old&&old.status!=='完成'?old.status:'規劃')}});
+        o.progressLog=$('#tf-progress',ov).value.split('\n').map(line=>line.trim()).filter(Boolean).map(line=>{const m=line.match(/^(\d{4}-\d{2}-\d{2})[｜|]\s*(.*)$/);return m?{date:m[1],text:m[2]}:{date:'',text:line}});
         const e=$('#tf-est',ov).value;o.estHours=e===''?null:+e;
         if(!isNew){const a=$('#tf-act',ov).value;o.actual={office:a===''?null:+a}}
         const dl=$('#tf-dl',ov).value||null;if(dl!==o.dl){if(o.dl&&dl)o.dlHistory.push({from:o.dl,to:dl,reason:$('#tf-dlr',ov).value.trim(),changedAt:today()});o.dl=dl}
@@ -1883,7 +1904,7 @@ function noteEditor(n){
   return`<div class="card stack"><div class="row"><button class="xbtn back" data-act="back" aria-label="上一頁（Esc）">‹</button><input type="text" id="n-title" value="${esc(n.title)}" placeholder="標題" style="flex:1;font-weight:600"><button class="btn sm" data-act="notepin" aria-pressed="${n.pinned}">${n.pinned?'取消釘選':'釘選'}</button></div>
     <div class="row"><span class="sub">專案</span>${(n.projectIds||[]).map(p=>`<span class="chip"><span class="pdot" style="background:${pcolor(p)}"></span>${esc(pname(p))}<button class="btn ghost sm" style="min-height:0;padding:0 2px" data-act="noteunp" data-p="${p}" aria-label="移除">×</button></span>`).join('')}
       <input type="text" id="n-proj" list="n-pl" placeholder="加專案標籤，Enter" style="width:180px"><datalist id="n-pl">${Object.values(db.projects).map(p=>`<option value="${esc(p.name)}">`).join('')}</datalist></div>
-    <textarea class="f" id="n-body" rows="14" style="font-family:var(--edf)">${esc(n.body)}</textarea>
+    <textarea class="f long-entry" id="n-body" rows="14" style="font-family:var(--edf)">${esc(n.body)}</textarea>
     <div class="row"><button class="btn sm" data-act="note2todo">選取的行 → 轉成待辦</button><span class="sub">支援 # 標題、- 清單、- [ ] 勾選、**粗體**</span><span class="sp" style="flex:1"></span><button class="btn sm danger" data-act="notedel">刪除</button></div>
     <div class="card md" style="background:var(--surface-2)" id="n-prev">${mdHTML(n.body)}</div></div>
     <div class="savebar"><span class="state saved" id="n-st"><i></i>輸入即自動儲存</span><button class="btn pri" data-act="notesaveback">儲存並返回</button></div>`}
@@ -1893,6 +1914,7 @@ function saveNoteNow(){const n=db.notes[S.noteSel];const ti=$('#n-title'),bo=$('
 after.notes=()=>{
   const q=$('#nq');if(q){q.addEventListener('input',()=>{S.noteQ=q.value;const p=q.selectionStart;render();const q2=$('#nq');q2.focus();q2.setSelectionRange(p,p)})}
   const n=db.notes[S.noteSel];if(!n)return;
+  const longNote=$('#n-body');expandLongEntry(longNote);longNote?.addEventListener('input',()=>expandLongEntry(longNote));
   const save=()=>{saveNoteNow()};
   let tm;['n-title','n-body'].forEach(k=>$('#'+k).addEventListener('input',()=>{const st=$('#n-st');st.className='state dirty';st.innerHTML='<i></i>輸入中…';clearTimeout(tm);tm=setTimeout(save,600)}));
   $('#n-proj').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const v=e.target.value.trim();if(!v)return;const pid=resolveProject(v);if(!n.projectIds.includes(pid))n.projectIds.push(pid);save();render()}})};
