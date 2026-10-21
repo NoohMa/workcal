@@ -1484,7 +1484,7 @@ function checkMorningReminder(){
 }
 
 
-function applyTheme(){const t=db.settings.theme;if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);else document.documentElement.removeAttribute('data-theme');
+function applyTheme(){const t=db.settings.theme;document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');
   document.documentElement.style.setProperty('--edf',db.settings.edFont==='sans'?'var(--font)':'var(--mono)')}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('on'),1800)}
 async function copy(text){try{await navigator.clipboard.writeText(text);toast('已複製');return true}catch(e){
@@ -2573,7 +2573,7 @@ function pgSettings(){const s=db.settings;const tab=S.settingsTab;
     <label class="fl">每日工時（hr，人日換算基準）<input type="number" min="1" max="24" step="0.5" data-s="hoursPerDay" data-n="1" value="${s.hoursPerDay}"></label>
     <label class="fl">請假單位（hr）<input type="number" min="0.5" step="0.5" data-s="leaveUnit" data-n="1" value="${s.leaveUnit}"></label>
     <label class="fl">每日項目上限提示<input type="number" min="0" data-s="dailyItemLimit" data-n="1" value="${s.dailyItemLimit}"></label>
-    <label class="fl">主題<select data-s="theme">${[['auto','跟隨系統'],['light','淺色'],['dark','深色']].map(([k,l])=>`<option value="${k}" ${s.theme===k?'selected':''}>${l}</option>`).join('')}</select></label>
+    <label class="fl">主題<select data-s="theme">${[['auto','預設（淺色）'],['light','淺色'],['dark','深色']].map(([k,l])=>`<option value="${k}" ${s.theme===k?'selected':''}>${l}</option>`).join('')}</select></label>
     <label class="fl">日誌字體<select data-s="edFont"><option value="mono" ${s.edFont==='mono'?'selected':''}>等寬</option><option value="sans" ${s.edFont==='sans'?'selected':''}>易讀</option></select></label></div>
     <label class="fl">假別（逗號分隔）<input type="text" data-s="leaveTypes" data-arr="1" value="${esc(s.leaveTypes.join('、'))}"></label>
     <label class="fl">常用辦公地（逗號分隔）<input type="text" data-s="places" data-arr="1" value="${esc(s.places.join('、'))}"></label>
