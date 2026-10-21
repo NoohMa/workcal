@@ -1048,19 +1048,22 @@ const HOLI_TEXT=`2024-01-01 元旦
 2026-10-26 臺灣光復節補假
 2026-12-25 行憲紀念日
 2027-01-01 元旦
-2027-02-05 除夕（待核）
-2027-02-08 春節（待核）
-2027-02-09 春節補假（待核）
-2027-02-10 春節補假（待核）
-2027-03-01 和平紀念日補假（待核）
-2027-04-05 清明節（待核）
-2027-04-06 兒童節補假（待核）
-2027-06-09 端午節（待核）
-2027-09-15 中秋節（待核）
-2027-09-28 教師節（待核）
-2027-10-11 國慶日補假（待核）
-2027-10-25 臺灣光復節（待核）
-2027-12-24 行憲紀念日補假（待核）`;
+2027-02-04 小年夜
+2027-02-05 除夕
+2027-02-08 春節
+2027-02-09 春節補假
+2027-02-10 春節補假
+2027-03-01 和平紀念日補假
+2027-04-05 清明節
+2027-04-06 兒童節補假
+2027-04-30 勞動節補假
+2027-06-09 端午節
+2027-09-15 中秋節
+2027-09-28 教師節
+2027-10-11 國慶日補假
+2027-10-25 臺灣光復暨金門古寧頭大捷紀念日
+2027-12-24 行憲紀念日補假
+2027-12-31 開國紀念日補假`;
 
 const DEF_PROMPT=`請根據以下我的工作紀錄，撰寫「{期間}」的個人貢獻與成就總結。
 要求：
@@ -2223,7 +2226,10 @@ const WC_REVIEW_KEY='workcal.review.summary.v1';
 let wcReviews={};try{wcReviews=JSON.parse(localStorage.getItem(WC_REVIEW_KEY)||'{}')||{}}catch(e){wcReviews={}}
 function wcSaveReview(){db.reviews=wcReviews;persist()}
 /* 舊版存在獨立 localStorage 的資料，第一次啟動時併入 db；之後一律跟著 db 備份、清除、還原 */
+function migrateHoli(){const st=db.settings;if(!st||(st.holiVer||0)>=2)return false;st.holiVer=2;
+  if(st.holidaysText&&/^2027-\d\d-\d\d.*待核/m.test(st.holidaysText)){const keep=st.holidaysText.split('\n').filter(l=>!/^2027-/.test(l.trim())).join('\n').replace(/\s+$/,'');const add=HOLI_TEXT.split('\n').filter(l=>/^2027-/.test(l)).join('\n');st.holidaysText=keep+'\n'+add;HOL_SRC=null}return true}
 function rebindDb(){
+  if(migrateHoli())persist();
   const first=!rebindDb.done;
   if(!db.teamsConfirmed)db.teamsConfirmed=first?Object.assign({},teamsConfirmed):{};
   if(!db.reviews)db.reviews=first?Object.assign({},wcReviews):{};
