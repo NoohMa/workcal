@@ -6,9 +6,9 @@
 <meta name="theme-color" content="#009EAE">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="icon" type="image/png" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-180.png">
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png?v=2">
+<link rel="apple-touch-icon" href="icon-180.png?v=2">
+<link rel="manifest" href="manifest.webmanifest?v=2">
 <title>工作日誌</title>
 <style>
 /* 版面：左導覽｜主內容｜右側待辦欄；手機為單欄＋底部導覽。記事本格線為每日頁的識別。 */
@@ -2163,7 +2163,7 @@ function saveDay(andBack){
 function todoGroups(){
   const D=today();const all=T().filter(t=>t.source==='todo'||t.source==='carry');
   const open=t=>!t.archived&&!['已交付','放棄'].includes(t.status);
-  const overdue=all.filter(t=>open(t)&&!['完成'].includes(t.status)&&((t.dl&&t.dl<D)||(t.date&&t.date<D&&t.status==='規劃')));
+  const overdue=all.filter(t=>open(t)&&!['完成'].includes(t.status)&&t.dl&&t.dl<D);
   const od=new Set(overdue.map(t=>t.id));
   let arch=all.filter(t=>t.archived);
   if(S.archYear!=='all')arch=arch.filter(t=>(t.deliveredAt||t.date||'').startsWith(S.archYear));
@@ -2172,10 +2172,12 @@ function todoGroups(){
     '已排日':all.filter(t=>open(t)&&t.date&&!od.has(t.id)).sort(by(t=>t.date)),
     '逾期':overdue.sort(by(t=>t.dl||t.date)),
     '封存':arch.sort(by(t=>t.deliveredAt||t.date||'',-1))}}
+function pastScheduled(){const t0=today();return T().filter(t=>(t.source==='todo'||t.source==='carry')&&!t.archived&&t.date&&t.date<t0&&['完成','延遲','已交付'].includes(t.status))}
 function pgTodo(){
   const G=todoGroups();const list=G[S.todoTab]||[];if(S.todoSel>=list.length)S.todoSel=Math.max(0,list.length-1);
   const years=[...new Set(T().filter(t=>t.archived).map(t=>(t.deliveredAt||t.date||'').slice(0,4)).filter(Boolean))].sort().reverse();
-  return`<div class="ph"><h1>待辦</h1><span class="sp"></span><button class="btn pri" data-act="newtodo">＋ 新增 <kbd>N</kbd></button></div>
+  const pastN=pastScheduled().length;
+  return`<div class="ph"><h1>待辦</h1><span class="sp"></span>${pastN?`<button class="btn" data-act="archivepast" title="把日期在今天以前、已完成或已延續到其他天的項目移到封存">封存過去項目（${pastN}）</button>`:''}<button class="btn pri" data-act="newtodo">＋ 新增 <kbd>N</kbd></button></div>
   <div class="tabs" role="tablist">${Object.keys(G).map(k=>`<button class="tab" data-act="todotab" data-t="${k}" aria-label="${k}${k==='逾期'&&G[k].length?'，有 ' + G[k].length + ' 筆逾期待辦':''}" aria-pressed="${S.todoTab===k}">${k}<span class="c">${G[k].length}</span>${k==='逾期'&&G[k].length?'<span class="todo-alert" aria-label="有逾期待辦">●</span>':''}</button>`).join('')}</div>
   ${S.todoTab==='封存'?`<div class="row" style="margin-bottom:10px"><select data-act="archyear" style="width:auto"><option value="all">全部年份</option>${years.map(y=>`<option ${S.archYear===y?'selected':''}>${y}</option>`).join('')}</select>
     <select data-act="archproj" style="width:auto"><option value="all">全部專案</option>${Object.values(db.projects).map(p=>`<option value="${p.id}" ${S.archProj===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div>`:''}
@@ -2190,7 +2192,7 @@ function todoRow(t,i){
     <div class="meta"><span class="pdot" style="background:${pcolor(t.projectId)}"></span>${esc(pname(t.projectId))}<span class="chip">${t.category}</span>
       ${t.estHours!=null?`<span class="num">${fh(t.estHours)}hr</span>`:''}${t.subItems?.length?`<span>子項 ${subDone}/${t.subItems.length}</span>`:''}
       ${t.dl?`<span class="chip ${l<0?'late':l<=2?'pend':''}">DL ${md(t.dl)}${l<0?`（逾期 ${-l} 天）`:l===0?'（今天）':''}</span>`:''}
-      ${t.date?`<span class="chip plan">排入 ${md(t.date)}</span>`:''}<span class="chip ${STCLS[t.status]}">${t.status}</span>${t.carriedCount?`<span class="chip late">延續 ${t.carriedCount}</span>`:''}
+      ${t.date?(t.date<today()&&['規劃','待辦'].includes(t.status)?`<span class="chip pend" title="排定的日子已過，還沒在日誌回報完成或延遲">排入 ${md(t.date)}・未回報</span>`:`<span class="chip plan">排入 ${md(t.date)}</span>`):''}<span class="chip ${STCLS[t.status]}">${t.status}</span>${t.carriedCount?`<span class="chip late">延續 ${t.carriedCount}</span>`:''}
       ${t.deliverTo?`<span>交付：${esc(t.deliverTo)}</span>`:''}${t.outcome?`<span>成果：${esc(t.outcome)}</span>`:''}</div></div>
     <div class="row hide-m">${t.archived?`<button class="btn sm" data-act="restore" data-id="${t.id}">還原</button><button class="btn sm danger" data-act="hardel" data-id="${t.id}">永久刪除</button>`:`<button class="btn sm" data-act="sched" data-id="${t.id}">排入</button><button class="btn sm" data-act="deliver" data-id="${t.id}">交付</button><button class="btn sm" data-act="archive" data-id="${t.id}">封存</button><button class="btn sm danger" data-act="hardel" data-id="${t.id}">刪除</button>`}</div></div>`}
 after.todo=()=>{const l=$('#todolist');if(l&&!isMobile()&&!modalStack.length&&document.activeElement===document.body)l.focus()};
@@ -2681,6 +2683,14 @@ function inferHistoryDone(dates){const set=new Set(dates),t0=today();let n=0;
   for(const t of T()){if(!set.has(t.date)||t.origin!=='plan'||t.status!=='規劃'||t.date>=t0)continue;
     t.status='完成';t.inferred=true;t.note=(t.note?t.note+'；':'')+'推定完成（匯入時無回報）';t.subItems=(t.subItems||[]).map(x=>Object.assign({},x,{status:'完成'}));n++}
   return n}
+/* 歷史匯入：由匯入產生、日期在今天以前的待辦／延續項目一律封存（仍可在「封存」還原） */
+function archiveHistoryTodos(dates){const set=new Set(dates),t0=today();let n=0;
+  for(const t of T()){if(t.archived||!(t.source==='todo'||t.source==='carry'))continue;
+    const fromImport=set.has(t.createdByDay)||set.has(t.date);if(!fromImport)continue;
+    if(t.date&&t.date>=t0)continue;
+    if(t.status==='規劃'||t.status==='待辦'){t.status='完成';t.inferred=true;t.note=(t.note?t.note+'；':'')+'推定完成（匯入時無回報）'}
+    t.archived=true;n++}
+  return n}
 function historyImportModal(){
  openModal({title:'歷史日誌匯入｜先預覽再確認',wide:true,body:`<p class="sub">請選擇使用 OneNote 轉換工具產生的 <b>workcal-history-v1 JSON</b>。原始 Word 請先使用隨附的轉換工具處理。<b>既有日期預設略過</b>；含私記的版本也會匯入（私記只存在你的資料內，不進 Teams 匯出）。匯入前建議下載完整 JSON 備份。</p><div class="row"><input id="hist-file" type="file" accept=".json,application/json"><button class="btn" id="hist-backup">先下載完整備份</button><button class="btn" id="hist-export">匯出所有日誌 JSON</button></div><div id="hist-results" class="stack" style="margin-top:12px"><span class="sub">尚未選擇匯入檔</span></div>`,foot:`<button class="btn" data-act="mclose">取消</button><button class="btn pri" id="hist-commit" disabled>確認匯入選定日期</button>`,onMount:ov=>{
   $('#hist-backup',ov).onclick=()=>backupModal();
@@ -2736,10 +2746,10 @@ function historyImportModal(){
       const text=r.variants[+(r._chosen||0)].text;
       // Imported history stays as original text first; parsing tasks from previous-workday sections requires chronological caution.
       applyDay(r.date,text);count++}
-      const inferred=inferHistoryDone(chosen.map(r=>r.date));
+      const inferred=inferHistoryDone(chosen.map(r=>r.date));const archivedN=archiveHistoryTodos(chosen.map(r=>r.date));
       persist();closeModal();render();
       if(!storageOk){noticeBox('匯入未能存檔',`瀏覽器儲存空間不足，這次匯入沒有存進去。\n請先「完整備份」，再分批匯入（例如一次半年）。`);return}
-      toast(`已匯入 ${count} 天，略過 ${skipped} 天；請抽查歷史日誌`);noticeBox('歷史匯入完成',`歷史匯入完成\n成功：${count} 天\n執行時因衝突略過：${skipped} 天\n未選取：${historyPack.records.length-chosen.length} 天\n推定完成：${inferred} 項（只出現在今日工作、之後沒有回報，已標記「推定完成」）\n建議抽查不同月份的日誌與工時。`)
+      toast(`已匯入 ${count} 天，略過 ${skipped} 天；請抽查歷史日誌`);noticeBox('歷史匯入完成',`歷史匯入完成\n成功：${count} 天\n執行時因衝突略過：${skipped} 天\n未選取：${historyPack.records.length-chosen.length} 天\n推定完成：${inferred} 項（只出現在今日工作、之後沒有回報，已標記「推定完成」）\n自動封存：${archivedN} 項（歷史延續與待辦項目，可在待辦「封存」查看或還原）\n建議抽查不同月份的日誌與工時。`)
     }catch(e){persist();toast(`匯入中斷：已處理 ${count} 天，${e.message}`)}};
  }});
 }
@@ -2949,7 +2959,7 @@ const ACT={
   riskopen:()=>go('risk'),
   wcdetailopen:()=>{saveDraftNow();S.dayDetail=true;S.logSub=false;S.guideSub=false;wcPrevSub=false;render();$('#main').scrollTop=0},wcotherday:()=>{wcPrevSub=false;S.dayDetail=true;render();$('#main').scrollTop=0},wcdetailclose:()=>{S.dayDetail=false;render();$('#main').scrollTop=0},wcdetailprev:()=>{S.day=addD(S.day,-1);S.cursor=S.day;render()},wcdetailnext:()=>{S.day=addD(S.day,1);S.cursor=S.day;render()},wcdetailtoday:()=>{S.day=today();S.cursor=S.day;render()},wcdetailcopy:()=>copy(S.privacy?dayText(S.day).split(/\n(?=私記)/)[0]:dayText(S.day)),wcdetailedit:()=>{S.dayDetail=false;S.logSub=true;S.edit=true;render()},
   wccopy:(el)=>wcCopySection(el.dataset.sec),wcprevopen:()=>{saveDraftNow();wcPrevSub=true;S.guideSub=false;guideMode='prev';const items=guidePrev(),oldReview=db.days[S.day]?.reviewSummary||wcReviews[S.day];if(oldReview&&(!oldReview.source||oldReview.source===prevWorkday(S.day))){const used=new Set();guideReview={};for(const x of items){const lbl=x.category+'－'+x.project;for(const state of ['done','undone']){const i=(oldReview[state]||[]).findIndex((a,j)=>a.label===lbl&&!used.has(state+'-'+j));if(i>=0){const r=oldReview[state][i];used.add(state+'-'+i);guideReview[x.id]={status:state==='done'?'完成':'未完成',actual:r.actual??'',detail:x.detail||'',reason:'',date:mmdd(S.day)};break}}}}render();$('#main').scrollTop=0},wcprevclose:()=>{wcPrevSub=false;render();$('#main').scrollTop=0},
-  mclose:()=>closeModal(),back:()=>back(),logopen:()=>{saveDraftNow();S.logSub=true;S.guideSub=false;S.edit=true;render();$('#main').scrollTop=0},logclose:()=>{saveDraftNow();S.logSub=false;render();$('#main').scrollTop=0},logsaveclose:()=>{saveDay(false);S.logSub=false;render();$('#main').scrollTop=0},guideopen:()=>{saveDraftNow();wcPrevSub=false;S.logSub=false;S.guideSub=true;S.edit=true;guideMode='today';render();$('#main').scrollTop=0},prevreview:()=>{wcPrevSub=true;S.guideSub=false;guideMode='prev';render();$('#main').scrollTop=0},guideprevopen:()=>{guideMode='prev';render();document.querySelector('#guided-host')?.scrollIntoView({block:'start',behavior:'smooth'})},guideclose:()=>{saveDraftNow();S.guideSub=false;render();$('#main').scrollTop=0},guidesaveclose:()=>{saveDay(false);S.guideSub=false;render();$('#main').scrollTop=0},savedayback:()=>saveDay(true),notesaveback:()=>{saveNoteNow();toast('已儲存');S.noteSel=null;render()},
+  mclose:()=>closeModal(),archivepast:()=>{const L=pastScheduled();confirmBox(`把 ${L.length} 筆日期在今天以前、已完成或已延續的項目移到封存？之後可在「封存」還原。`,()=>{L.forEach(t=>t.archived=true);persist();render();toast(`已封存 ${L.length} 筆`)},'封存')},back:()=>back(),logopen:()=>{saveDraftNow();S.logSub=true;S.guideSub=false;S.edit=true;render();$('#main').scrollTop=0},logclose:()=>{saveDraftNow();S.logSub=false;render();$('#main').scrollTop=0},logsaveclose:()=>{saveDay(false);S.logSub=false;render();$('#main').scrollTop=0},guideopen:()=>{saveDraftNow();wcPrevSub=false;S.logSub=false;S.guideSub=true;S.edit=true;guideMode='today';render();$('#main').scrollTop=0},prevreview:()=>{wcPrevSub=true;S.guideSub=false;guideMode='prev';render();$('#main').scrollTop=0},guideprevopen:()=>{guideMode='prev';render();document.querySelector('#guided-host')?.scrollIntoView({block:'start',behavior:'smooth'})},guideclose:()=>{saveDraftNow();S.guideSub=false;render();$('#main').scrollTop=0},guidesaveclose:()=>{saveDay(false);S.guideSub=false;render();$('#main').scrollTop=0},savedayback:()=>saveDay(true),notesaveback:()=>{saveNoteNow();toast('已儲存');S.noteSel=null;render()},
   palette:()=>openPalette(),search:()=>openSearch(),help:()=>helpModal(),
   privacy:()=>{S.privacy=!S.privacy;render()},
   rail:()=>$('#rail').classList.toggle('open'),
