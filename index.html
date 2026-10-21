@@ -1008,6 +1008,17 @@ label.fl .enh-wrap,.fgrid .enh-wrap{display:flex;width:100%}
 :root[data-theme="dark"] .seg{border-color:var(--dk-line)!important}
 :root[data-theme="dark"] :is(h1,h2,h3,.railsec h3){color:var(--dk-fg)!important}
 .g-item .row b .stag{display:inline-block!important;width:auto!important;margin-left:6px;vertical-align:middle;font-weight:500}
+.enh-combo{position:relative}
+.enh-combo>input[type=text]{padding-right:30px!important}
+.enh-drop{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--w-fg2);font-size:15px;width:26px;height:26px;cursor:pointer;border-radius:6px}
+.enh-drop:hover{background:var(--w-soft2)}
+.enh-menu{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:80;margin:0;padding:4px;list-style:none;background:var(--w-card);border:1px solid var(--w-line);border-radius:10px;box-shadow:0 8px 24px rgba(10,50,60,.16);max-height:260px;overflow:auto}
+.enh-menu li{padding:8px 10px;border-radius:7px;cursor:pointer;color:var(--w-fg);font-size:14px}
+.enh-menu li:hover,.enh-menu li.on{background:var(--w-soft2)}
+.enh-menu li[aria-selected="true"]{font-weight:700;color:var(--w-acc)}
+.enh-menu li.enh-new{color:var(--w-fg2);cursor:default}
+.srow .sbtns{display:flex;gap:6px;flex:none}
+@media(max-width:1023px){.srow .sdet{flex:1 1 50%!important;padding-left:0}.srow .sbtns{order:10;flex-basis:100%;justify-content:flex-end}.srow .sdet+.sp{display:none}}
 </style>
 </head>
 <body>
@@ -1134,7 +1145,7 @@ const DEF_PROMPT=`請根據以下我的工作紀錄，撰寫「{期間}」的個
 5. 繁體中文，條列為主，適合放進年終自評。`;
 
 const DEF_SET={displayName:'馬哥',teamsName:'馬哥',hoursPerDay:8,leaveUnit:1,
-  leaveTypes:['特休','補休','病假','事假','公假','其他'],places:['花壇','總部','中辦','中所'],
+  leaveTypes:['特休','補休','生日假','病假','事假','公假','婚假','喪假','產檢假','陪產假','家庭照顧假','生理假','其他'],places:['花壇','總部','中辦','中所'],
   dailyItemLimit:5,workCategories:['專案','例行','會議','突發','授課','助教','導師','考官','跟課','聽課','異地辦公','其他'],exportDefaults:{priv:false,extras:false,loc:false,leave:false},
   holidaysText:HOLI_TEXT,theme:'auto',edFont:'mono',aiPrompt:DEF_PROMPT,lastBackup:null,importStartYear:2024};
 const PCOLORS=['#0A97D9','#4C9F38','#FD6925','#DD1367','#26BDE2','#A21942','#FCC30B','#3F7E44','#E5243B','#BF8B2E','#FD9D24','#19486A','#DDA63A','#56C02B','#00689D','#FD6925','#E5243B'];
@@ -1547,7 +1558,7 @@ function aiPack(from,to,o){
     st.forEach(x=>L.push(`- ${x.name}（${x.cat}）：${x.first}～${x.last}，投入 ${x.days} 天，辦公室 ${fh(x.office)}hr＝${fh(x.office/hpd())} 人日${o.ot?`；申報 ${fh(x.decl)}hr、無償 ${fh(x.unpaid)}hr`:''}；完成 ${x.done} 項、交付 ${x.deliv} 項`))}
   if(o.ontime){const S=calcStats(from,to);L.push('','【準時率與延遲】',`- 有 DL 的交付 ${S.ontime.n} 項，準時 ${S.ontime.ok} 項（${S.ontime.n?Math.round(S.ontime.ok/S.ontime.n*100):'—'}%）`,`- 延遲 ${S.delays.n} 次；原因：${Object.entries(S.delays.tags).map(([k,v])=>`${k} ${v}`).join('、')||'無'}`)}
   if(o.ot){const S=calcStats(from,to);L.push('','【加班】',`- 無償 ${fh(S.unpaid)}hr，申報 ${fh(S.decl)}hr，轉補休 ${fh(S.comp)}hr`)}
-  if(o.leave){const S=calcStats(from,to);L.push('','【請假】',...(Object.entries(S.leaves).map(([k,v])=>`- ${k} ${fh(v)}hr（${fh(v/hpd())} 天）`)),Object.keys(S.leaves).length?'':'（無）')}
+  if(o.leave){const S=calcStats(from,to);L.push('','【請假】',...(Object.entries(S.leaves).map(([k,v])=>`- ${k} ${fmtLeave(k,v)}`)),Object.keys(S.leaves).length?'':'（無）')}
   if(o.priv){L.push('','【私記】');Object.keys(db.days).filter(d=>d>=from&&d<=to).sort().forEach(d=>{const p=privPart(db.days[d].rawText);if(p.trim())L.push(`${d}：${p.trim().replace(/\n/g,'／')}`)})}
   return L.filter(x=>x!==undefined).join('\n')}
 function privPart(text){const ls=String(text||'').split('\n');const i=ls.findIndex(l=>/^[—─\-=_]{3,}$/.test(N(l))||/^私記/.test(N(l)));if(i<0)return'';return ls.slice(i+1).filter(l=>!/^私記/.test(N(l))).join('\n')}
@@ -1990,7 +2001,7 @@ function wcDetailCard(title,icon,kind,content,extra=''){
 function pgDayDetail(){
  const D=S.day,txt=dayText(D),r=parseDay(txt);const header=r.header;
  const loc=(header.locations||[]).map(l=>`<div class="wc-detail-row"><span>${l.trip?'💼 出差':'🏢 辦公'}｜${esc(l.place)}${l.activity?'｜'+esc(l.activity):''}</span><span class="sub">${esc(l.start||'')} ${l.end?'～'+esc(l.end):''}</span></div>`).join('')||'<div class="wc-detail-empty">沒有辦公地紀錄</div>';
- const leave=(header.leaves||[]).map(x=>`<div class="wc-detail-row"><span>${esc(x.type)}</span><b>${fh(x.hours)}h</b></div>`).join('')||'<div class="wc-detail-empty">無請假</div>';
+ const leave=(header.leaves||[]).map(x=>`<div class="wc-detail-row"><span>${esc(x.type)}</span><b>${fmtLeave(x.type,x.hours)}</b></div>`).join('')||'<div class="wc-detail-empty">無請假</div>';
  const cards=[
  wcDetailCard('辦公地／出差','💼','office',loc),
  wcDetailCard('請假／補休','🌿','leave',leave),
@@ -2047,7 +2058,7 @@ function dlShort(dl){return /^\d{4}-\d\d-\d\d$/.test(dl||'')?md(dl):String(dl||'
 function pgDayMain(D,text,ro,H){
  const st=dayStatus(D,text),isToday=D===today();
  const places=(st.h.locations||[]).filter(l=>String(l.place||'').trim()).map(l=>`${l.trip?'出差 ':''}<b>${esc(l.place)}</b>${l.start&&l.end?` <small>${esc(l.start)}–${esc(l.end)}</small>`:''}`).join('、');
- const leaves=(st.h.leaves||[]).filter(x=>Number(x.hours)>0).map(x=>`${esc(x.type)} ${fh(x.hours)}h`).join('、');
+ const leaves=(st.h.leaves||[]).filter(x=>Number(x.hours)>0).map(x=>`${esc(x.type)} ${fmtLeave(x.type,x.hours)}`).join('、');
  const s1done=st.reported||!st.prev.length;
  const chip=H.h[D]?`<span class="chip late">${esc(H.h[D])}</span>`:!isWorkday(D)?'<span class="chip">假日</span>':H.w[D]?'<span class="chip plan">補班日</span>':'';
  return `<div class="dayhead day3-head">${isInner()?'<button class="xbtn back" data-act="back" aria-label="上一頁（Esc）">‹</button>':''}<h1>${md(D)}（${wd(D)}）</h1>${isToday?'<span class="chip plan">今天</span>':`<button class="btn sm" data-act="openday" data-d="${today()}">回今天 <kbd class="hide-m">T</kbd></button>`}${chip}
@@ -2083,7 +2094,7 @@ function dayStep1(D,st,ro){
  return `<section class="step ${st.reported?'is-done':st.prev.length?'is-active':''}" aria-label="步驟一 盤點昨日">${stepHead(1,st.reported,'盤點昨日',meta,right)}${rows?`<div class="srows">${rows}</div>`:''}${st.reported&&!ro?'<button class="step-tap" data-act="wcprevopen" aria-label="查看盤點"></button>':''}</section>`}
 function dayStep2(D,st,ro,s1done){
  const items=st.p.today,n=openTodoCount();
- const rows=items.map((it,i)=>`<div class="srow">${it.star?'<span class="sstar" title="主星">★</span>':'<span class="sstar"></span>'}<span class="stag cat">${esc(it.cat)}</span><b class="sname">${esc(it.project||it.title)}</b>${it.title&&it.title!==it.project?`<span class="sdet">${esc(it.title)}</span>`:''}<span class="sp"></span>${it.dl?`<span class="sdl">DL ${esc(dlShort(it.dl))}</span>`:''}<b class="sh">${it.est!=null?fh(it.est)+'h':'—'}</b>${ro?'':`<button class="btn sm sx" data-act="todaydel" data-i="${i}" aria-label="移除 ${esc(it.project||it.title)}">移除</button>`}</div>`).join('');
+ const rows=items.map((it,i)=>`<div class="srow">${it.star?'<span class="sstar" title="主星">★</span>':'<span class="sstar"></span>'}<span class="stag cat">${esc(it.cat)}</span><b class="sname">${esc(it.project||it.title)}</b>${it.title&&it.title!==it.project?`<span class="sdet">${esc(it.title)}</span>`:''}<span class="sp"></span>${it.dl?`<span class="sdl">DL ${esc(dlShort(it.dl))}</span>`:''}<b class="sh">${it.est!=null?fh(it.est)+'h':'—'}</b>${ro?'':`<span class="sbtns"><button class="btn sm sx" data-act="todayedit" data-i="${i}" aria-label="編輯 ${esc(it.project||it.title)}">編輯</button><button class="btn sm sx" data-act="todaydel" data-i="${i}" aria-label="移除 ${esc(it.project||it.title)}">移除</button></span>`}</div>`).join('');
  const projs=Object.values(db.projects).filter(p=>p.status!=='結案').map(p=>`<option value="${esc(p.name)}">`).join('');
  const cat=S.qaCat&&categories().includes(S.qaCat)?S.qaCat:categories()[0];
  const form=ro?'':`${S.qaOpen?'':'<button class="btn qopen" data-act="qaopen">＋ 新增工作</button>'}<div class="qadd ${S.qaOpen?'open':''}" role="group" aria-label="新增今日工作"><label>分類<select id="qa-cat">${categories().map(c=>`<option ${c===cat?'selected':''}>${esc(c)}</option>`).join('')}</select></label><label class="qp">專案<input id="qa-proj" type="text" list="qa-projs" placeholder="輸入或選擇" autocomplete="off"><datalist id="qa-projs">${projs}</datalist></label><label class="qd">內容<input id="qa-detail" type="text" placeholder="例如：上架＋回饋處理"></label><label class="qh">時數<input id="qa-h" type="text" inputmode="decimal" placeholder="1.5"></label><button class="btn pri" data-act="todayadd">加入</button></div>`;
@@ -2108,6 +2119,19 @@ function todayAdd(){const D=S.day;const cat=$('#qa-cat')?.value||categories()[0]
  S.qaCat=cat;saveDraftNow();
  dayCommit(D,insertTodayLine(dayText(D),guideLine({category:cat,project,hours:h,detail})),'已加入今日工作');
  setTimeout(()=>$('#qa-proj')?.focus(),0)}
+function todayEdit(i){const D=S.day,it=parseDay(dayText(D)).today[+i];if(!it)return;const C=categories();
+ const t=T().find(x=>x.date===D&&x.rawLine&&x.rawLine.trim()===it.raw.trim());
+ const dlIso=t?.dl||(it.dl?parseDateText(it.dl,D):'');const detail=it.title&&it.title!==it.project?it.title:'';
+ openModal({title:`編輯今日工作｜${md(D)}`,body:`<div class="fgrid"><label class="fl">分類<select id="te-cat">${C.concat(C.includes(it.cat)?[]:[it.cat]).map(c=>`<option ${c===it.cat?'selected':''}>${esc(c)}</option>`).join('')}</select></label><label class="fl">專案<input id="te-proj" list="te-projs" value="${esc(it.project)}"><datalist id="te-projs">${Object.values(db.projects).filter(p=>p.status!=='結案').map(p=>`<option value="${esc(p.name)}">`).join('')}</datalist></label><label class="fl">內容<input id="te-detail" value="${esc(detail)}"></label><label class="fl">預估（hr）<input id="te-est" inputmode="decimal" value="${it.est==null?'':fh(it.est)}" placeholder="例如 2 或 30m"></label><label class="fl">DL（選填）<input id="te-dl" value="${esc(dlIso?mmdd(dlIso).replace(/^(\d\d)(\d\d)$/,'$1/$2'):'')}" placeholder="例：1030、10/30"></label><label class="fl" style="flex-direction:row;align-items:center;gap:8px;margin-top:22px"><input type="checkbox" id="te-star" ${it.star?'checked':''}> 主星 ⭐</label></div><p class="sub">會改寫今天日誌裡的這一行，Teams 預覽和統計一起更新。</p>`,
+  foot:'<button class="btn" data-act="mclose">取消</button><button class="btn pri" id="te-save">儲存</button>',
+  onMount:ov=>{const save=()=>{const cat=$('#te-cat',ov).value,project=$('#te-proj',ov).value.trim(),det=$('#te-detail',ov).value.trim(),hv=$('#te-est',ov).value.trim(),h=hv?qaHours(hv):null,dv=$('#te-dl',ov).value.trim(),star=$('#te-star',ov).checked;
+   if(!project){toast('請填專案');return}if(/[_\n]/.test(project)){toast('專案名稱不能含底線');return}if(h!=null&&!(Number.isFinite(h)&&h>=0)){toast('預估請填數字，例如 2 或 30m');return}
+   let dl='';if(dv){dl=parseDateText(dv,D);if(!dl){toast('DL 日期看不懂，例：1030 或 10/30');return}}
+   const keep=String(it.raw).split(/[｜|]/).slice(1).map(x=>x.trim()).filter(x=>x&&x!=='⭐'&&!/^(DL|dl)\s*[:：]/.test(x));
+   let line=guideLine({category:cat,project,hours:h,detail:det});if(star)line+='｜⭐';if(dl)line+='｜DL：'+mmdd(dl);if(keep.length)line+='｜'+keep.join('｜');
+   saveDraftNow();const text=prevLineReplace(dayText(D),it.raw,line);if(text==null){toast('找不到原文這一行，請用原文編輯');return}
+   closeModal();dayCommit(D,text,'已更新')};
+   $('#te-save',ov).onclick=save;$$('input',ov).forEach(x=>x.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing&&x.type!=='checkbox'){e.preventDefault();save()}}))}})}
 function todayDel(i){const D=S.day,it=parseDay(dayText(D)).today[+i];if(!it)return;
  confirmBox(`從今日工作移除「${it.project||it.title}」？`,()=>{const ls=dayText(D).split('\n'),b=ls.findIndex(l=>secOf(N(l))==='today');let j=-1;for(let k=b+1;k<ls.length;k++){if(ls[k].trim()===it.raw.trim()){j=k;break}}if(j<0){toast('找不到原文這一行，請用原文編輯');return}ls.splice(j,1);dayCommit(D,ls.join('\n'),'已移除')},'移除')}
 
@@ -2157,7 +2181,8 @@ function guidePrev(){
  const D=prevWorkday(S.day);
  const plans=T().filter(t=>t.date===D&&t.origin==='plan'&&!t.archived);
  let out;
- if(plans.length)out=plans.map(t=>({id:t.id,raw:t.rawLine||'',category:t.category,project:pname(t.projectId),detail:taskContent(t)===pname(t.projectId)?'':taskContent(t),est:t.estHours,actual:t.actual?.office,status:'待確認'}));
+ const own=t=>{const it=t.rawLine?parseItem(t.rawLine,'today'):null;return it&&it.ok&&it.project?it.project:pname(t.projectId)};
+ if(plans.length)out=plans.map(t=>({id:t.id,raw:t.rawLine||'',category:t.category,project:own(t),detail:taskContent(t)===own(t)?'':taskContent(t),est:t.estHours,actual:t.actual?.office,status:'待確認'}));
  // 匯入的歷史文字可能還沒轉成待辦；僅將原文工作項目帶入供人工確認。
  else out=parseDay(db.days[D]?.rawText||'').today.map((it,i)=>({id:'raw-'+D+'-'+i,raw:it.raw.trim(),category:it.cat,project:it.project,detail:it.title===it.project?'':it.title,est:it.est,actual:null,status:'待確認'}));
  // 標記可能重複：名稱或內容相近的兩筆
@@ -2232,7 +2257,7 @@ function wcSectionCard(key,label,D,extra=''){
 function wcLeaveText(d){
  const leaves=parseDay(dayText(d)).header.leaves||[];
  const total=leaves.reduce((n,v)=>n+(Number(v.hours)||0),0);
- return total>0?'請假 '+fh(total)+'h':'';
+ return total>0?'請假 '+leaves.filter(v=>Number(v.hours)>0).map(v=>fmtLeave(v.type,v.hours)).join('＋'):'';
 }
 function wcClock(d){
  const info=dayInfo(d), dd=dayText(d), loc=parseDay(dd).header.locations||[];
@@ -2296,7 +2321,7 @@ function guideCompleteText(){
 function guideHeaderHTML(){
  guideInitHeader();
  const loc=guidePlaces.map((x,i)=>`<div class="g-item"><div class="fgrid">${placePicker(i,x.place)}<label class="fl">工作性質<select data-gplace="${i}" data-gfield="trip"><option value="0" ${!x.trip?'selected':''}>一般辦公</option><option value="1" ${x.trip?'selected':''}>出差</option></select></label><label class="fl">實際工作項目<select data-gplace="${i}" data-gfield="activity"><option value="" ${!x.activity?'selected':''}>請選擇（選填）</option>${['授課','助教','導師','考官','跟課','聽課','會議','異地辦公','其他'].concat(x.activity&&!['授課','助教','導師','考官','跟課','聽課','會議','異地辦公','其他'].includes(x.activity)?[x.activity]:[]).map(a=>`<option value="${esc(a)}" ${(a==='其他'?String(x.activity||'').startsWith('其他'):x.activity===a)?'selected':''}>${esc(a)}${a==='授課／助教／導師／考官'||a==='跟課／聽課'?'（歷史資料）':''}</option>`).join('')}</select></label><label class="fl" data-other-wrap="${i}" style="${String(x.activity||'').startsWith('其他')?'':'display:none'}">其他工作項目<input data-gplace="${i}" data-gfield="activityOther" value="${esc(String(x.activity||'').startsWith('其他：')?x.activity.slice(3):'')}" placeholder="請輸入工作項目"></label><label class="fl">開始時間<input type="time" data-gplace="${i}" data-gfield="start" value="${esc(x.start||'08:30')}"></label><label class="fl">結束時間<input type="time" data-gplace="${i}" data-gfield="end" value="${esc(x.end||'17:30')}"></label></div><button class="btn sm" data-guide="remove-place" data-i="${i}">移除</button></div>`).join('');
- const leave=guideLeaves.map((x,i)=>`<div class="g-item"><div class="fgrid"><label class="fl">假別<select data-gleave="${i}" data-gfield="type">${['特休','補休','事假','病假','公假','其他'].map(y=>`<option ${x.type===y?'selected':''}>${y}</option>`).join('')}${!['特休','補休','事假','病假','公假','其他'].includes(x.type)?`<option selected>${esc(x.type)}</option>`:''}</select></label><label class="fl">請假時數 hr<input type="number" min="0" step="0.5" data-gleave="${i}" data-gfield="hours" value="${esc(x.hours)}"></label></div><button class="btn sm" data-guide="remove-leave" data-i="${i}">移除</button></div>`).join('');
+ const leave=guideLeaves.map((x,i)=>`<div class="g-item"><div class="fgrid"><label class="fl">假別<select data-gleave="${i}" data-gfield="type">${leaveTypeList().map(y=>`<option ${x.type===y?'selected':''}>${esc(y)}</option>`).join('')}${!leaveTypeList().includes(x.type)?`<option selected>${esc(x.type)}</option>`:''}</select></label><label class="fl">請假時數 hr<input type="number" min="0" step="0.5" data-gleave="${i}" data-gfield="hours" value="${esc(x.hours)}"></label></div><button class="btn sm" data-guide="remove-leave" data-i="${i}">移除</button></div>`).join('');
  return `<div class="guide-header"><h2>當日基本資料</h2><div class="sub">辦公地可分時段、請假可多筆；填寫後按「儲存基本資料」，同步更新當日日誌及統計。</div><div class="row" style="justify-content:space-between;margin:10px 0 6px"><b>辦公地／出差</b><button class="btn sm" data-guide="add-place">＋ 新增地點／時段</button></div>${loc||'<div class="sub">尚未設定辦公地</div>'}<div class="row" style="justify-content:space-between;margin:12px 0 6px"><b>請假</b><button class="btn sm" data-guide="add-leave">＋ 新增請假</button></div>${leave||'<div class="sub">無請假</div>'}<div class="g-actions guide-confirm-actions"><button class="btn pri guide-wide-btn" data-guide="save-header">儲存基本資料</button><span class="sub">儲存後同步更新當日首頁及統計</span></div></div>`;
 }
 function guideLoadToday(){guideItems=parseDay(guideSource()).today.map(i=>({category:i.cat,project:i.project,hours:i.est,detail:i.doneText||((i.title!==i.project)?i.title:''),raw:i.raw.trim()}));guideItemsDay=S.day}
@@ -2305,7 +2330,7 @@ function guideRender(){const host=$('#guided-host');if(!host)return;
  if(S.guideSub&&guideItemsDay!==S.day)guideLoadToday();
  guideInitHeader();const C=categories();const opts=C.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
  const prev=guidePrev();
- if(!S.guideSub&&!wcPrevSub){host.innerHTML=`<section class="guided">${guideHeaderHTML()}</section>`;host.querySelectorAll('[data-gplace],[data-gleave]').forEach(node=>{const update=()=>{const isPlace=node.hasAttribute('data-gplace'),i=+(isPlace?node.dataset.gplace:node.dataset.gleave),o=(isPlace?guidePlaces:guideLeaves)[i];if(!o)return;if(node.dataset.gfield==='placeChoice'){const wrap=host.querySelector('[data-place-other="'+i+'"]');if(wrap)wrap.style.display=node.value==='其他'?'':'none';o.place=node.value==='其他'?(host.querySelector('[data-gplace="'+i+'"][data-gfield="placeCustom"]')?.value.trim()||''):node.value}else if(node.dataset.gfield==='placeCustom')o.place=node.value.trim();else if(node.dataset.gfield==='activityOther')o.activity='其他'+(node.value.trim()?'：'+node.value.trim():'');else o[node.dataset.gfield]=node.dataset.gfield==='trip'?node.value==='1':node.dataset.gfield==='hours'?Number(node.value):node.value;if(node.dataset.gfield==='activity'){const wrap=host.querySelector('[data-other-wrap="'+i+'"]');if(wrap)wrap.style.display=node.value==='其他'?'':'none'}};node.addEventListener('input',update);node.addEventListener('change',update)});return}
+ if(!S.guideSub&&!wcPrevSub){host.innerHTML=`<section class="guided">${guideHeaderHTML()}</section>`;host.querySelectorAll('[data-gplace],[data-gleave]').forEach(node=>{const update=()=>{const isPlace=node.hasAttribute('data-gplace'),i=+(isPlace?node.dataset.gplace:node.dataset.gleave),o=(isPlace?guidePlaces:guideLeaves)[i];if(!o)return;if(node.dataset.gfield==='placeChoice'){const wrap=host.querySelector('[data-place-other="'+i+'"]');if(wrap)wrap.style.display=node.value==='其他'?'':'none';o.place=node.value==='其他'?(host.querySelector('[data-gplace="'+i+'"][data-gfield="placeCustom"]')?.value.trim()||''):node.value}else if(node.dataset.gfield==='placeCustom')o.place=node.value.trim();else if(node.dataset.gfield==='activityOther')o.activity='其他'+(node.value.trim()?'：'+node.value.trim():'');else o[node.dataset.gfield]=node.dataset.gfield==='trip'?node.value==='1':node.dataset.gfield==='hours'?Number(node.value):node.value;if(!isPlace&&node.dataset.gfield==='type'&&o.type==='生日假'){o.hours=hpd();const hh=host.querySelector('[data-gleave="'+i+'"][data-gfield="hours"]');if(hh)hh.value=hpd()}if(node.dataset.gfield==='activity'){const wrap=host.querySelector('[data-other-wrap="'+i+'"]');if(wrap)wrap.style.display=node.value==='其他'?'':'none'}};node.addEventListener('input',update);node.addEventListener('change',update)});return}
  host.innerHTML=`<section class="guided"><h2>${S.guideSub?"今日工作輸入｜快速整理":"每日基本資料與昨日工作盤點"}</h2>${S.guideSub?'<div class="guided-tabs"><button class="btn pri" data-guide="tab-today">今日工作項目</button><button class="btn" data-guide="categories">＋ 分類</button></div>':''}
  ${S.guideSub?`<div class="fgrid"><label class="fl">分類<select id="gd-cat">${opts}</select></label><label class="fl">專案／工作名稱<input id="gd-project" type="text" list="gd-projects" placeholder="輸入工作名稱"><datalist id="gd-projects">${Object.values(db.projects).map(p=>`<option value="${esc(p.name)}">`).join('')}</datalist></label><label class="fl">預估工時 hr<input type="number" min="0" step="0.5" id="gd-hour" placeholder="例如 3"></label><label class="fl">內容<input id="gd-detail" type="text" placeholder="例如：公告更新、內容巡檢"></label></div><div class="g-actions"><button class="btn pri" data-guide="add">＋ 加入工作項目</button><button class="btn" data-guide="from-text">讀取現有今日項目</button></div><div id="gd-list">${guideItems.map((x,i)=>`<div class="g-item row"><span style="flex:1">${esc(x.category)}-${esc(x.project)}_${hrTok(x.hours)}${x.detail?'，'+esc(x.detail):''}</span><button class="btn sm" data-guide="remove" data-i="${i}">移除</button></div>`).join('')}</div><div class="g-actions"><button class="btn pri" data-guide="output-today">輸出到今日工作項目</button><button class="btn" data-guide="copy-today">複製條列文字</button></div>`:
  `<div class="sub">逐項確認完成狀態、實際工時與成果，並可新增突發工作。</div><div class="g-actions prev-import-actions"><button class="btn" data-act="wcotherday">🔎 其他工作日項目</button><button class="btn" data-guide="add-urgent">＋ 新增突發工作</button></div><div class="prev-source-wrap"><div class="sub">來源：${prevWorkday(S.day)}｜已自動顯示上一工作日項目；確認盤點後才寫入日誌。</div>${prev.length?prev.map((x,i)=>{const r=guideReview[x.id]||{};return`<div class="g-item ${x.dup?'g-dup':''}"><div class="row" style="flex-wrap:wrap"><b style="flex:1;min-width:10em">${esc(x.category)}－${esc(x.project)}${x.dup?' <span class="stag warn">可能重複</span>':''}</b><span class="sub">原預估 ${x.est==null?'未填':fh(x.est)+'hr'}</span><button class="btn sm" data-guide="prev-edit" data-id="${x.id}">編輯</button><button class="btn sm" data-guide="prev-remove" data-id="${x.id}">移除</button></div>${x.detail?`<div class="sub">${esc(x.detail)}</div>`:''}<div class="fgrid"><label class="fl">結果<select data-gstatus="${x.id}"><option value="待確認" ${r.status==='待確認'?'selected':''}>待確認／略過</option><option value="完成" ${r.status==='完成'?'selected':''}>完成</option><option value="未完成" ${r.status==='未完成'?'selected':''}>未完成</option></select></label>${r.status==='完成'?`<label class="fl">實際工時 hr<input type="number" min="0" step="0.5" data-gactual="${x.id}" value="${esc(r.actual??'')}" placeholder="自行填寫"></label><label class="fl">實際完成內容<input type="text" data-gdetail="${x.id}" value="${esc(r.detail??x.detail)}"></label>`:''}${r.status==='未完成'?`<label class="fl">未完成原因<input type="text" data-greason="${x.id}" value="${esc(r.reason||'')}"></label><label class="fl">預計完成 MMDD<input type="text" data-gdate="${x.id}" value="${esc(r.date||mmdd(S.day))}"></label>`:''}</div></div>`}).join(''):'<div class="empty">上一工作日尚無規劃項目，可先使用自由文字日誌。</div>'}</div><div class="guide-urgent-wrap"><h3>上一工作日新增突發工作</h3>${guideUrgents.length?guideUrgents.map((u,i)=>`<div class="g-item"><div class="fgrid"><label class="fl">分類<select data-gurgent="${i}" data-ufield="category">${C.map(c=>`<option value="${esc(c)}" ${u.category===c?'selected':''}>${esc(c)}</option>`).join('')}</select></label><label class="fl">工作名稱<input data-gurgent="${i}" data-ufield="project" value="${esc(u.project)}" placeholder="突發工作名稱"></label><label class="fl">狀態<select data-gurgent="${i}" data-ufield="status"><option value="完成" ${u.status!=='未完成'?'selected':''}>完成</option><option value="未完成" ${u.status==='未完成'?'selected':''}>未完成</option></select></label><label class="fl">實際工時 hr<input type="number" min="0" step="0.5" data-gurgent="${i}" data-ufield="hours" value="${esc(u.hours)}"></label>${u.status==='未完成'?`<label class="fl">未完成原因<input data-gurgent="${i}" data-ufield="reason" value="${esc(u.reason||'')}"></label><label class="fl">預計完成 MMDD<input data-gurgent="${i}" data-ufield="date" value="${esc(u.date||mmdd(S.day))}"></label>`:`<label class="fl">實際完成內容<input data-gurgent="${i}" data-ufield="detail" value="${esc(u.detail)}"></label>`}</div><div class="g-actions"><button class="btn sm" data-guide="remove-urgent" data-i="${i}">移除</button></div></div>`).join(''):'<div class="sub">目前沒有新增突發工作。</div>'}</div><div class="g-actions guide-confirm-actions"><button class="btn pri guide-wide-btn" data-guide="output-prev">確認上一工作日盤點</button><button class="btn" data-guide="copy-prev">複製條列文字</button></div>`}
@@ -2316,7 +2341,7 @@ function guideRender(){const host=$('#guided-host');if(!host)return;
   if(node.dataset.gfield==='placeChoice'){const wrap=host.querySelector('[data-place-other="'+i+'"]');if(wrap)wrap.style.display=node.value==='其他'?'':'none';o.place=node.value==='其他'?(host.querySelector('[data-gplace="'+i+'"][data-gfield="placeCustom"]')?.value.trim()||''):node.value}
   else if(node.dataset.gfield==='placeCustom')o.place=node.value.trim();
   else if(node.dataset.gfield==='activityOther')o.activity='其他'+(node.value.trim()?'：'+node.value.trim():'');
-  else o[node.dataset.gfield]=node.dataset.gfield==='trip'?node.value==='1':node.dataset.gfield==='hours'?Number(node.value):node.value;
+  else o[node.dataset.gfield]=node.dataset.gfield==='trip'?node.value==='1':node.dataset.gfield==='hours'?Number(node.value):node.value;if(!isPlace&&node.dataset.gfield==='type'&&o.type==='生日假'){o.hours=hpd();const hh=host.querySelector('[data-gleave="'+i+'"][data-gfield="hours"]');if(hh)hh.value=hpd()}
   if(node.dataset.gfield==='activity'){const wrap=host.querySelector('[data-other-wrap="'+i+'"]');if(wrap)wrap.style.display=node.value==='其他'?'':'none'}
  };node.addEventListener('input',update);node.addEventListener('change',update)});
  host.querySelectorAll('[data-gurgent]').forEach(el=>{const update=()=>{const u=guideUrgents[+el.dataset.gurgent];if(u){u[el.dataset.ufield]=el.value;if(el.dataset.ufield==='status')guideRender()}};el.addEventListener('input',update);el.addEventListener('change',update)});
@@ -2326,10 +2351,18 @@ const WC_REVIEW_KEY='workcal.review.summary.v1';
 let wcReviews={};try{wcReviews=JSON.parse(localStorage.getItem(WC_REVIEW_KEY)||'{}')||{}}catch(e){wcReviews={}}
 function wcSaveReview(){db.reviews=wcReviews;persist()}
 /* 舊版存在獨立 localStorage 的資料，第一次啟動時併入 db；之後一律跟著 db 備份、清除、還原 */
+function bdayWarnings(D,leaves){const W=[],y=D.slice(0,4),hr=hpd();
+  for(const x of leaves||[]){if(x.type!=='生日假')continue;if(Number(x.hours)!==hr)W.push(`生日假是一次請一天（${hr} 小時），這筆填了 ${fh(Number(x.hours)||0)} 小時。`)}
+  if((leaves||[]).some(x=>x.type==='生日假')){const other=Object.keys(db.days).filter(d=>d!==D&&d.slice(0,4)===y&&(db.days[d].leaves||[]).some(x=>x.type==='生日假'));if(other.length)W.push(`${y} 年已經在 ${other.map(md).join('、')} 請過生日假。`)}
+  return W}
+function dayHour(h){h=Math.round((Number(h)||0)*100)/100;const hr=hpd(),neg=h<0;h=Math.abs(h);const d=Math.floor(h/hr+1e-9),r=Math.round((h-d*hr)*100)/100;const t=d&&r?`${d} 天 ${fh(r)}h`:d?`${d} 天`:`${fh(r)}h`;return (neg?'-':'')+t}
+function fmtLeave(type,h){h=Number(h)||0;if(type==='補休')return fh(h)+'h';if(type==='生日假'){const d=h/hpd();return Number.isInteger(Math.round(d*100)/100)?`${fh(d)} 天`:dayHour(h)}return dayHour(h)}
+function leaveTypeList(){const L=db.settings.leaveTypes;return Array.isArray(L)&&L.length?L:['特休','補休','生日假','病假','事假','公假','婚假','喪假','產檢假','陪產假','家庭照顧假','生理假','其他']}
+function migrateLeaveTypes(){const st=db.settings;if(!st||(st.leaveTypesVer||0)>=1)return false;st.leaveTypesVer=1;const cur=Array.isArray(st.leaveTypes)?st.leaveTypes:[];const add=['特休','補休','生日假','病假','事假','公假','婚假','喪假','產檢假','陪產假','家庭照顧假','生理假','其他'].filter(x=>!cur.includes(x));const oth=cur.includes('其他');st.leaveTypes=cur.filter(x=>x!=='其他').concat(add.filter(x=>x!=='其他'),'其他');return true}
 function migrateHoli(){const st=db.settings;if(!st||(st.holiVer||0)>=2)return false;st.holiVer=2;
   if(st.holidaysText&&/^2027-\d\d-\d\d.*待核/m.test(st.holidaysText)){const keep=st.holidaysText.split('\n').filter(l=>!/^2027-/.test(l.trim())).join('\n').replace(/\s+$/,'');const add=HOLI_TEXT.split('\n').filter(l=>/^2027-/.test(l)).join('\n');st.holidaysText=keep+'\n'+add;HOL_SRC=null}return true}
 function rebindDb(){
-  if(migrateHoli())persist();
+  const m1=migrateHoli(),m2=migrateLeaveTypes();if(m1||m2)persist();
   const first=!rebindDb.done;
   if(!db.teamsConfirmed)db.teamsConfirmed=first?Object.assign({},teamsConfirmed):{};
   if(!db.reviews)db.reviews=first?Object.assign({},wcReviews):{};
@@ -2356,6 +2389,7 @@ function guideAction(type,el){
  if(type==='add-urgent'){guideUrgents.push({category:'突發',project:'',status:'完成',hours:'',detail:'',reason:'',date:mmdd(S.day)});guideRender();return}
  if(type==='remove-urgent'){if(ask('確認移除這筆尚未確認的突發工作？',()=>guideAction(type,el),'移除')){guideUrgents.splice(+el.dataset.i,1);guideRender()}return}
 
+ if(type==='save-header'&&!guideAction._bdayOk){const W=bdayWarnings(S.day,guideLeaves);if(W.length){confirmBox('生日假提醒：<br>'+W.map(esc).join('<br>')+'<br><span class="sub">確定還是要這樣存嗎？</span>',()=>{guideAction._bdayOk=true;try{guideAction(type,el)}finally{guideAction._bdayOk=false}},'照樣儲存');return}}
  if(type==='save-header'){
   const before=guideSource(),text=guideMergeHeader(before);
   if(text!==before&&db.days[S.day]?.rawText&&before!==template(S.day)&&!ask('確認更新當日日誌的辦公地與請假欄位？其餘文字會保留。',()=>guideAction(type,el),'儲存'))return;
@@ -2826,19 +2860,19 @@ function pgLeaveManage(){const asOf=today(),s=db.settings,z=leaveSummary(asOf),h
  <div class="lv-cards">
   <section class="lv-card" aria-label="特休"><div class="lv-l">特休剩餘</div>
    ${rem==null?`<div class="lv-n"><b>待設定</b></div><div class="lv-s">先填公司核給的特休時數，才算得出剩多少。</div><div><button class="btn sm pri" data-act="leaveedit">填核給額度</button></div>`:
-   `<div class="lv-n"><b>${fh(rem/hr)}</b><span> 天</span><small>（${fh(rem)}h）</small></div><div class="lv-bar"><i style="width:${usedPct}%"></i></div><div class="lv-s">已休 ${fh(z.special/hr)}／核給 ${fh(z.available/hr)} 天</div><div class="lv-s warnc">${slashDate(z.ed)} 到期・還有 ${left} 天</div>`}
+   `<div class="lv-n"><b>${dayHour(rem)}</b></div><div class="lv-bar"><i style="width:${usedPct}%"></i></div><div class="lv-s">已休 ${dayHour(z.special)}／核給 ${dayHour(z.available)}</div><div class="lv-s warnc">${slashDate(z.ed)} 到期・還有 ${left} 天</div>`}
   </section>
   <section class="lv-card" aria-label="補休"><div class="lv-l">補休餘額</div><div class="lv-n"><b>${fh(z.compBalance)}</b><span> h</span></div><div class="lv-bar"><i style="width:${compPct}%"></i></div><div class="lv-s">公司核給 ${fh(z.compEarned)}h・已用 ${fh(z.compUsed+z.compDebits)}h</div><div class="lv-s">${otH?`本期加班紀錄 ${fh(otH)}h（不會自動轉成補休）`:'本期沒有加班紀錄'}</div></section>
-  <section class="lv-card" aria-label="今年請假"><div class="lv-l">${year} 年已請</div><div class="lv-n"><b>${fh(yTotal/hr)}</b><span> 天</span><small>（${fh(yTotal)}h）</small></div><div class="lv-chips">${types.map(k=>`<span>${esc(k)} ${fh((ySum.leaves[k]||0)/hr)}</span>`).join('')}</div><div class="lv-s">本月 ${fh(mTotal/hr)} 天</div></section>
+  <section class="lv-card" aria-label="今年請假"><div class="lv-l">${year} 年已請</div><div class="lv-n"><b>${dayHour(yTotal)}</b></div><div class="lv-chips">${types.map(k=>`<span>${esc(k)} ${(ySum.leaves[k]||0)?fmtLeave(k,ySum.leaves[k]):0}</span>`).join('')}</div><div class="lv-s">本月 ${mTotal?dayHour(mTotal):'0'}</div></section>
  </div>
  <div class="lv-row">
   <section class="card lv-plan" aria-label="特休規劃"><div class="row"><h3 style="flex:1;margin:0">特休規劃</h3><button class="btn pri sm" data-act="go" data-p="leaveplan">排休</button></div>
-   <p class="lv-p">${avg==null?'設定核給額度後，會算出到期前每月要休幾天。':rem<=0?'本期特休已休完。':`到期前還有 ${Math.max(1,Math.round(left/30.4))} 個月，平均每月要休 <b>${fh(Math.round(avg*10)/10)} 天</b> 才休得完。`}</p>
+   <p class="lv-p">${avg==null?'設定核給額度後，會算出到期前每月要休幾天。':rem<=0?'本期特休已休完。':`到期前還有 ${Math.max(1,Math.round(left/30.4))} 個月，平均每月要休 <b>${dayHour(Math.ceil(avg*hr))}</b> 才休得完。`}</p>
    <div class="lv-chart" style="grid-template-columns:repeat(${months.length||1},minmax(0,1fr))">${months.map((m,i)=>`<div class="lv-col" title="${m}：${fh(per[i])} 天"><i style="height:${Math.max(3,per[i]/pmax*100)}%" class="${per[i]?'on':''}"></i></div>`).join('')}</div>
    <div class="lv-axis" style="grid-template-columns:repeat(${months.length||1},minmax(0,1fr))">${months.map(m=>`<span>${+m.slice(5)}月</span>`).join('')}</div>
    <div class="lv-s">長條＝各月已請＋已排的特休天數。按「排休」挑日期，只是規劃，不會變成正式請假。</div></section>
   <section class="card lv-rec" aria-label="本期請假紀錄"><h3 style="margin:0 0 8px">本期請假紀錄</h3>
-   ${recs.length?`<div class="lv-list">${recs.slice(0,40).map(r=>`<button class="lv-item" data-act="openday" data-d="${r.d}"><span>${md(r.d)}（${wd(r.d)}）${r.d>asOf?'<small class="muted"> 預定</small>':''}</span><span class="sp"></span><span>${r.list.map(x=>`${esc(x.type)} ${fh(x.hours)}h`).join('、')}</span></button>`).join('')}</div>${recs.length>40?`<div class="lv-s">只列最近 40 筆，共 ${recs.length} 筆</div>`:''}`:
+   ${recs.length?`<div class="lv-list">${recs.slice(0,40).map(r=>`<button class="lv-item" data-act="openday" data-d="${r.d}"><span>${md(r.d)}（${wd(r.d)}）${r.d>asOf?'<small class="muted"> 預定</small>':''}</span><span class="sp"></span><span>${r.list.map(x=>`${esc(x.type)} ${fmtLeave(x.type,x.hours)}`).join('、')}</span></button>`).join('')}</div>${recs.length>40?`<div class="lv-s">只列最近 40 筆，共 ${recs.length} 筆</div>`:''}`:
    '<div class="lv-empty">本期還沒有請假。<br>在「今天」頁按「編輯辦公地／請假」填寫後，會自動列在這裡。</div>'}</section>
  </div>
  <section class="lv-set" aria-label="額度設定"><span>到職日 <b>${esc(hire)}</b></span><span>年資 <b>${ten?`${ten.y} 年 ${ten.m} 月 ${ten.d} 天`:'—'}</b>${z.estimate!=null?`（本期法定 ${z.estimate} 天）`:''}</span><span>週期 <b>${s.leaveCycleStart?'自訂':'依到職日'}</b></span><span>公司核給 <b>${z.grant==null?'待設定':fh(z.grant/hr)+' 天'}</b></span>${+s.leaveReserveHours?`<span>自留 <b>${fh(s.leaveReserveHours)}h</b></span>`:''}<span class="sp"></span>
@@ -2893,7 +2927,7 @@ function pgStats(){
   const delChart=hbars(tg.map(([k2,v])=>({label:k2,total:v,vtxt:v+' 次',drill:dq({type:'delay',tag:k2}),segs:[{v,c:'var(--late)',n:k2}]})),tmax);
   const delT=tbl(['原因','次數'],tg.map(([k2,v])=>[esc(k2),v]));
   // 請假／辦公地
-  const lvT=tbl(['假別','時數','天數'],Object.entries(s.leaves).map(([k2,v])=>[esc(k2),fh(v),fh(v/hpd())]));
+  const lvT=tbl(['假別','合計'],Object.entries(s.leaves).map(([k2,v])=>[esc(k2),fmtLeave(k2,v)]));
   // 辦公地／出差採獨立年月篩選，和整頁統計期間分開。
   const officeYears=[...new Set([...Object.keys(db.days).map(d=>d.slice(0,4)),new Date().getFullYear().toString(),S.officeYear].filter(y=>/^\d{4}$/.test(y)))].sort((a,b)=>b.localeCompare(a));
   const oy=S.officeYear,om=S.officeMonth,officeAnnual=S.officePeriod==='year';
@@ -3045,6 +3079,11 @@ function finalizeHistoryProjects(){const t0=today(),cut=addD(t0,-60);let closed=
     const pending=ts.some(t=>!t.archived&&['待辦','規劃'].includes(t.status)&&(!t.date||t.date>=t0));
     if(p.status==='進行中'&&last&&last<cut&&!pending){p.status='結案';p.closedAt=last;closed++}}
   return closed}
+/* 匯入檔的專案別名：原文寫法 → 歸到哪個專案（不改日誌原文） */
+function importHistoryProjects(list){if(!Array.isArray(list))return 0;let n=0;
+  for(const x of list){if(!x||!x.name)continue;const id=resolveProject(String(x.name),'例行'),p=db.projects[id];p.aliases=p.aliases||[];
+    for(const a of x.aliases||[]){const k=nk(a);if(!k||k===nk(p.name)||p.aliases.some(y=>nk(y)===k))continue;const other=findProject(a);if(other&&other.id!==id)continue;p.aliases.push(String(a));n++}}
+  return n}
 function historyImportModal(){
  openModal({title:'歷史日誌匯入｜先預覽再確認',wide:true,body:`<p class="sub">請選擇使用 OneNote 轉換工具產生的 <b>workcal-history-v1 JSON</b>。原始 Word 請先使用隨附的轉換工具處理。<b>既有日期預設略過</b>；含私記的版本也會匯入（私記只存在你的資料內，不進 Teams 匯出）。匯入前建議下載完整 JSON 備份。</p><div class="row"><input id="hist-file" type="file" accept=".json,application/json"><button class="btn" id="hist-backup">先下載完整備份</button><button class="btn" id="hist-export">匯出所有日誌 JSON</button></div><div id="hist-results" class="stack" style="margin-top:12px"><span class="sub">尚未選擇匯入檔</span></div>`,foot:`<button class="btn" data-act="mclose">取消</button><button class="btn pri" id="hist-commit" disabled>確認匯入選定日期</button>`,onMount:ov=>{
   $('#hist-backup',ov).onclick=()=>backupModal();
@@ -3095,7 +3134,7 @@ function historyImportModal(){
   commit.onclick=()=>{if(!historyPack)return;const chosen=historyPack.records.filter(r=>historyChoices[r.date]!=='skip');if(!chosen.length){toast('尚未選取要匯入的日期');return}
     const overwriteCount=chosen.filter(r=>historyChoices[r.date]==='overwrite').length;
     if(!ask(`匯入前最後確認：預計處理 ${chosen.length} 天，其中覆蓋既有日誌 ${overwriteCount} 天。\n請先下載完整備份。\n確定繼續？`,()=>commit.onclick(),'開始匯入'))return;
-    let count=0,skipped=0;try{for(const r of chosen.sort((a,b)=>a.date.localeCompare(b.date))){const action=historyChoices[r.date],existing=!!db.days[r.date]?.rawText;
+    let count=0,skipped=0;try{importHistoryProjects(historyPack.projects);for(const r of chosen.sort((a,b)=>a.date.localeCompare(b.date))){const action=historyChoices[r.date],existing=!!db.days[r.date]?.rawText;
       if((action==='write'&&existing)||(action==='overwrite'&&!existing)){skipped++;continue;}
       const text=r.variants[+(r._chosen||0)].text;
       // Imported history stays as original text first; parsing tasks from previous-workday sections requires chronological caution.
@@ -3369,7 +3408,7 @@ const ACT={
   teamsconfirm:()=>setTeamsConfirm(),
   teamscopy:()=>{saveDraftNow();copy(teamsText(S.day,Object.assign({},db.settings.exportDefaults)))},
   riskstalearch:()=>{const L=T().filter(riskStale);confirmBox(`把 ${L.length} 筆兩週前、沒有 DL 的未結項目移到封存？封存後仍可在「待辦 › 封存」查到或還原，日誌原文不變。`,()=>{L.forEach(t=>t.archived=true);persist();render();toast(`已封存 ${L.length} 筆`)},'封存')},
-  todayadd:()=>todayAdd(),qaopen:()=>{S.qaOpen=true;render._keep=true;render();setTimeout(()=>$('#qa-proj')?.focus(),0)},todaydel:el=>todayDel(el.dataset.i),
+  todayadd:()=>todayAdd(),todayedit:el=>todayEdit(el.dataset.i),qaopen:()=>{S.qaOpen=true;render._keep=true;render();setTimeout(()=>$('#qa-proj')?.focus(),0)},todaydel:el=>todayDel(el.dataset.i),
   hdropen:()=>{saveDraftNow();closeDaySubs();guideHeaderDay='';S.hdrSub=true;render();$('#main').scrollTop=0},hdrclose:()=>{S.hdrSub=false;render()},
   leaveedit:()=>{S.leaveEdit=!S.leaveEdit;render._keep=true;render()},leaveadd:()=>{S.leaveAdd=!S.leaveAdd;render._keep=true;render()},
   impcommit:()=>{const C=IMP.chunks.filter(c=>!c.bad&&c.date&&['write','overwrite','merge'].includes(c.action)).sort(by(c=>c.date));
@@ -3646,21 +3685,39 @@ function enhDateTime(orig){const isTime=orig.type==='time';orig.dataset.enh='1';
   t.addEventListener('keydown',e=>{if(e.key==='Enter')commit();if(e.key==='ArrowDown'&&e.altKey){e.preventDefault();b.click()}});
   orig.addEventListener('change',show);orig.addEventListener('focus',()=>t.focus());
   b.addEventListener('click',()=>{commit();try{orig.showPicker()}catch(e){orig.focus();orig.click()}})}
-function enhCombo(sel){sel.dataset.enh='1';const isCat=sel.matches(ENH_CAT);
-  const wrap=document.createElement('span');wrap.className='enh-wrap';const id='dl'+uid();
-  const dl=document.createElement('datalist');dl.id=id;
-  const fill=()=>{dl.innerHTML=[...sel.options].map(o=>`<option value="${esc(o.textContent.trim())}">`).join('')};fill();
-  const t=document.createElement('input');t.type='text';t.className=sel.className;t.setAttribute('list',id);t.autocomplete='off';
+function enhCombo(sel){sel.dataset.enh='1';const isCat=sel.matches(ENH_CAT),isLeave=sel.matches('[data-gleave][data-gfield="type"]');
+  const wrap=document.createElement('span');wrap.className='enh-wrap enh-combo';
+  const t=document.createElement('input');t.type='text';t.className=sel.className;t.autocomplete='off';t.setAttribute('role','combobox');t.setAttribute('aria-expanded','false');
   t.placeholder='輸入或下拉選擇';if(sel.getAttribute('aria-label'))t.setAttribute('aria-label',sel.getAttribute('aria-label'));if(sel.style.width)t.style.width=sel.style.width==='auto'?'9em':sel.style.width;
-  sel.parentNode.insertBefore(wrap,sel);wrap.append(t,dl,sel);sel.classList.add('enh-hidden');sel.tabIndex=-1;
+  const btn=document.createElement('button');btn.type='button';btn.className='enh-drop';btn.tabIndex=-1;btn.setAttribute('aria-label','展開選項');btn.textContent='▾';
+  const menu=document.createElement('ul');menu.className='enh-menu';menu.setAttribute('role','listbox');menu.hidden=true;
+  sel.parentNode.insertBefore(wrap,sel);wrap.append(t,btn,menu,sel);sel.classList.add('enh-hidden');sel.tabIndex=-1;
+  let act=-1,filterOn=false;
+  const opts=()=>[...sel.options].map(o=>o.textContent.trim()).filter(Boolean);
+  const draw=()=>{const q=filterOn?t.value.trim():'';const L=opts().filter(v=>!q||v.includes(q));
+    menu.innerHTML=L.length?L.map((v,i)=>`<li role="option" data-v="${esc(v)}" class="${i===act?'on':''}" aria-selected="${v===t.value.trim()}">${esc(v)}</li>`).join(''):`<li class="enh-new">按 Enter 新增「${esc(q)}」</li>`};
+  const open=all=>{filterOn=!all;act=-1;draw();menu.hidden=false;t.setAttribute('aria-expanded','true')};
+  const close=()=>{menu.hidden=true;t.setAttribute('aria-expanded','false')};
   const show=()=>{const o=sel.options[sel.selectedIndex];t.value=o?o.textContent.trim():''};show();enhHook(sel,show);
   const commit=()=>{const v=t.value.trim();if(!v){show();return}
     let o=[...sel.options].find(x=>x.textContent.trim()===v||x.value===v);
     if(!o){if(isCat&&/[-｜|_\n]/.test(v)){toast('分類名稱不能含 - ｜ _ 符號');show();return}
-      o=new Option(v,v);sel.add(o);fill();
-      if(isCat&&!categories().includes(v)){db.settings.workCategories=[...(db.settings.workCategories||[]),v];persist();toast('已新增分類「'+v+'」')}}
+      if(isLeave&&/[|｜\d\n]/.test(v)){toast('假別名稱不能含數字或 ｜');show();return}
+      o=new Option(v,v);sel.add(o);
+      if(isCat&&!categories().includes(v)){db.settings.workCategories=[...(db.settings.workCategories||[]),v];persist();toast('已新增分類「'+v+'」')}
+      if(isLeave&&!leaveTypeList().includes(v)){const L=leaveTypeList().filter(x=>x!=='其他');db.settings.leaveTypes=L.concat(v,leaveTypeList().includes('其他')?['其他']:[]);persist();toast('已新增假別「'+v+'」')}}
     if(sel.value!==o.value){Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(sel,o.value);enhFire(sel)}show()};
-  t.addEventListener('change',commit);t.addEventListener('blur',commit);t.addEventListener('keydown',e=>{if(e.key==='Enter')commit()});
+  const pick=v=>{t.value=v;close();commit()};
+  btn.addEventListener('mousedown',e=>e.preventDefault());
+  btn.addEventListener('click',()=>{if(menu.hidden){t.focus();open(true)}else close()});
+  menu.addEventListener('mousedown',e=>{e.preventDefault();const li=e.target.closest('li[data-v]');if(li)pick(li.dataset.v)});
+  t.addEventListener('click',()=>{if(menu.hidden)open(true)});
+  t.addEventListener('input',()=>open(false));
+  t.addEventListener('blur',()=>{close();commit()});
+  t.addEventListener('keydown',e=>{const items=[...menu.querySelectorAll('li[data-v]')];
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(menu.hidden){open(true);return}act=Math.max(0,Math.min(items.length-1,act+(e.key==='ArrowDown'?1:-1)));draw();menu.querySelector('li.on')?.scrollIntoView({block:'nearest'});return}
+    if(e.key==='Enter'){e.preventDefault();if(!menu.hidden&&act>=0&&items[act]){pick(items[act].dataset.v);return}close();commit();return}
+    if(e.key==='Escape'&&!menu.hidden){e.preventDefault();e.stopPropagation();close();show();return}});
   t.addEventListener('focus',()=>{t.select()});sel.addEventListener('change',show);sel.addEventListener('focus',()=>t.focus())}
 function enhanceInputs(root){(root||document).querySelectorAll('input[type="date"]:not([data-enh]),input[type="time"]:not([data-enh])').forEach(enhDateTime);
   (root||document).querySelectorAll('select:not([data-enh])').forEach(s=>{if(s.matches(ENH_COMBO))enhCombo(s)})}
