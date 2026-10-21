@@ -1843,7 +1843,11 @@ function pgDay(){
 /* ---------- 選項式工作日誌：輸出原始文字，延用現有解析與儲存 ---------- */
 /* Dashboard KPI: one source per metric, no mixing work dates or duplicated urgent work. */
 function wcDayKpis(D,raw){
- const parsed=parseDay(raw), work=sum(parsed.today,x=>x.est||0);
+ const parsed=parseDay(raw), est=sum(parsed.today,x=>x.est||0);
+ // 當天先顯示預估；隔日在「昨日完成」回報後，自動改顯示實際工時（含當天的突發工作）
+ const dayTasks=T().filter(t=>t.date===D&&t.status!=='待辦');
+ const reported=dayTasks.filter(t=>t.actual&&t.actual.office!=null);
+ const isActual=reported.length>0, work=isActual?sum(reported,t=>t.actual.office):est;
  const leaves=(parsed.header.leaves||[]).reduce((n,x)=>n+(Number(x.hours)||0),0);
  const review=liveReview(D);
  const finished=review?(review.done||[]).length+(review.urgent||[]).filter(x=>x.status==='完成').length:null;
@@ -1852,8 +1856,8 @@ function wcDayKpis(D,raw){
  const alerts=overdue+risks.filter(x=>x.level===3&&!x.isLate).length;
  return `<div class="dash-kpis">
   <button type="button" class="dash-kpi k-blue wc-kpi-link" data-act="kpiwork" title="檢視並編輯今日工時與請假">
-   <span class="k-ico">▦</span><div class="wc-kpi-content"><span>今日工時配置</span>
-   <div class="wc-kpi-hours"><span><b>${fh(work)}h</b><small>預估工作</small></span><span><b>${fh(leaves)}h</b><small>請假／補休</small></span><span><b>${fh(work+leaves)}h</b><small>合計</small></span></div></div>
+   <span class="k-ico">▦</span><div class="wc-kpi-content"><span>${D===today()?'今日':md(D)+' '}工時配置</span>
+   <div class="wc-kpi-hours"><span><b>${fh(work)}h</b><small>${isActual?'實際工作':'預估工作'}${isActual&&Math.abs(work-est)>1e-6?`（預估 ${fh(est)}h）`:''}</small></span><span><b>${fh(leaves)}h</b><small>請假／補休</small></span><span><b>${fh(work+leaves)}h</b><small>合計</small></span></div></div>
   </button>
   <button type="button" class="dash-kpi k-green wc-kpi-link" data-act="wcprevopen" title="查看上一工作日完成盤點">
    <span class="k-ico">✓</span><div><span>上一工作日完成</span><strong>${finished===null?'待確認':finished+'<small> 項</small>'}</strong></div>
