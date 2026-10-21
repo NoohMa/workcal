@@ -713,8 +713,8 @@ body{background:linear-gradient(150deg,#BCEBE8 0%,#E0F8F3 45%,#E8FAF7 100%)}
 .tabs .tab[data-t="逾期"]:has(.todo-alert){border-color:#e3a6ab;color:#a2192b}
 
 /* Long-form fields: generous first view, grow to viewport cap, then scroll. */
-textarea.f.long-entry{min-height:190px;max-height:65vh;overflow-y:auto;resize:vertical;line-height:1.65}
-@media(max-width:700px){textarea.f.long-entry{min-height:145px;max-height:52vh;font-size:16px}}
+textarea.f.long-entry{min-height:190px;overflow-y:hidden;resize:vertical;line-height:1.65}
+@media(max-width:700px){textarea.f.long-entry{min-height:145px;font-size:16px}}
 
 /* Annual calendar: show date numbers, with clear past/future contrast. */
 .yr .mmg button.mmc{display:grid;place-items:center;font-size:clamp(10px,0.85vw,12px);font-weight:600;line-height:1;min-width:0;text-align:center;}
@@ -1838,9 +1838,10 @@ after.weeklyspace=mountWeekSpace;
 function closeDaySubs(){S.guideSub=false;S.logSub=false;wcPrevSub=false;S.dayDetail=false;S.hdrSub=false}
 function back(){
   if(modalStack.length){closeModal();return}
+  if(S.page==='day'&&wcPrevSub&&S.closeFrom){openDay(S.closeFrom);return}
   if(S.page==='day'&&daySubOpen()){saveDraftNow();closeDaySubs();render();$('#main').scrollTop=0;return}
   if(S.page==='day'){saveDraftNow();const to=S.from&&S.from!=='day'?S.from:'calendar';S.cursor=S.day;go(to);return}
-  if(S.page==='notes'&&S.noteSel){saveNoteNow();S.noteSel=null;render();return}
+  if(S.page==='notes'&&S.noteSel){saveNoteNow();const id=S.noteSel;S.noteSel=null;if(dropEmptyNote(id))toast('空白筆記不保存');render();return}
   if(S.page==='projects'&&S.projSel){S.projSel=null;render();return}
   if(S.page==='import'){go('settings');return}}
 function go(p){
@@ -1848,7 +1849,7 @@ function go(p){
   if(p==='work')p=S.lastWork||'todo';if(p==='review')p=S.lastReview||'stats';
   if(GROUPS.work.some(x=>x[0]===p))S.lastWork=p;
   if(p==='leaveplan')S.lastReview='leave';else if(GROUPS.review.some(x=>x[0]===p))S.lastReview=p;
-  if(S.page==='day'&&p!=='day'){saveDraftNow();closeDaySubs()}S.page=p;$('#rail').classList.remove('open');render();$('#main').scrollTop=0}
+  if(S.page==='day'&&p!=='day'){saveDraftNow();closeDaySubs()}if(S.page==='notes'&&S.noteSel&&!(p==='notes')){saveNoteNow();dropEmptyNote(S.noteSel)}S.page=p;$('#rail').classList.remove('open');render();$('#main').scrollTop=0}
 function pgYearAI(){const p=db.settings.aiPrompt||DEF_PROMPT;
  return `<div class="ph"><h1>年終 AI</h1></div>
  <div class="grid g2"><div class="card stack"><h3>AI 資料包</h3><p class="sub">選期間，把交付成果、專案工時、準時率整理成一份文字，貼給外部 AI 寫成貢獻與成就總結。</p><div><button class="btn pri" data-act="aipack">產生 AI 資料包</button></div></div>
@@ -2034,7 +2035,7 @@ function pgDay(){
     <div class="infobar" id="infobar"></div>
     <div class="ed ${editMode?'':'read'}" id="ed"><pre id="hl" aria-hidden="${editMode}"></pre>${editMode?`<textarea id="ta" spellcheck="false" aria-label="${D} 日誌內容">${esc(text)}</textarea>`:''}</div>
     <div class="savebar"><span class="state ${sc}" id="daystate"><i></i>${sl}</span><button class="btn pri" data-act="logsaveclose" ${ro?'disabled':''}>儲存並返回每日主頁</button></div>`;
-  if(wcPrevSub)return `<div class="dayhead"><button class="xbtn back" data-act="wcprevclose" aria-label="返回每日主頁">‹</button><h1>${md(D)}（${wd(D)}）｜上一工作日盤點</h1><span class="sp" style="flex:1"></span>${calendarModeSwitch()}<button class="btn sm" data-act="wcprevclose">返回每日主頁</button></div><div id="guided-host"></div>`;
+  if(wcPrevSub)return `<div class="dayhead"><button class="xbtn back" data-act="wcprevclose" aria-label="返回每日主頁">‹</button><h1>${S.closeFrom?`${md(S.closeFrom)}（${wd(S.closeFrom)}）｜今日結案`:`${md(D)}（${wd(D)}）｜上一工作日盤點`}</h1><span class="sp" style="flex:1"></span>${calendarModeSwitch()}<button class="btn sm" data-act="wcprevclose">返回每日主頁</button></div><div id="guided-host"></div>`;
   if(S.hdrSub)return `<div class="dayhead"><button class="xbtn back" data-act="hdrclose" aria-label="返回">‹</button><h1>${md(D)}（${wd(D)}）｜辦公地／請假</h1><span class="sp" style="flex:1"></span><button class="btn sm" data-act="hdrclose">返回</button></div><div id="guided-host"></div>`;
   if(S.guideSub)return `<div class="dayhead"><button class="xbtn back" data-act="guideclose" aria-label="返回每日主頁">‹</button><h1>${md(D)}（${wd(D)}）｜今日工作輸入</h1><span class="sp" style="flex:1"></span>${calendarModeSwitch()}<button class="btn sm" data-act="guideclose">返回每日主頁</button></div><div id="guided-host"></div><div class="wc-editor-footer"><button class="btn pri" data-act="guideclose">返回每日主頁</button></div>`;
   return pgDayMain(D,text,ro,H)}
@@ -2074,7 +2075,7 @@ function pgDayMain(D,text,ro,H){
  </section>
  ${dayStep1(D,st,ro)}
  ${dayStep2(D,st,ro,s1done)}
- ${dayStep3(D)}`}
+ ${dayStep3(D,st)}`}
 function stepHead(n,done,title,meta,right=''){return `<div class="shead"><span class="snum ${done?'ok':''}">${done?CHECK_SVG:n}</span><h2>${title}</h2>${meta?`<span class="smeta">${meta}</span>`:''}<span class="sp"></span>${right}</div>`}
 function dayStep1(D,st,ro){
  const lbl=st.prevD?`${md(st.prevD)}（${wd(st.prevD)}）`:'上一工作日';
@@ -2100,14 +2101,14 @@ function dayStep2(D,st,ro,s1done){
  const form=ro?'':`${S.qaOpen?'':'<button class="btn qopen" data-act="qaopen">＋ 新增工作</button>'}<div class="qadd ${S.qaOpen?'open':''}" role="group" aria-label="新增今日工作"><label>分類<select id="qa-cat">${categories().map(c=>`<option ${c===cat?'selected':''}>${esc(c)}</option>`).join('')}</select></label><label class="qp">專案<input id="qa-proj" type="text" list="qa-projs" placeholder="輸入或選擇" autocomplete="off"><datalist id="qa-projs">${projs}</datalist></label><label class="qd">內容<input id="qa-detail" type="text" placeholder="例如：上架＋回饋處理"></label><label class="qh">時數<input id="qa-h" type="text" inputmode="decimal" placeholder="1.5"></label><button class="btn pri" data-act="todayadd">加入</button></div>`;
  return `<section class="step ${s1done?'is-active':''}" aria-label="步驟二 今日工作">${stepHead(2,false,'今日工作',`${items.length} 項・預估 ${fh(st.est)}h`,ro?'':`<button class="btn sm" data-act="picktodo">帶入待辦（${n}）</button><button class="lnk hide-m" data-act="guideopen">逐項編輯</button>`)}
   <div class="srows">${rows||'<div class="sempty">還沒有今日工作。用下方欄位加入，或帶入待辦。</div>'}</div>${form}</section>`}
-function dayStep3(D){
+function dayStep3(D,st){
  const t=teamsConfirmed[D],has=!!db.days[D]?.rawText;
  const o=Object.assign({},db.settings.exportDefaults);if(S.privacy)o.priv=false;
  const txt=has?teamsText(D,o):'';
  const when=t?new Date(t):null;
  return `<section class="step ${t?'is-done':''}" aria-label="步驟三 送出 Teams">${stepHead(3,!!t,'送出 Teams',t?`<span class="okc">已上傳 ${pad(when.getHours())}:${pad(when.getMinutes())}</span>`:has?'<span class="warnc">尚未上傳</span>':'<span class="muted">日誌還是空的</span>','<button class="lnk" data-act="teams">匯出選項</button>')}
   ${has?`<details class="tprev" ${isMobile()?'':'open'}><summary>預覽</summary><pre class="mono">${esc(txt)}</pre></details>`:''}
-  <div class="sacts"><button class="btn pri big" data-act="teamscopy" ${has?'':'disabled'}>複製 Teams 版 <kbd class="hide-m">Ctrl⇧C</kbd></button><button class="btn big ${t?'':'outline'}" data-act="teamsconfirm" ${has?'':'disabled'}>${t?'取消已上傳':'標記已上傳'}</button><span class="sp"></span>
+  <div class="sacts"><button class="btn pri big" data-act="teamscopy" ${has?'':'disabled'}>複製 Teams 版 <kbd class="hide-m">Ctrl⇧C</kbd></button><button class="btn big ${t?'':'outline'}" data-act="teamsconfirm" ${has?'':'disabled'}>${t?'取消已上傳':'標記已上傳'}</button>${(()=>{if(S.privacy||!st.p.today.length)return'';const N=nextWorkday(D),done=!!liveReview(N);return `<button class="btn big ${done?'':'outline'}" data-act="dayclose" title="下班前直接盤點今天，寫入 ${md(N)} 的昨日完成">${done?'已結案・重新盤點':'今日結案'}</button>`})()}<span class="sp"></span>
   <span class="slinks"><button class="lnk" data-act="copyai">複製給 AI</button><button class="lnk" data-act="pasteback" ${S.privacy?'disabled':''}>貼回定稿</button><button class="lnk" data-act="logopen">原文編輯</button><button class="lnk" data-act="wcdetailopen">單日完整內容</button></span></div></section>`}
 function dayCommit(D,text,msg){applyDay(D,text);delete drafts[D];persist();render._keep=true;render();wcHoursAlert(D);if(msg)toast(msg)}
 function qaHours(v){v=String(v||'').trim();if(!v)return null;let m=v.match(/^(\d+(?:\.\d+)?)\s*(m|min|分|分鐘)$/i);if(m)return +m[1]/60;m=v.match(/^(\d+(?:\.\d+)?)\s*(h|hr|小時)?$/i);return m?+m[1]:NaN}
@@ -2425,7 +2426,7 @@ function guideAction(type,el){
   for(const x of guidePrev()){const r=guideReview[x.id]||{};if(r.status==='完成'||r.status==='未完成')reviewed[r.status==='完成'?'done':'undone'].push({label:x.category+'－'+x.project,status:r.status,est:x.est,actual:r.actual!==''&&r.actual!=null?Number(r.actual):null})}
   for(const u of guideUrgents)reviewed.urgent.push({label:u.category+'－'+u.project,status:u.status,est:null,actual:u.hours===''?null:Number(u.hours),origin:'urgent'});
   reviewed.sig=reviewSig(text);wcReviews[S.day]=reviewed;wcSaveReview();
-  applyDay(S.day,text);db.days[S.day].reviewSummary=reviewed;delete drafts[S.day];guideUrgents=[];persist();wcPrevSub=false;render();wcHoursAlert(S.day);toast('上一工作日盤點已確認並儲存，首頁與日誌已更新');return;
+  applyDay(S.day,text);db.days[S.day].reviewSummary=reviewed;delete drafts[S.day];guideUrgents=[];persist();wcPrevSub=false;if(S.closeFrom){const f=S.closeFrom;openDay(f);toast(md(f)+' 已結案，工時改為實際');return}render();wcHoursAlert(S.day);toast('上一工作日盤點已確認並儲存，首頁與日誌已更新');return;
  }
 }
 function promptCategory(){openModal({title:'新增工作分類',body:`<label class="fl">分類名稱<input id="gc-name" type="text" placeholder="例如：行政、支援" autofocus></label><p class="sub">新增後可用於日誌解析、待辦、專案與統計。</p>`,foot:'<button class="btn" data-act="mclose">取消</button><button class="btn pri" id="gc-save">新增分類</button>',onMount:ov=>{$('#gc-save',ov).onclick=()=>{const name=$('#gc-name',ov).value.trim();if(!name||/[-｜|_\n]/.test(name)){toast('名稱不能空白或含分隔符號');return}db.settings.workCategories=categories().concat(name).filter((x,i,a)=>a.indexOf(x)===i);persist();closeModal();guideRender();toast('分類已新增')}}})}
@@ -2542,13 +2543,24 @@ function curTodo(){const G=todoGroups();return(G[S.todoTab]||[])[S.todoSel]}
 
 function expandLongEntry(el){
   if(!el)return;
-  const computed=getComputedStyle(el);
-  const min=parseFloat(computed.minHeight)||0;
-  const max=Math.max(min,Math.round(window.innerHeight*(window.innerWidth<=700?.52:.65)));
-  // Preserve user drag sizing; grow only when text requires more space.
-  const target=Math.min(max,Math.max(min,el.scrollHeight));
-  if(el.clientHeight+2<target)el.style.height=target+'px';
+  const min=parseFloat(getComputedStyle(el).minHeight)||0;
+  // 不設上限：內容多高框就多高，改由整頁捲動
+  el.style.height='auto';el.style.height=Math.max(min,el.scrollHeight+2)+'px';
+  if(document.activeElement===el)keepCaretVisible(el);
 }
+function scrollParent(el){let p=el.parentElement;while(p&&p!==document.body){const o=getComputedStyle(p).overflowY;if((o==='auto'||o==='scroll')&&p.scrollHeight>p.clientHeight+1)return p;p=p.parentElement}return document.scrollingElement}
+function caretOffsetY(el){const cs=getComputedStyle(el),m=document.createElement('div');
+  for(const k of['fontFamily','fontSize','fontWeight','lineHeight','letterSpacing','paddingTop','paddingLeft','paddingRight','borderTopWidth','borderLeftWidth','borderRightWidth','boxSizing','whiteSpace','wordBreak','overflowWrap','tabSize'])m.style[k]=cs[k];
+  m.style.position='absolute';m.style.visibility='hidden';m.style.top='0';m.style.left='-9999px';m.style.width=el.clientWidth+'px';m.style.whiteSpace='pre-wrap';m.style.overflowWrap='break-word';
+  m.textContent=el.value.slice(0,el.selectionEnd);const sp=document.createElement('span');sp.textContent='​';m.appendChild(sp);document.body.appendChild(m);
+  const y=sp.offsetTop+sp.offsetHeight;m.remove();return y}
+function keepCaretVisible(el){try{const sc=scrollParent(el);const r=el.getBoundingClientRect();const caret=r.top+caretOffsetY(el)-el.scrollTop;
+  const vv=window.visualViewport,vh=vv?vv.height+vv.offsetTop:innerHeight;
+  const bar=document.querySelector('.savebar');const barH=bar&&getComputedStyle(bar).position!=='static'?bar.offsetHeight:0;
+  const bnav=$('#bnav');const navH=bnav&&getComputedStyle(bnav).display!=='none'&&!document.body.classList.contains('inner')?bnav.offsetHeight:0;
+  const limit=vh-Math.max(barH,navH)-24;
+  if(caret>limit)sc.scrollTop+=caret-limit;else if(caret<r.top+8&&caret<60){sc.scrollTop-=60-caret}}catch(e){}}
+function bindLongEntry(el){if(!el||el.dataset.le)return;el.dataset.le='1';expandLongEntry(el);el.addEventListener('input',()=>expandLongEntry(el));['keyup','click','focus'].forEach(ev=>el.addEventListener(ev,()=>keepCaretVisible(el)))}
 function taskForm(t,isNew){
   const projs=Object.values(db.projects);
   return`<div class="fgrid">
@@ -2585,7 +2597,7 @@ function openTask(id,opts={}){
   openModal({title:isNew?'新增待辦':'編輯任務',body:taskForm(t,isNew),
     foot:`${isNew?'':`<button class="btn danger" id="tf-del">${t.archived?'永久移除':'移除'}</button><span style="flex:1"></span>`}${isNew?'<button class="btn" data-act="mclose">取消</button>':'<span class="state saved" id="tf-st"><i></i>修改即自動儲存</span>'}<button class="btn pri" id="tf-ok">${isNew?'新增':'儲存並返回'}</button>`,
     onMount:ov=>{
-      $$('.long-entry',ov).forEach(el=>{expandLongEntry(el);el.addEventListener('input',()=>expandLongEntry(el))});
+      $$('.long-entry',ov).forEach(bindLongEntry);
       const chk=()=>{const w=[];const dl=$('#tf-dl',ov).value;const pid=findProject($('#tf-proj',ov).value)?.id;const p=pid&&P(pid);
         if(dl&&p?.dl&&dl>p.dl)w.push(`任務 DL（${dl}）晚於專案 DL（${p.dl}）`);
         if(dl&&!isNew&&t.dl&&dl!==t.dl)$('#tf-dlr-w',ov).hidden=false;
@@ -2687,7 +2699,7 @@ function saveNoteNow(){const n=db.notes[S.noteSel];const ti=$('#n-title'),bo=$('
 after.notes=()=>{
   const q=$('#nq');if(q){q.addEventListener('input',()=>{S.noteQ=q.value;const p=q.selectionStart;render();const q2=$('#nq');q2.focus();q2.setSelectionRange(p,p)})}
   const n=db.notes[S.noteSel];if(!n)return;
-  const longNote=$('#n-body');expandLongEntry(longNote);longNote?.addEventListener('input',()=>expandLongEntry(longNote));
+  bindLongEntry($('#n-body'));
   const save=()=>{saveNoteNow()};
   let tm;['n-title','n-body'].forEach(k=>$('#'+k).addEventListener('input',()=>{const st=$('#n-st');st.className='state dirty';st.innerHTML='<i></i>輸入中…';clearTimeout(tm);tm=setTimeout(save,600)}));
   $('#n-proj').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const v=e.target.value.trim();if(!v)return;const pid=resolveProject(v);if(!n.projectIds.includes(pid))n.projectIds.push(pid);save();render()}})};
@@ -2788,8 +2800,8 @@ function anniversaryYears(hire,day){if(!hire||!day)return null;if(day<hire)retur
 function leavePeriod(anchor,asOf){if(!/^\d{4}-\d{2}-\d{2}$/.test(anchor||''))return null;let st=anchor;let n=0;while(addYears(st,1)<=asOf&&n++<150)st=addYears(st,1);while(st>asOf&&n++<300)st=addYears(st,-1);return[st,addD(addYears(st,1),-1)]}
 function addYears(d,n){const y=+d.slice(0,4)+n,m=+d.slice(5,7),dd=+d.slice(8);return iso(new Date(y,m-1,Math.min(dd,new Date(y,m,0).getDate())))}
 function hoursUsed(type,start,end){return sum(Object.entries(db.days).filter(([d])=>d>=start&&d<=end),([d,v])=>sum((v.leaves||[]).filter(x=>x.type===type),x=>+x.hours||0))}
-function leaveSummary(asOf){const s=db.settings,cycle=leavePeriod(s.leaveCycleStart||s.hireDate,asOf);const st=cycle?.[0]||`${asOf.slice(0,4)}-01-01`,ed=cycle?.[1]||`${asOf.slice(0,4)}-12-31`;const years=anniversaryYears(s.hireDate,st);const sixMonths=s.hireDate?(()=>{const a=new Date(s.hireDate+'T12:00:00');const b=new Date(a);b.setMonth(b.getMonth()+6);return iso(b)})():null;const estimate=years==null?null:(years>=1?leaveGrantDays(years):(sixMonths&&asOf>=sixMonths?3:0));const grant=s.leaveGrantedHours===''||s.leaveGrantedHours==null?null:+s.leaveGrantedHours;const special=hoursUsed('特休',st,asOf);const adjust=sum(leaveLedger().filter(x=>x.type==='特休'&&x.date>=st&&x.date<=asOf),x=>x.hours);const available=grant==null?null:grant+adjust;
- const compEarned=sum(leaveLedger().filter(x=>x.type==='補休'&&x.date<=asOf),x=>x.hours);const compUsed=hoursUsed('補休','1900-01-01',asOf);const compDebits=sum(leaveLedger().filter(x=>x.type==='補休結清'&&x.date<=asOf),x=>x.hours);return{st,ed,estimate,years,grant,available,special,compEarned,compUsed,compDebits,compBalance:compEarned-compUsed-compDebits}}
+function leaveSummary(asOf){const s=db.settings,cycle=leavePeriod(s.leaveCycleStart||s.hireDate,asOf);const st=cycle?.[0]||`${asOf.slice(0,4)}-01-01`,ed=cycle?.[1]||`${asOf.slice(0,4)}-12-31`;const years=anniversaryYears(s.hireDate,st);const sixMonths=s.hireDate?(()=>{const a=new Date(s.hireDate+'T12:00:00');const b=new Date(a);b.setMonth(b.getMonth()+6);return iso(b)})():null;const estimate=years==null?null:(years>=1?leaveGrantDays(years):(sixMonths&&asOf>=sixMonths?3:0));const grant=s.leaveGrantedHours===''||s.leaveGrantedHours==null?null:+s.leaveGrantedHours;const special=hoursUsed('特休',st,asOf);const adjust=sum(leaveLedger().filter(x=>x.type==='特休'&&x.date>=st&&x.date<=asOf),x=>x.hours);const legalH=estimate==null?null:estimate*hpd(),base=grant??legalH,estimated=grant==null&&legalH!=null;const available=base==null?null:base+adjust;
+ const compEarned=sum(leaveLedger().filter(x=>x.type==='補休'&&x.date<=asOf),x=>x.hours);const compUsed=hoursUsed('補休','1900-01-01',asOf);const compDebits=sum(leaveLedger().filter(x=>x.type==='補休結清'&&x.date<=asOf),x=>x.hours);return{st,ed,estimate,years,grant,estimated,available,special,compEarned,compUsed,compDebits,compBalance:compEarned-compUsed-compDebits}}
 /* --- 特休規劃：規劃獨立保存，不影響正式請假與核給流水 --- */
 function leavePlans(){return db.leavePlans||(db.leavePlans=[])}
 function leaveMinutes(h){return Math.round((Number(h)||0)*60)}
@@ -2858,12 +2870,12 @@ function pgLeaveManage(){const asOf=today(),s=db.settings,z=leaveSummary(asOf),h
  const hire=s.hireDate?slashDate(s.hireDate):'未設定',yrs=z.years==null?null:Math.floor(z.years);const ten=s.hireDate?ymdSpan(s.hireDate,asOf):null;
  return `<div class="ph"><h1>假勤</h1><span class="sub">本期 ${slashDate(z.st)} ～ ${slashDate(z.ed)}</span></div>
  <div class="lv-cards">
+  <section class="lv-card" aria-label="今年請假"><div class="lv-l">${year} 年已請</div><div class="lv-n"><b>${dayHour(yTotal)}</b></div><div class="lv-chips">${types.map(k=>`<span>${esc(k)} ${(ySum.leaves[k]||0)?fmtLeave(k,ySum.leaves[k]):0}</span>`).join('')}</div><div class="lv-s">本月 ${mTotal?dayHour(mTotal):'0'}</div></section>
   <section class="lv-card" aria-label="特休"><div class="lv-l">特休剩餘</div>
-   ${rem==null?`<div class="lv-n"><b>待設定</b></div><div class="lv-s">先填公司核給的特休時數，才算得出剩多少。</div><div><button class="btn sm pri" data-act="leaveedit">填核給額度</button></div>`:
-   `<div class="lv-n"><b>${dayHour(rem)}</b></div><div class="lv-bar"><i style="width:${usedPct}%"></i></div><div class="lv-s">已休 ${dayHour(z.special)}／核給 ${dayHour(z.available)}</div><div class="lv-s warnc">${slashDate(z.ed)} 到期・還有 ${left} 天</div>`}
+   ${rem==null?`<div class="lv-n"><b>待設定</b></div><div class="lv-s">先在「編輯設定」填到職日（或公司核給時數），才算得出剩多少。</div><div><button class="btn sm pri" data-act="leaveedit">填核給額度</button></div>`:
+   `<div class="lv-n"><b>${dayHour(rem)}</b></div><div class="lv-bar"><i style="width:${usedPct}%"></i></div><div class="lv-s">已休 ${dayHour(z.special)}／核給 ${dayHour(z.available)}</div><div class="lv-s warnc">${slashDate(z.ed)} 到期・還有 ${left} 天</div>${z.estimated?`<div class="lv-s">依年資法定 ${z.estimate} 天估算；公司核給不同時到「編輯設定」填寫</div>`:''}`}
   </section>
   <section class="lv-card" aria-label="補休"><div class="lv-l">補休餘額</div><div class="lv-n"><b>${fh(z.compBalance)}</b><span> h</span></div><div class="lv-bar"><i style="width:${compPct}%"></i></div><div class="lv-s">公司核給 ${fh(z.compEarned)}h・已用 ${fh(z.compUsed+z.compDebits)}h</div><div class="lv-s">${otH?`本期加班紀錄 ${fh(otH)}h（不會自動轉成補休）`:'本期沒有加班紀錄'}</div></section>
-  <section class="lv-card" aria-label="今年請假"><div class="lv-l">${year} 年已請</div><div class="lv-n"><b>${dayHour(yTotal)}</b></div><div class="lv-chips">${types.map(k=>`<span>${esc(k)} ${(ySum.leaves[k]||0)?fmtLeave(k,ySum.leaves[k]):0}</span>`).join('')}</div><div class="lv-s">本月 ${mTotal?dayHour(mTotal):'0'}</div></section>
  </div>
  <div class="lv-row">
   <section class="card lv-plan" aria-label="特休規劃"><div class="row"><h3 style="flex:1;margin:0">特休規劃</h3><button class="btn pri sm" data-act="go" data-p="leaveplan">排休</button></div>
@@ -2875,7 +2887,7 @@ function pgLeaveManage(){const asOf=today(),s=db.settings,z=leaveSummary(asOf),h
    ${recs.length?`<div class="lv-list">${recs.slice(0,40).map(r=>`<button class="lv-item" data-act="openday" data-d="${r.d}"><span>${md(r.d)}（${wd(r.d)}）${r.d>asOf?'<small class="muted"> 預定</small>':''}</span><span class="sp"></span><span>${r.list.map(x=>`${esc(x.type)} ${fmtLeave(x.type,x.hours)}`).join('、')}</span></button>`).join('')}</div>${recs.length>40?`<div class="lv-s">只列最近 40 筆，共 ${recs.length} 筆</div>`:''}`:
    '<div class="lv-empty">本期還沒有請假。<br>在「今天」頁按「編輯辦公地／請假」填寫後，會自動列在這裡。</div>'}</section>
  </div>
- <section class="lv-set" aria-label="額度設定"><span>到職日 <b>${esc(hire)}</b></span><span>年資 <b>${ten?`${ten.y} 年 ${ten.m} 月 ${ten.d} 天`:'—'}</b>${z.estimate!=null?`（本期法定 ${z.estimate} 天）`:''}</span><span>週期 <b>${s.leaveCycleStart?'自訂':'依到職日'}</b></span><span>公司核給 <b>${z.grant==null?'待設定':fh(z.grant/hr)+' 天'}</b></span>${+s.leaveReserveHours?`<span>自留 <b>${fh(s.leaveReserveHours)}h</b></span>`:''}<span class="sp"></span>
+ <section class="lv-set" aria-label="額度設定"><span>到職日 <b>${esc(hire)}</b></span><span>年資 <b>${ten?`${ten.y} 年 ${ten.m} 月 ${ten.d} 天`:'—'}</b>${z.estimate!=null?`（本期法定 ${z.estimate} 天）`:''}</span><span>週期 <b>${s.leaveCycleStart?'自訂':'依到職日'}</b></span><span>公司核給 <b>${z.grant==null?(z.estimate!=null?'未填（用法定 '+z.estimate+' 天）':'待設定'):dayHour(z.grant)}</b></span>${+s.leaveReserveHours?`<span>自留 <b>${fh(s.leaveReserveHours)}h</b></span>`:''}<span class="sp"></span>
   <button class="btn sm" data-act="leaveedit" aria-expanded="${S.leaveEdit}">${S.leaveEdit?'收合設定':'編輯設定'}</button><button class="btn sm" data-act="leaveadd" aria-expanded="${S.leaveAdd}">${S.leaveAdd?'收合':'＋ 調整額度／補休核給'}</button></section>
  ${S.leaveEdit?`<div class="card stack"><h3>計算設定</h3><div class="fgrid"><label class="fl">正式到職日<input type="date" data-leaves="hireDate" value="${esc(s.hireDate||'')}"></label><label class="fl">特休週期起算日（留白＝依到職日週年）<input type="date" data-leaves="leaveCycleStart" value="${esc(s.leaveCycleStart||'')}"></label><label class="fl">公司當期核給特休（小時，${hr}h＝1 天）<input type="number" min="0" step="0.5" data-leaves="leaveGrantedHours" placeholder="未確認留白" value="${s.leaveGrantedHours??''}"></label><label class="fl">自行預留特休（hr）<input type="number" min="0" step="0.5" data-leaves="leaveReserveHours" value="${s.leaveReserveHours??0}"></label></div><p class="sub">到職日用來算年資與法定天數參考；週期起算日決定本期範圍。實際以公司核給為準。</p></div>`:''}
  ${S.leaveAdd?`<div class="card stack"><h3>新增額度／結清紀錄</h3><div class="fgrid"><label class="fl">日期<input type="date" id="lv-date" value="${today()}"></label><label class="fl">項目<select id="lv-type"><option>補休</option><option>補休結清</option><option>特休</option></select></label><label class="fl">時數（特休調整可輸入負數）<input id="lv-hours" type="number" step="0.5"></label><label class="fl">補休到期日（選填）<input id="lv-expiry" type="date"></label></div><label class="fl">來源／原因<input id="lv-note" placeholder="例如：公司核准加班換補休"></label><div><button class="btn pri" data-act="addleaveledger">新增一筆</button></div>
@@ -3342,8 +3354,9 @@ function fixLineModal(i,sec){
       else if(s==='undone')line=`${c}-${p}｜${t||p}_${hrTok(+e||0)}，因${r||'＿＿'}，擬${mmdd(S.day)}完成`;
       else line=`${c}-${p}${e!==''?'_'+hrTok(+e):''}${t?'，'+t:''}`;
       ls[i]=line;ta.value=ls.join('\n');closeModal();ta.dispatchEvent(new Event('input'));toast('已補正，記得存檔')}}})}
+function dropEmptyNote(id){const n=db.notes[id];if(n&&!String(n.title||'').trim()&&!String(n.body||'').trim()){delete db.notes[id];persist();return true}return false}
 function newNote(){const id=uid();db.notes[id]={id,title:'',body:'',projectIds:[],pinned:false,createdAt:Date.now(),updatedAt:Date.now()};S.noteSel=id;persist();go('notes');setTimeout(()=>$('#n-title')?.focus(),0)}
-function openDay(d){S.hdrSub=false;S.dayDetail=false;wcPrevSub=false;S.guideSub=false;S.logSub=false;guideReview={};guideItems=[];guideItemsDay='';guideUrgents=[];guideImportedDay='';guideMode='today';if(S.page==='day')saveDraftNow();else S.from=S.page;S.day=d;S.cursor=d;S.edit=!isMobile();S.page='day';render();$('#main').scrollTop=0;if(!isMobile()&&!S.privacy)setTimeout(()=>{const ta=$('#ta');if(ta){ta.focus();ta.setSelectionRange(0,0)}},0)}
+function openDay(d){S.closeFrom=null;S.hdrSub=false;S.dayDetail=false;wcPrevSub=false;S.guideSub=false;S.logSub=false;guideReview={};guideItems=[];guideItemsDay='';guideUrgents=[];guideImportedDay='';guideMode='today';if(S.page==='day')saveDraftNow();else S.from=S.page;S.day=d;S.cursor=d;S.edit=!isMobile();S.page='day';render();$('#main').scrollTop=0;if(!isMobile()&&!S.privacy)setTimeout(()=>{const ta=$('#ta');if(ta){ta.focus();ta.setSelectionRange(0,0)}},0)}
 
 /* ---------- 點擊事件 ---------- */
 const ACT={
@@ -3353,7 +3366,7 @@ const ACT={
   riskopen:()=>go('risk'),
   wcdetailopen:()=>{saveDraftNow();S.dayDetail=true;S.logSub=false;S.guideSub=false;wcPrevSub=false;render();$('#main').scrollTop=0},wcotherday:()=>{wcPrevSub=false;S.dayDetail=true;render();$('#main').scrollTop=0},wcdetailclose:()=>{S.dayDetail=false;render();$('#main').scrollTop=0},wcdetailprev:()=>{S.day=addD(S.day,-1);S.cursor=S.day;render()},wcdetailnext:()=>{S.day=addD(S.day,1);S.cursor=S.day;render()},wcdetailtoday:()=>{S.day=today();S.cursor=S.day;render()},wcdetailcopy:()=>copy(S.privacy?dayText(S.day).split(/\n(?=私記)/)[0]:dayText(S.day)),wcdetailedit:()=>{S.dayDetail=false;S.logSub=true;S.edit=true;render()},
   wccopy:(el)=>wcCopySection(el.dataset.sec),wcprevopen:()=>{saveDraftNow();wcPrevSub=true;S.guideSub=false;guideMode='prev';const items=guidePrev(),oldReview=db.days[S.day]?.reviewSummary||wcReviews[S.day];if(oldReview&&(!oldReview.source||oldReview.source===prevWorkday(S.day))){const used=new Set();guideReview={};for(const x of items){const lbl=x.category+'－'+x.project;for(const state of ['done','undone']){const i=(oldReview[state]||[]).findIndex((a,j)=>a.label===lbl&&!used.has(state+'-'+j));if(i>=0){const r=oldReview[state][i];used.add(state+'-'+i);guideReview[x.id]={status:state==='done'?'完成':'未完成',actual:r.actual??'',detail:x.detail||'',reason:'',date:mmdd(S.day)};break}}}}render();$('#main').scrollTop=0},wcprevclose:()=>{wcPrevSub=false;render();$('#main').scrollTop=0},
-  mclose:()=>closeModal(),archivepast:()=>{const L=pastScheduled();confirmBox(`把 ${L.length} 筆日期在今天以前、已完成或已延續的項目移到封存？之後可在「封存」還原。`,()=>{L.forEach(t=>t.archived=true);persist();render();toast(`已封存 ${L.length} 筆`)},'封存')},back:()=>back(),logopen:()=>{saveDraftNow();S.logSub=true;S.guideSub=false;S.edit=true;render();$('#main').scrollTop=0},logclose:()=>{saveDraftNow();S.logSub=false;render();$('#main').scrollTop=0},logsaveclose:()=>{saveDay(false);S.logSub=false;render();$('#main').scrollTop=0},guideopen:()=>{saveDraftNow();wcPrevSub=false;S.logSub=false;S.guideSub=true;S.edit=true;guideMode='today';render();$('#main').scrollTop=0},prevreview:()=>{wcPrevSub=true;S.guideSub=false;guideMode='prev';render();$('#main').scrollTop=0},guideprevopen:()=>{guideMode='prev';render();document.querySelector('#guided-host')?.scrollIntoView({block:'start',behavior:'smooth'})},guideclose:()=>{saveDraftNow();S.guideSub=false;render();$('#main').scrollTop=0},guidesaveclose:()=>{saveDay(false);S.guideSub=false;render();$('#main').scrollTop=0},savedayback:()=>saveDay(true),notesaveback:()=>{saveNoteNow();toast('已儲存');S.noteSel=null;render()},
+  mclose:()=>closeModal(),archivepast:()=>{const L=pastScheduled();confirmBox(`把 ${L.length} 筆日期在今天以前、已完成或已延續的項目移到封存？之後可在「封存」還原。`,()=>{L.forEach(t=>t.archived=true);persist();render();toast(`已封存 ${L.length} 筆`)},'封存')},back:()=>back(),logopen:()=>{saveDraftNow();S.logSub=true;S.guideSub=false;S.edit=true;render();$('#main').scrollTop=0},logclose:()=>{saveDraftNow();S.logSub=false;render();$('#main').scrollTop=0},logsaveclose:()=>{saveDay(false);S.logSub=false;render();$('#main').scrollTop=0},guideopen:()=>{saveDraftNow();wcPrevSub=false;S.logSub=false;S.guideSub=true;S.edit=true;guideMode='today';render();$('#main').scrollTop=0},prevreview:()=>{wcPrevSub=true;S.guideSub=false;guideMode='prev';render();$('#main').scrollTop=0},guideprevopen:()=>{guideMode='prev';render();document.querySelector('#guided-host')?.scrollIntoView({block:'start',behavior:'smooth'})},guideclose:()=>{saveDraftNow();S.guideSub=false;render();$('#main').scrollTop=0},guidesaveclose:()=>{saveDay(false);S.guideSub=false;render();$('#main').scrollTop=0},savedayback:()=>saveDay(true),notesaveback:()=>{saveNoteNow();const id=S.noteSel;S.noteSel=null;toast(dropEmptyNote(id)?'空白筆記不保存':'已儲存');render()},
   palette:()=>openPalette(),search:()=>openSearch(),help:()=>helpModal(),
   privacy:()=>{S.privacy=!S.privacy;render()},
   rail:()=>$('#rail').classList.toggle('open'),
@@ -3408,6 +3421,7 @@ const ACT={
   teamsconfirm:()=>setTeamsConfirm(),
   teamscopy:()=>{saveDraftNow();copy(teamsText(S.day,Object.assign({},db.settings.exportDefaults)))},
   riskstalearch:()=>{const L=T().filter(riskStale);confirmBox(`把 ${L.length} 筆兩週前、沒有 DL 的未結項目移到封存？封存後仍可在「待辦 › 封存」查到或還原，日誌原文不變。`,()=>{L.forEach(t=>t.archived=true);persist();render();toast(`已封存 ${L.length} 筆`)},'封存')},
+  dayclose:()=>{const D=S.day;if(!parseDay(dayText(D)).today.length){toast('今天還沒有工作項目');return}saveDraftNow();const N=nextWorkday(D);openDay(N);S.closeFrom=D;ACT.wcprevopen()},
   todayadd:()=>todayAdd(),todayedit:el=>todayEdit(el.dataset.i),qaopen:()=>{S.qaOpen=true;render._keep=true;render();setTimeout(()=>$('#qa-proj')?.focus(),0)},todaydel:el=>todayDel(el.dataset.i),
   hdropen:()=>{saveDraftNow();closeDaySubs();guideHeaderDay='';S.hdrSub=true;render();$('#main').scrollTop=0},hdrclose:()=>{S.hdrSub=false;render()},
   leaveedit:()=>{S.leaveEdit=!S.leaveEdit;render._keep=true;render()},leaveadd:()=>{S.leaveAdd=!S.leaveAdd;render._keep=true;render()},
