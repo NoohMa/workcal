@@ -978,7 +978,8 @@ function loadDb(){try{const s=localStorage.getItem(KEY);if(s){const d=JSON.parse
  d.ot=d.ot||[];return d}}catch(e){storageOk=false}return null}
 let db=loadDb();
 let drafts={};try{drafts=JSON.parse(localStorage.getItem(DKEY)||'{}')}catch(e){drafts={}}
-function persist(){try{localStorage.setItem(KEY,JSON.stringify(db));localStorage.setItem(DKEY,JSON.stringify(drafts));storageOk=true}catch(e){storageOk=false}}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(db));localStorage.setItem(DKEY,JSON.stringify(drafts));storageOk=true}catch(e){storageOk=false;const n=Date.now();if(!persist._w||n-persist._w>15000){persist._w=n;setTimeout(()=>{try{toast('⚠ 儲存失敗：瀏覽器空間不足，請立即到設定做完整備份')}catch(_){}} ,0)}}}
+function storageUsage(){try{const n=(localStorage.getItem(KEY)||'').length+(localStorage.getItem(DKEY)||'').length;return{mb:n*2/1048576,pct:Math.round(n*2/(10*1048576)*100)}}catch(e){return null}}
 const T=()=>Object.values(db.tasks);
 const P=id=>db.projects[id];
 const pname=id=>P(id)?.name||'（未指定）';
@@ -1253,8 +1254,10 @@ function applyDay(D,text,opt={}){
     db.ot.push({id:uid(),date:Pd,type:o.type,hours:o.hours,text:o.text,projectId:pid,sourceDay:D})}
   // 4. 延遲項目延續至新日期
   const keepCarry=new Set();const toReapply=[];
+  const sameDayLines=[];
   for(const c of carries){
-    let ct=oldCarries.find(x=>x.chainId===c.src.chainId);
+    let ct=oldCarries.find(x=>x.chainId===c.src.chainId&&!keepCarry.has(x.id))||oldCarries.find(x=>!keepCarry.has(x.id)&&x.projectId===c.src.projectId&&sim(x.title,c.src.title)>.6);
+    if(ct)ct.chainId=c.src.chainId;
     const remaining=c.src.subItems.filter(s=>s.status==='延遲').map(s=>s.text);
     if(!ct){ct=newTask({source:'carry',origin:'plan',createdByDay:D,chainId:c.src.chainId,status:'規劃'})}
     keepCarry.add(ct.id);
@@ -1267,7 +1270,9 @@ function applyDay(D,text,opt={}){
     ct.updatedAt=Date.now();
     const td=db.days[c.date];
     if(td&&td.rawText&&c.date!==D&&!opt.noCascade){const pr=parseDay(td.rawText);const already=pr.today.some(x=>findProject(x.project)?.id===ct.projectId&&sim(x.title,ct.title)>.6);
-      if(!already)toReapply.push([c.date,insertTodayLine(td.rawText,lineFromTask(ct))])}}
+      if(!already)toReapply.push([c.date,insertTodayLine(td.rawText,lineFromTask(ct))])}
+    if(c.date===D&&!r.today.some(x=>findProject(x.project)?.id===ct.projectId&&sim(x.title,ct.title)>.6))sameDayLines.push(lineFromTask(ct))}
+  if(sameDayLines.length){for(const l of sameDayLines)text=insertTodayLine(text,l);db.days[D].rawText=text;r.today=parseDay(text).today}
   // 2. 今日工作項目
   const plan=T().filter(t=>t.date===D&&t.origin==='plan');const used=new Set();
   for(const it of r.today){
@@ -1492,7 +1497,7 @@ function buildSample(){
 const S={page:'calendar',guideSub:false,logSub:false,dayDetail:false,calView:'month',cursor:today(),day:today(),edit:!isMobile(),dirty:false,
   todoTab:'已排日',todoSel:0,archYear:'all',archProj:'all',noteSel:null,noteQ:'',projFilter:'進行中',projSel:null,projTab:'list',
   gZoom:'month',gSel:0,gOpen:{},gAll:false,statKind:'month',statAnchor:today(),statFrom:null,statTo:null,officePeriod:'month',officeYear:today().slice(0,4),officeMonth:today().slice(5,7),chartTable:{},privacy:false,railSel:new Set(),settingsTab:'basic'};
-let guideMode='today',guideItems=[],guideReview={},guideUrgents=[];
+let guideMode='today',guideItems=[],guideReview={},guideUrgents=[],guideItemsDay='';
 let wcPrevSub=false;
 let guideImportedDay='';
 let guideHeaderDay='',guidePlaces=[],guideLeaves=[];
@@ -1760,7 +1765,7 @@ function wcHoursAlert(D){
  wcHourAlertCache.set(D,signature);
  // 用系統確認視窗清楚列出異常。按確定只關閉提醒，不覆蓋資料。
  const message=`${D} 工時／出勤檢核提醒：\n\n`+data.errors.map((x,i)=>`${i+1}. ${x}`).join('\n')+'\n\n資料已保留，請確認工作、請假及辦公地紀錄。';
- noticeBox('工時／出勤檢核提醒',message);
+ void message;toast('工時檢核：'+data.errors[0]);
 }
 function wcHoursAudit(D){
  // 正常或異常皆只在儲存完成時提示；畫面不常駐警示卡。
@@ -1977,7 +1982,7 @@ function guidePutText(text,msg){
 }
 function guideCompleteText(){
  let t=guideMergeHeader(guideSource());
- if(guideItems.length)t=guideReplaceSection(t,'today',guideItems.map(x=>`${x.category}-${x.project}_${hrTok(x.hours)}${x.detail?'，'+x.detail:''}`));
+ if(guideItemsDay===S.day)t=guideReplaceSection(t,'today',guideItems.map(guideLine));
  const {done,undone}=guideOutputPrev();
  if(done.length||undone.length){t=guideReplaceSection(t,'done',done);t=guideReplaceSection(t,'undone',undone)}
  return t;
@@ -1988,7 +1993,10 @@ function guideHeaderHTML(){
  const leave=guideLeaves.map((x,i)=>`<div class="g-item"><div class="fgrid"><label class="fl">假別<select data-gleave="${i}" data-gfield="type">${['特休','補休','事假','病假','公假','其他'].map(y=>`<option ${x.type===y?'selected':''}>${y}</option>`).join('')}${!['特休','補休','事假','病假','公假','其他'].includes(x.type)?`<option selected>${esc(x.type)}</option>`:''}</select></label><label class="fl">請假時數 hr<input type="number" min="0" step="0.5" data-gleave="${i}" data-gfield="hours" value="${esc(x.hours)}"></label></div><button class="btn sm" data-guide="remove-leave" data-i="${i}">移除這筆請假</button></div>`).join('');
  return `<div class="guide-header"><h2>當日基本資料</h2><div class="sub">辦公地可分時段、請假可多筆；填寫後按「儲存基本資料」，同步更新當日日誌及統計。</div><div class="row" style="justify-content:space-between;margin:10px 0 6px"><b>辦公地／出差</b><button class="btn sm" data-guide="add-place">＋ 新增地點／時段</button></div>${loc||'<div class="sub">尚未設定辦公地</div>'}<div class="row" style="justify-content:space-between;margin:12px 0 6px"><b>請假</b><button class="btn sm" data-guide="add-leave">＋ 新增請假</button></div>${leave||'<div class="sub">無請假</div>'}<div class="g-actions guide-confirm-actions"><button class="btn pri guide-wide-btn" data-guide="save-header">儲存基本資料</button><span class="sub">儲存後同步更新當日首頁及統計</span></div></div>`;
 }
+function guideLoadToday(){guideItems=parseDay(guideSource()).today.map(i=>({category:i.cat,project:i.project,hours:i.est,detail:i.doneText||((i.title!==i.project)?i.title:''),raw:i.raw.trim()}));guideItemsDay=S.day}
+function guideLine(x){return x.raw||`${x.category}-${x.project}${x.hours!=null&&x.hours!==''?'_'+hrTok(x.hours):''}${x.detail?'，'+x.detail:''}`}
 function guideRender(){const host=$('#guided-host');if(!host)return;
+ if(S.guideSub&&guideItemsDay!==S.day)guideLoadToday();
  guideInitHeader();const C=categories();const opts=C.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
  const prev=guidePrev();
  if(!S.guideSub&&!wcPrevSub){host.innerHTML=`<section class="guided">${guideHeaderHTML()}</section>`;host.querySelectorAll('[data-gplace],[data-gleave]').forEach(node=>{const update=()=>{const isPlace=node.hasAttribute('data-gplace'),i=+(isPlace?node.dataset.gplace:node.dataset.gleave),o=(isPlace?guidePlaces:guideLeaves)[i];if(!o)return;if(node.dataset.gfield==='placeChoice'){const wrap=host.querySelector('[data-place-other="'+i+'"]');if(wrap)wrap.style.display=node.value==='其他'?'':'none';o.place=node.value==='其他'?(host.querySelector('[data-gplace="'+i+'"][data-gfield="placeCustom"]')?.value.trim()||''):node.value}else if(node.dataset.gfield==='placeCustom')o.place=node.value.trim();else if(node.dataset.gfield==='activityOther')o.activity='其他'+(node.value.trim()?'：'+node.value.trim():'');else o[node.dataset.gfield]=node.dataset.gfield==='trip'?node.value==='1':node.dataset.gfield==='hours'?Number(node.value):node.value;if(node.dataset.gfield==='activity'){const wrap=host.querySelector('[data-other-wrap="'+i+'"]');if(wrap)wrap.style.display=node.value==='其他'?'':'none'}};node.addEventListener('input',update);node.addEventListener('change',update)});return}
@@ -2058,8 +2066,8 @@ function guideAction(type,el){
  if(type==='categories'){const t=promptCategory();return}
  if(type==='add'){const category=$('#gd-cat').value,project=$('#gd-project').value.trim(),h=$('#gd-hour').value,detail=$('#gd-detail').value.trim();if(!project||h===''||+h<0){toast('請填工作名稱及預估工時');return}guideItems.push({category,project,hours:+h,detail});guideRender();return}
  if(type==='remove'){guideItems.splice(+el.dataset.i,1);guideRender();return}
- if(type==='from-text'){guideItems=parseDay(guideSource()).today.filter(i=>i.est!=null).map(i=>({category:i.cat,project:i.project,hours:i.est,detail:i.doneText||((i.title!==i.project)?i.title:'')}));guideRender();return}
- if(type==='output-today'||type==='copy-today'){const lines=guideItems.map(x=>`${x.category}-${x.project}_${hrTok(x.hours)}${x.detail?'，'+x.detail:''}`);if(!lines.length){toast('請先加入工作項目');return}if(type==='copy-today')copy('今日工作項目\n'+lines.join('\n'));else guideCommit('today',lines);return}
+ if(type==='from-text'){guideLoadToday();guideRender();return}
+ if(type==='output-today'||type==='copy-today'){const lines=guideItems.map(guideLine);if(!lines.length&&type==='copy-today'){toast('請先加入工作項目');return}if(type==='copy-today')copy('今日工作項目\n'+lines.join('\n'));else guideCommit('today',lines);return}
  if(type==='output-prev'||type==='copy-prev'){
   const {done,undone}=guideOutputPrev();
   if(!done.length&&!undone.length&&!guideOutputUrgent().length){toast('請先確認工作項目或新增突發工作');return}
@@ -2088,7 +2096,7 @@ after.day=()=>{
 };
 let daySaveT=null;
 function autoSaveDay(){clearTimeout(daySaveT);const ta=$('#ta');if(!ta||S.page!=='day')return;const D=S.day;
-  const changed=ta.value!==db.days[D]?.rawText&&(S.dirty||db.days[D]?.rawText);if(changed){applyDay(D,ta.value)}delete drafts[D];persist();S.dirty=false;if(changed)wcHoursAlert(D);
+  const changed=ta.value!==db.days[D]?.rawText&&(S.dirty||db.days[D]?.rawText);if(changed){applyDay(D,ta.value);if(db.days[D].rawText!==ta.value){const a=ta.selectionStart,b=ta.selectionEnd;ta.value=db.days[D].rawText;try{ta.setSelectionRange(a,b)}catch(e){}}}delete drafts[D];persist();S.dirty=false;if(changed)wcHoursAlert(D);
   const st=$('#daystate');if(st){const n=new Date();st.className='state saved';st.innerHTML=`<i></i>已自動儲存 ${pad(n.getHours())}:${pad(n.getMinutes())}`}}
 function saveDraftNow(){if(S.page==='day'&&$('#ta'))autoSaveDay();S.dirty=false}
 function hlHTML(text,r,read){
@@ -2634,7 +2642,7 @@ function pgSettings(){const s=db.settings;const tab=S.settingsTab;
   if(tab==='holiday')body=`<div class="card stack"><p class="sub" style="margin:0">一行一天：<span class="mono">YYYY-MM-DD 名稱</span>。名稱含「補班」視為補班日。內建 2024–2026 依人事總處公告整理，2027 標「待核」者請公告後核對。</p>
     <textarea class="f mono" data-s="holidaysText" rows="18" style="font-size:12px">${esc(s.holidaysText)}</textarea><div class="row"><button class="btn sm" data-act="resetholi">還原內建</button></div></div>`;
   if(tab==='data')body=`<div class="grid g2"><div class="card stack"><h3>匯入</h3><button class="btn" data-act="go" data-p="import">匯入舊日誌（記事本）</button><button class="btn" data-act="historyimport">歷史 Word 轉換資料（預覽匯入）</button><button class="btn" data-act="importjson">還原 JSON 備份</button></div>
-    <div class="card stack"><h3>匯出與備份</h3><button class="btn" data-act="backup">完整備份（JSON）</button><div class="row"><button class="btn sm" data-act="csv" data-k="tasks">任務 CSV</button><button class="btn sm" data-act="csv" data-k="days">每日 CSV</button><button class="btn sm" data-act="csv" data-k="projects">專案 CSV</button></div><span class="sub">上次備份：${s.lastBackup||'從未'}</span></div>
+    <div class="card stack"><h3>匯出與備份</h3><button class="btn" data-act="backup">完整備份（JSON）</button><div class="row"><button class="btn sm" data-act="csv" data-k="tasks">任務 CSV</button><button class="btn sm" data-act="csv" data-k="days">每日 CSV</button><button class="btn sm" data-act="csv" data-k="projects">專案 CSV</button></div><span class="sub">${(()=>{const u=storageUsage();return u?`本機已用約 ${u.mb.toFixed(1)} MB（瀏覽器上限約 5–10 MB，約 ${u.pct}%）｜`:''})()}上次備份：${s.lastBackup||'從未'}</span></div>
     <div class="card stack"><h3>範例與重設</h3><button class="btn" data-act="loadsample">重新載入範例資料</button><button class="btn danger" data-act="resetall">清除全部資料</button><span class="sub">資料目前只存在這個瀏覽器；正式版接上 Firebase 後才會跨裝置同步。</span></div></div>`;
   return`<div class="ph"><h1>設定</h1></div><div class="tabs">${tabs.map(([k,l])=>`<button class="tab" data-act="settab" data-v="${k}" aria-pressed="${tab===k}">${l}</button>`).join('')}</div>${body}`}
 after.settings=()=>{
@@ -2664,8 +2672,13 @@ function importJsonModal(){openModal({title:'還原 JSON 備份',wide:true,body:
 /* ---------- 歷史資料安全匯入：workcal-history-v1 ---------- */
 let historyPack=null,historyChoices={};
 function historyExportDays(){const days=Object.keys(db.days).sort(),a=days.map(d=>({date:d,text:db.days[d].rawText||''}));const blob=new Blob([JSON.stringify({format:'workcal-history-export-v1',records:a},null,2)],{type:'application/json'});const u=URL.createObjectURL(blob);const b=document.createElement('a');b.href=u;b.download=`workcal-history-${today()}.json`;b.click();setTimeout(()=>URL.revokeObjectURL(u),3000)}
+/* 歷史匯入：只出現在「今日工作項目」、之後沒有回報的過去項目，視為推定完成並標記 */
+function inferHistoryDone(dates){const set=new Set(dates),t0=today();let n=0;
+  for(const t of T()){if(!set.has(t.date)||t.origin!=='plan'||t.status!=='規劃'||t.date>=t0)continue;
+    t.status='完成';t.inferred=true;t.note=(t.note?t.note+'；':'')+'推定完成（匯入時無回報）';t.subItems=(t.subItems||[]).map(x=>Object.assign({},x,{status:'完成'}));n++}
+  return n}
 function historyImportModal(){
- openModal({title:'歷史日誌匯入｜先預覽再確認',wide:true,body:`<p class="sub">請選擇使用 OneNote 轉換工具產生的 <b>workcal-history-v1 JSON</b>。原始 Word 請先使用隨附的轉換工具處理。<b>既有日期預設略過、私人版本預設略過</b>。匯入前建議下載完整 JSON 備份。</p><div class="row"><input id="hist-file" type="file" accept=".json,application/json"><button class="btn" id="hist-backup">先下載完整備份</button><button class="btn" id="hist-export">匯出所有日誌 JSON</button></div><div id="hist-results" class="stack" style="margin-top:12px"><span class="sub">尚未選擇匯入檔</span></div>`,foot:`<button class="btn" data-act="mclose">取消</button><button class="btn pri" id="hist-commit" disabled>確認匯入選定日期</button>`,onMount:ov=>{
+ openModal({title:'歷史日誌匯入｜先預覽再確認',wide:true,body:`<p class="sub">請選擇使用 OneNote 轉換工具產生的 <b>workcal-history-v1 JSON</b>。原始 Word 請先使用隨附的轉換工具處理。<b>既有日期預設略過</b>；含私記的版本也會匯入（私記只存在你的資料內，不進 Teams 匯出）。匯入前建議下載完整 JSON 備份。</p><div class="row"><input id="hist-file" type="file" accept=".json,application/json"><button class="btn" id="hist-backup">先下載完整備份</button><button class="btn" id="hist-export">匯出所有日誌 JSON</button></div><div id="hist-results" class="stack" style="margin-top:12px"><span class="sub">尚未選擇匯入檔</span></div>`,foot:`<button class="btn" data-act="mclose">取消</button><button class="btn pri" id="hist-commit" disabled>確認匯入選定日期</button>`,onMount:ov=>{
   $('#hist-backup',ov).onclick=()=>backupModal();
   $('#hist-export',ov).onclick=()=>historyExportDays();
   const result=$('#hist-results',ov),commit=$('#hist-commit',ov);
@@ -2675,7 +2688,7 @@ function historyImportModal(){
     historyPack=doc;historyChoices={};for(const r of doc.records)historyChoices[r.date]='skip'; // 不執行自動匯入，等使用者選擇批次規則
     show();commit.disabled=false;
    }catch(e){historyPack=null;commit.disabled=true;result.textContent='無法讀取：'+e.message}}
-  const safeVersions=r=>r.variants.map((v,j)=>({v,j})).filter(x=>!x.v.private && typeof x.v.text==='string');
+  const safeVersions=r=>r.variants.map((v,j)=>({v,j})).filter(x=>typeof x.v.text==='string');
   const chooseBulk=mode=>{
     if(!historyPack)return;
     bulkMode=mode;
@@ -2698,7 +2711,7 @@ function historyImportModal(){
     const privateOnly=items.filter(r=>safeVersions(r).length===0).length;
     const skipped=items.length-chosen.length;
     commit.disabled=!chosen.length;
-    result.innerHTML=`<div class="stack" style="gap:12px"><div class="row"><b>${items.length} 天、${items.reduce((n,x)=>n+x.variants.length,0)} 個候選版本</b><span class="chip">預計新增 ${chosen.filter(r=>historyChoices[r.date]==='write').length} 天</span><span class="chip">預計覆蓋 ${chosen.filter(r=>historyChoices[r.date]==='overwrite').length} 天</span></div><div class="row"><span class="sub">略過 ${skipped} 天｜已存在 ${existing} 天｜多版本 ${multi} 天｜只有私人版本 ${privateOnly} 天</span></div><div class="card stack" style="padding:12px"><b>批次選取（選取後仍須按下方確認匯入）</b><div class="row" style="gap:10px;flex-wrap:wrap"><button type="button" class="btn pri" id="hist-bulk-last">批次選最後一份公開版本</button><button type="button" class="btn" id="hist-bulk-single">僅選單一版本</button><button type="button" class="btn" id="hist-bulk-first">批次選第一份公開版本</button><button type="button" class="btn" id="hist-bulk-none">全部取消選取</button></div><p class="sub">批次選取會略過已有日誌的日期與含私記的候選版本，不會自動覆蓋。多版本的「最後一份」僅指轉換檔中的排列順序，並不代表最新定稿。需要時可在下表單日調整。</p></div><div class="tbl-wrap" style="max-height:46vh;overflow:auto"><table class="t"><thead><tr><th>日期</th><th>現有資料</th><th>選擇版本</th><th>動作</th><th>預覽</th></tr></thead><tbody>${items.map((r,i)=>`<tr><td>${esc(r.date)}</td><td>${db.days[r.date]?.rawText?'已存在':'空白'}</td><td><select data-hver="${i}">${r.variants.map((v,j)=>`<option value="${j}">${esc(v.label||'版本 '+(j+1))}${v.private?'（含私記）':''}</option>`).join('')}</select></td><td><select data-hact="${i}"><option value="skip">略過</option><option value="write" ${db.days[r.date]?.rawText?'disabled':''}>新增</option><option value="overwrite" ${db.days[r.date]?.rawText?'':'disabled'}>覆蓋已存在的日誌</option></select></td><td><button type="button" class="btn sm" data-hview="${i}">檢視</button></td></tr>`).join('')}</tbody></table></div></div>`;
+    result.innerHTML=`<div class="stack" style="gap:12px"><div class="row"><b>${items.length} 天、${items.reduce((n,x)=>n+x.variants.length,0)} 個候選版本</b><span class="chip">預計新增 ${chosen.filter(r=>historyChoices[r.date]==='write').length} 天</span><span class="chip">預計覆蓋 ${chosen.filter(r=>historyChoices[r.date]==='overwrite').length} 天</span></div><div class="row"><span class="sub">略過 ${skipped} 天｜已存在 ${existing} 天｜多版本 ${multi} 天｜只有私人版本 ${privateOnly} 天</span></div><div class="card stack" style="padding:12px"><b>批次選取（選取後仍須按下方確認匯入）</b><div class="row" style="gap:10px;flex-wrap:wrap"><button type="button" class="btn pri" id="hist-bulk-last">批次選最後一份公開版本</button><button type="button" class="btn" id="hist-bulk-single">僅選單一版本</button><button type="button" class="btn" id="hist-bulk-first">批次選第一份公開版本</button><button type="button" class="btn" id="hist-bulk-none">全部取消選取</button></div><p class="sub">批次選取會略過已有日誌的日期，不會自動覆蓋。多版本的「最後一份」僅指轉換檔中的排列順序，並不代表最新定稿。需要時可在下表單日調整。</p></div><div class="tbl-wrap" style="max-height:46vh;overflow:auto"><table class="t"><thead><tr><th>日期</th><th>現有資料</th><th>選擇版本</th><th>動作</th><th>預覽</th></tr></thead><tbody>${items.map((r,i)=>`<tr><td>${esc(r.date)}</td><td>${db.days[r.date]?.rawText?'已存在':'空白'}</td><td><select data-hver="${i}">${r.variants.map((v,j)=>`<option value="${j}">${esc(v.label||'版本 '+(j+1))}${v.private?'（含私記）':''}</option>`).join('')}</select></td><td><select data-hact="${i}"><option value="skip">略過</option><option value="write" ${db.days[r.date]?.rawText?'disabled':''}>新增</option><option value="overwrite" ${db.days[r.date]?.rawText?'':'disabled'}>覆蓋已存在的日誌</option></select></td><td><button type="button" class="btn sm" data-hview="${i}">檢視</button></td></tr>`).join('')}</tbody></table></div></div>`;
     $('#hist-bulk-last',result).onclick=()=>chooseBulk('last');
     $('#hist-bulk-single',result).onclick=()=>chooseBulk('single');
     $('#hist-bulk-first',result).onclick=()=>chooseBulk('first');
@@ -2719,7 +2732,10 @@ function historyImportModal(){
       const text=r.variants[+(r._chosen||0)].text;
       // Imported history stays as original text first; parsing tasks from previous-workday sections requires chronological caution.
       applyDay(r.date,text);count++}
-      persist();closeModal();toast(`已匯入 ${count} 天，略過 ${skipped} 天；請抽查歷史日誌`);render();noticeBox('歷史匯入完成',`歷史匯入完成\n成功：${count} 天\n執行時因衝突略過：${skipped} 天\n未選取：${historyPack.records.length-chosen.length} 天\n建議抽查不同月份的日誌與工時。`)
+      const inferred=inferHistoryDone(chosen.map(r=>r.date));
+      persist();closeModal();render();
+      if(!storageOk){noticeBox('匯入未能存檔',`瀏覽器儲存空間不足，這次匯入沒有存進去。\n請先「完整備份」，再分批匯入（例如一次半年）。`);return}
+      toast(`已匯入 ${count} 天，略過 ${skipped} 天；請抽查歷史日誌`);noticeBox('歷史匯入完成',`歷史匯入完成\n成功：${count} 天\n執行時因衝突略過：${skipped} 天\n未選取：${historyPack.records.length-chosen.length} 天\n推定完成：${inferred} 項（只出現在今日工作、之後沒有回報，已標記「推定完成」）\n建議抽查不同月份的日誌與工時。`)
     }catch(e){persist();toast(`匯入中斷：已處理 ${count} 天，${e.message}`)}};
  }});
 }
@@ -2919,7 +2935,7 @@ function fixLineModal(i,sec){
       else line=`${c}-${p}${e!==''?'_'+hrTok(+e):''}${t?'，'+t:''}`;
       ls[i]=line;ta.value=ls.join('\n');closeModal();ta.dispatchEvent(new Event('input'));toast('已補正，記得存檔')}}})}
 function newNote(){const id=uid();db.notes[id]={id,title:'',body:'',projectIds:[],pinned:false,createdAt:Date.now(),updatedAt:Date.now()};S.noteSel=id;persist();go('notes');setTimeout(()=>$('#n-title')?.focus(),0)}
-function openDay(d){S.dayDetail=false;wcPrevSub=false;S.guideSub=false;S.logSub=false;guideReview={};guideItems=[];guideUrgents=[];guideImportedDay='';guideMode='today';if(S.page==='day')saveDraftNow();else S.from=S.page;S.day=d;S.cursor=d;S.edit=!isMobile();S.page='day';render();$('#main').scrollTop=0;if(!isMobile()&&!S.privacy)setTimeout(()=>{const ta=$('#ta');if(ta){ta.focus();ta.setSelectionRange(0,0)}},0)}
+function openDay(d){S.dayDetail=false;wcPrevSub=false;S.guideSub=false;S.logSub=false;guideReview={};guideItems=[];guideItemsDay='';guideUrgents=[];guideImportedDay='';guideMode='today';if(S.page==='day')saveDraftNow();else S.from=S.page;S.day=d;S.cursor=d;S.edit=!isMobile();S.page='day';render();$('#main').scrollTop=0;if(!isMobile()&&!S.privacy)setTimeout(()=>{const ta=$('#ta');if(ta){ta.focus();ta.setSelectionRange(0,0)}},0)}
 
 /* ---------- 點擊事件 ---------- */
 const ACT={
