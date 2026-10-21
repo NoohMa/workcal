@@ -1242,7 +1242,10 @@ function applyDay(D,text,opt={}){
     if(it.newDate){const nd=resolveMD(it.newDate,D,'future');if(nd)carries.push({src:t,date:nd,it})}}
   for(const it of r.urgent){
     const t=newTask({date:Pd,origin:'urgent',source:'urgent',createdByDay:D,isUrgent:true});
-    applyItemFields(t,it,Pd);t.actual={office:it.actual??it.est};
+    applyItemFields(t,it,Pd);
+    // 突發只列不計：同一件事已寫在「昨日完成／未完成」時，工時已算在那裡，突發這筆不再計時
+    const h=it.actual??it.est;const listed=[...r.done,...r.undone].some(x=>findProject(x.project)?.id===t.projectId&&(sim((x.title||'')+(x.doneText||''),(it.title||'')+(it.doneText||''))>=.4||(x.actual!=null&&x.actual===h)));
+    t.actual={office:listed?null:h};t.urgentHours=h;t.countedElsewhere=listed;
     if(it.urgentStatus==='未完成'){t.status='延遲';t.delayReasonText=it.reason||'';t.delayReasonTag=reasonTag(it.reason);
       if(it.newDate){const nd=resolveMD(it.newDate,D,'future');if(nd)carries.push({src:t,date:nd,it})}}
     else{t.status=it.delivered?'已交付':'完成';if(t.status==='已交付')t.deliveredAt=Pd}
@@ -2691,6 +2694,15 @@ function archiveHistoryTodos(dates){const set=new Set(dates),t0=today();let n=0;
     if(t.status==='規劃'||t.status==='待辦'){t.status='完成';t.inferred=true;t.note=(t.note?t.note+'；':'')+'推定完成（匯入時無回報）'}
     t.archived=true;n++}
   return n}
+/* 歷史匯入後整理專案：分類取多數決（不看突發），超過 60 天沒有紀錄的專案自動結案 */
+function finalizeHistoryProjects(){const t0=today(),cut=addD(t0,-60);let closed=0;
+  for(const p of Object.values(db.projects)){const ts=T().filter(t=>t.projectId===p.id);
+    const cnt={};ts.filter(t=>t.category&&t.category!=='突發').forEach(t=>cnt[t.category]=(cnt[t.category]||0)+1);
+    const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];if(top)p.category=top[0];
+    const last=ts.filter(t=>t.date).map(t=>t.date).sort().pop();
+    const pending=ts.some(t=>!t.archived&&['待辦','規劃'].includes(t.status)&&(!t.date||t.date>=t0));
+    if(p.status==='進行中'&&last&&last<cut&&!pending){p.status='結案';p.closedAt=last;closed++}}
+  return closed}
 function historyImportModal(){
  openModal({title:'歷史日誌匯入｜先預覽再確認',wide:true,body:`<p class="sub">請選擇使用 OneNote 轉換工具產生的 <b>workcal-history-v1 JSON</b>。原始 Word 請先使用隨附的轉換工具處理。<b>既有日期預設略過</b>；含私記的版本也會匯入（私記只存在你的資料內，不進 Teams 匯出）。匯入前建議下載完整 JSON 備份。</p><div class="row"><input id="hist-file" type="file" accept=".json,application/json"><button class="btn" id="hist-backup">先下載完整備份</button><button class="btn" id="hist-export">匯出所有日誌 JSON</button></div><div id="hist-results" class="stack" style="margin-top:12px"><span class="sub">尚未選擇匯入檔</span></div>`,foot:`<button class="btn" data-act="mclose">取消</button><button class="btn pri" id="hist-commit" disabled>確認匯入選定日期</button>`,onMount:ov=>{
   $('#hist-backup',ov).onclick=()=>backupModal();
@@ -2746,10 +2758,10 @@ function historyImportModal(){
       const text=r.variants[+(r._chosen||0)].text;
       // Imported history stays as original text first; parsing tasks from previous-workday sections requires chronological caution.
       applyDay(r.date,text);count++}
-      const inferred=inferHistoryDone(chosen.map(r=>r.date));const archivedN=archiveHistoryTodos(chosen.map(r=>r.date));
+      const inferred=inferHistoryDone(chosen.map(r=>r.date));const archivedN=archiveHistoryTodos(chosen.map(r=>r.date));const closedN=finalizeHistoryProjects();
       persist();closeModal();render();
       if(!storageOk){noticeBox('匯入未能存檔',`瀏覽器儲存空間不足，這次匯入沒有存進去。\n請先「完整備份」，再分批匯入（例如一次半年）。`);return}
-      toast(`已匯入 ${count} 天，略過 ${skipped} 天；請抽查歷史日誌`);noticeBox('歷史匯入完成',`歷史匯入完成\n成功：${count} 天\n執行時因衝突略過：${skipped} 天\n未選取：${historyPack.records.length-chosen.length} 天\n推定完成：${inferred} 項（只出現在今日工作、之後沒有回報，已標記「推定完成」）\n自動封存：${archivedN} 項（歷史延續與待辦項目，可在待辦「封存」查看或還原）\n建議抽查不同月份的日誌與工時。`)
+      toast(`已匯入 ${count} 天，略過 ${skipped} 天；請抽查歷史日誌`);noticeBox('歷史匯入完成',`歷史匯入完成\n成功：${count} 天\n執行時因衝突略過：${skipped} 天\n未選取：${historyPack.records.length-chosen.length} 天\n推定完成：${inferred} 項（只出現在今日工作、之後沒有回報，已標記「推定完成」）\n自動封存：${archivedN} 項（歷史延續與待辦項目，可在待辦「封存」查看或還原）\n自動結案：${closedN} 個專案（超過 60 天沒有紀錄，可在專案「結案」查看或改回）\n建議抽查不同月份的日誌與工時。`)
     }catch(e){persist();toast(`匯入中斷：已處理 ${count} 天，${e.message}`)}};
  }});
 }
