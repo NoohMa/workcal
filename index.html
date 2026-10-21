@@ -792,6 +792,47 @@ button.dash-kpi.wc-kpi-link.wc-kpi-alert{border-color:#F0A1B0}
 
 /* 特休預測介面保留現有卡片與排版 */
 @media(max-width:700px){.ph h1{font-size:20px}.card .fgrid{min-width:0}}
+
+/* ===== 深色模式統一覆寫（放在最後，修正散落的淺色寫死顏色與調暗濾鏡） ===== */
+:root[data-theme="dark"]{--dk-bg:#0B2A2F;--dk-panel:#0F3439;--dk-card:#123D43;--dk-card2:#174A50;--dk-line:#2C6066;--dk-fg:#EAF7F6;--dk-fg2:#B9D9D7;--dk-fg3:#8DB4B2;--dk-acc:#4FD1C9}
+:root[data-theme="dark"] :is(#nav,#rail,.ph,.md-h,#bnav,.cell,.cell.out,.cell.off){filter:none!important}
+:root[data-theme="dark"] :is(body,#app,#main){background:var(--dk-bg)!important;color:var(--dk-fg)}
+:root[data-theme="dark"] :is(#nav,#rail,#bnav){background:var(--dk-panel)!important;color:var(--dk-fg)!important;border-color:var(--dk-line)!important}
+:root[data-theme="dark"] .ph{background:var(--dk-panel)!important;border-color:var(--dk-line)!important;color:var(--dk-fg)}
+:root[data-theme="dark"] .ph h1,:root[data-theme="dark"] .dayhead h1{color:var(--dk-fg)!important}
+:root[data-theme="dark"] .brand b,:root[data-theme="dark"] .brand span{color:var(--dk-fg)!important}
+:root[data-theme="dark"] #nav .navbtn{background:transparent!important;color:var(--dk-fg2)!important;border:1px solid transparent!important}
+:root[data-theme="dark"] #nav .navbtn svg,:root[data-theme="dark"] #nav .navbtn .k{color:var(--dk-fg3)!important}
+:root[data-theme="dark"] #nav .navbtn:hover{background:var(--dk-card)!important;color:var(--dk-fg)!important}
+:root[data-theme="dark"] #nav .navbtn[aria-current="page"]{background:var(--dk-acc)!important;color:#062226!important}
+:root[data-theme="dark"] #nav .navbtn[aria-current="page"] :is(svg,.k){color:#062226!important}
+:root[data-theme="dark"] #bnav .bn{color:var(--dk-fg2)!important;background:transparent!important}
+:root[data-theme="dark"] #bnav .bn[aria-current="page"]{background:var(--dk-acc)!important;color:#062226!important;border-radius:9px}
+:root[data-theme="dark"] :is(.card,.pcard,.kpi,.li,.list,.md-box,.md-b,.md-f,.ed,.ed.read,.guided,.guide-header,.g-item,.teams-check,.wc-log-entry,.wc-log-banner,.wc-data-card,.wc-data-head,.mini-calendar,.week-panel,.week-stats,.risk-stat,.risk-sim,.dash-work-col,.dash-prev-col,.dash-quick,.dash-output-head,.dash-section-head,.rem-i,.banner,.wkcol,.mm,.gwrap,.gl,.gt.head,.cell){background:var(--dk-card)!important;color:var(--dk-fg)!important;border-color:var(--dk-line)!important;box-shadow:none!important}
+:root[data-theme="dark"] .cell.off,:root[data-theme="dark"] .wkt,:root[data-theme="dark"] .g-item,:root[data-theme="dark"] .rem-i{background:var(--dk-card2)!important}
+:root[data-theme="dark"] .cell.today{border-color:var(--dk-acc)!important;box-shadow:inset 0 0 0 1px var(--dk-acc)!important}
+:root[data-theme="dark"] .md-h{background:var(--dk-panel)!important;color:var(--dk-fg)!important;border-color:var(--dk-line)!important}
+:root[data-theme="dark"] .md-h h2{color:var(--dk-fg)!important}
+:root[data-theme="dark"] .savebar{background:linear-gradient(to top,var(--dk-bg) 72%,transparent)!important}
+:root[data-theme="dark"] .ed pre{background:transparent!important;color:var(--dk-fg)!important}
+:root[data-theme="dark"] :is(h1,h2,h3,b,strong){color:inherit}
+:root[data-theme="dark"] :is(.sub,.muted,.syncstate,.calhead,.legend,.mini-wd,.k-label){color:var(--dk-fg3)!important}
+:root[data-theme="dark"] :is(.btn:not(.pri):not(.danger),.tab:not([aria-pressed="true"]),.seg button:not([aria-pressed="true"]),.xbtn,button.chip){background:var(--dk-card2)!important;color:var(--dk-fg)!important;border-color:var(--dk-line)!important}
+:root[data-theme="dark"] :is(.btn.pri,.savebar .btn.pri,.tab[aria-pressed="true"],.seg button[aria-pressed="true"]){background:var(--dk-acc)!important;color:#062226!important;border-color:var(--dk-acc)!important}
+:root[data-theme="dark"] kbd{background:var(--dk-panel)!important;color:var(--dk-fg2)!important;border-color:var(--dk-line)!important}
+:root[data-theme="dark"] :is(input,select,textarea):not([type=checkbox]):not([type=radio]):not(#ta){background:var(--dk-panel)!important;color:var(--dk-fg)!important;border-color:var(--dk-line)!important}
+:root[data-theme="dark"] #ta{background:transparent!important;color:transparent!important;caret-color:var(--dk-fg)!important}
+:root[data-theme="dark"] .dash-kpi{color:var(--dk-fg)!important;border-color:var(--dk-line)!important}
+:root[data-theme="dark"] .dash-kpi.k-blue{background:#16385A!important}
+:root[data-theme="dark"] .dash-kpi.k-green{background:#14402D!important}
+:root[data-theme="dark"] .dash-kpi.k-orange{background:#4A3018!important}
+:root[data-theme="dark"] .dash-kpi.k-rose{background:#4A1E2E!important}
+:root[data-theme="dark"] .dash-kpi :is(span,small,b,strong){color:var(--dk-fg)!important}
+:root[data-theme="dark"] .mini-date.active,:root[data-theme="dark"] .mini-calendar button.mini-date.active{background:var(--dk-acc)!important;color:#062226!important}
+:root[data-theme="dark"] .chip:not(.plan):not(.done):not(.late):not(.pend):not(.priv):not(.star){background:var(--dk-card2)!important;color:var(--dk-fg2)!important}
+:root[data-theme="dark"] #nav .navfoot .btn{background:var(--dk-card2)!important;color:var(--dk-fg)!important;border-color:var(--dk-line)!important}
+:root[data-theme="dark"] .mini-calendar :is(button,.mini-date,b){color:var(--dk-fg2)!important}
+:root[data-theme="dark"] .teams-check p,:root[data-theme="dark"] .wc-log-entry p{color:var(--dk-fg2)!important}
 </style>
 </head>
 <body>
