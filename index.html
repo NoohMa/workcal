@@ -3115,7 +3115,7 @@ function syncLabel(){const t=SYNC.lastAt?new Date(SYNC.lastAt):null;
 function syncNavHTML(){const c={synced:'var(--done)',syncing:'var(--plan)',loading:'var(--plan)',error:'var(--late)',offline:'var(--pend)',off:'var(--pend)',choose:'var(--pend)'}[SYNC.status]||'var(--none)';
   return `<button class="syncstate" data-act="syncpanel" style="border:0;background:none;padding:0;cursor:pointer;text-align:left;color:inherit;font:inherit"><i style="background:${c}"></i>${esc(storageOk?syncLabel():'無法寫入瀏覽器儲存，重新整理會遺失')}</button>`}
 function syncBanner(){
-  if(SYNC.status==='off'&&SYNC.api)return `<div class="banner" id="sync-banner"><b>雲端同步未開啟</b><span>用 Google 帳號登入後，電腦和手機的資料會自動同步。</span><span class="sp" style="flex:1"></span><button class="btn sm pri" data-act="cloudlogin">用 Google 登入</button></div>`;
+  if(SYNC.status==='off'&&SYNC.api)return `<div class="banner" id="sync-banner"><b>雲端同步未開啟</b><span>登入後，電腦和手機的資料會自動同步。</span><span class="sp" style="flex:1"></span><button class="btn sm pri" data-act="cloudlogin">登入</button></div>`;
   if(SYNC.status==='error')return `<div class="banner" id="sync-banner"><b>同步失敗</b><span>${esc(SYNC.msg)}。資料仍保存在這台裝置，恢復後會自動補傳。</span><span class="sp" style="flex:1"></span><button class="btn sm" data-act="syncnow">重試</button></div>`;
   if(S.page==='settings'&&SYNC.uid)return `<div class="banner" id="sync-banner" style="background:var(--surface-2)"><b>雲端同步</b><span>${esc(SYNC.email)}｜${esc(syncLabel())}</span><span class="sp" style="flex:1"></span><button class="btn sm" data-act="syncnow">立即同步</button><button class="btn sm" data-act="cloudlogout">登出</button></div>`;
   return `<span id="sync-banner" hidden></span>`}
@@ -3194,6 +3194,23 @@ function syncChoose(buf){SYNC.choosing=true;syncSetStatus('choose');
         drafts={};try{rebindDb()}catch(e){}HOL_SRC=null;syncRawSave();applyTheme();SYNC.state.fresh=false;syncSaveState();SYNC.ready=true;render();syncPush();toast('已改用雲端資料')});
       $('#sc-merge',ov).onclick=()=>go(()=>syncFinishInitial(buf))},
     onClose:()=>{if(SYNC.choosing){SYNC.choosing=false;syncStop();SYNC.api.signOut();toast('已取消，維持本機資料、未同步')}}})}
+function cloudLoginModal(){let last='';try{last=localStorage.getItem('worklog.login.email')||''}catch(e){}
+  openModal({title:'登入雲端同步',body:`<form id="lg-form" class="stack" autocomplete="on"><label class="fl">Email<input type="email" id="lg-email" autocomplete="username" value="${esc(last)}" ${last?'':'autofocus'} required></label>
+    <label class="fl">密碼<input type="password" id="lg-pw" autocomplete="current-password" ${last?'autofocus':''} required></label>
+    <div class="sub" id="lg-msg">使用你在 Firebase 建立的帳號。登入一次後，這台裝置會記住登入狀態。</div><button type="submit" hidden></button></form>`,
+    foot:'<button class="btn ghost" id="lg-reset">忘記密碼</button><span style="flex:1"></span><button class="btn" data-act="mclose">取消</button><button class="btn pri" id="lg-ok">登入</button>',
+    onMount:ov=>{const msg=t=>{$('#lg-msg',ov).textContent=t;$('#lg-msg',ov).style.color='var(--late)'};
+      const go=async()=>{const em=$('#lg-email',ov).value.trim(),pw=$('#lg-pw',ov).value;if(!em||!pw){msg('請輸入 Email 和密碼');return}
+        const b=$('#lg-ok',ov);b.disabled=true;b.textContent='登入中…';
+        try{await SYNC.api.signIn(em,pw);try{localStorage.setItem('worklog.login.email',em)}catch(e){}closeModal();toast('已登入，開始同步')}
+        catch(e){b.disabled=false;b.textContent='登入';msg(loginErr(e))}};
+      $('#lg-ok',ov).onclick=go;$('#lg-form',ov).addEventListener('submit',e=>{e.preventDefault();go()});
+      $('#lg-reset',ov).onclick=async()=>{const em=$('#lg-email',ov).value.trim();if(!em){msg('先輸入 Email，再按忘記密碼');return}
+        try{await SYNC.api.resetPassword(em);const m=$('#lg-msg',ov);m.style.color='';m.textContent='已寄出重設密碼信到 '+em+'，請到信箱收信（也看一下垃圾郵件）'}catch(e){msg(loginErr(e))}}}})}
+function loginErr(e){const c=e&&e.code||'';
+  return ['auth/invalid-credential','auth/wrong-password','auth/user-not-found','auth/invalid-login-credentials'].includes(c)?'Email 或密碼不正確':
+    c==='auth/invalid-email'?'Email 格式不正確':c==='auth/too-many-requests'?'嘗試太多次，請稍後再試或用忘記密碼':
+    c==='auth/network-request-failed'?'連不上網路':c==='auth/operation-not-allowed'?'Firebase 尚未啟用「電子郵件/密碼」登入':'登入失敗：'+(c||e?.message||e)}
 function syncStop(){SYNC.unsubs.forEach(u=>{try{u()}catch(e){}});SYNC.unsubs=[];SYNC.ready=false;SYNC.uid=null;clearTimeout(SYNC.pushT);clearTimeout(SYNC.retryT)}
 function cloudBoot(){
   const attach=api=>{SYNC.api=api;api.onAuth(user=>{if(user)syncStart(user);else{syncStop();syncSetStatus('off')}});
@@ -3205,7 +3222,7 @@ function cloudBoot(){
 window.__persistLocal=persist;
 persist=function(){window.__persistLocal();syncSchedule()};
 Object.assign(ACT,{
-  cloudlogin:()=>{if(!SYNC.api){toast('雲端元件尚未載入');return}SYNC.api.signIn().catch(e=>toast('登入失敗：'+syncErr(e)))},
+  cloudlogin:()=>{if(!SYNC.api){toast('雲端元件尚未載入，請確認網路後重新整理');return}cloudLoginModal()},
   cloudlogout:()=>confirmBox('登出後這台裝置的資料仍會保留，但不再同步。確定登出？',()=>{SYNC.api.signOut()},'登出'),
   syncnow:()=>{if(SYNC.uid){syncPush()}else ACT.cloudlogin()},
   syncpanel:()=>{if(!SYNC.uid){ACT.cloudlogin();return}S.page='settings';render()}
@@ -3233,22 +3250,14 @@ const firebaseConfig={
   messagingSenderId:"561827672271",
   appId:"1:561827672271:web:348b08f5fcb41fee2ac7ba"
 };
-// 部署在 Firebase Hosting 時，用目前網域當登入網域，避免手機瀏覽器擋第三方 Cookie 導致登入失敗
-if(/\.(web\.app|firebaseapp\.com)$/.test(location.hostname))firebaseConfig.authDomain=location.hostname;
 const V='10.12.2',B=`https://www.gstatic.com/firebasejs/${V}/`;
 try{
   const [{initializeApp},A,F]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')]);
   const app=initializeApp(firebaseConfig),auth=A.getAuth(app),fs=F.getFirestore(app);
-  const provider=new A.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});
-  const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
-  A.getRedirectResult(auth).catch(()=>{});
   window.WorkCalCloud={
     onAuth:cb=>A.onAuthStateChanged(auth,u=>cb(u?{uid:u.uid,email:u.email}:null)),
-    async signIn(){
-      if(standalone)return A.signInWithRedirect(auth,provider);
-      try{await A.signInWithPopup(auth,provider)}
-      catch(e){if(['auth/popup-blocked','auth/operation-not-supported-in-this-environment','auth/cancelled-popup-request'].includes(e.code))return A.signInWithRedirect(auth,provider);
-        if(e.code==='auth/popup-closed-by-user')return;throw e}},
+    signIn:(email,password)=>A.signInWithEmailAndPassword(auth,email,password),
+    resetPassword:email=>A.sendPasswordResetEmail(auth,email),
     signOut:()=>A.signOut(auth),
     listen(uid,col,sinceMs,onList,onErr){
       const q=F.query(F.collection(fs,'users',uid,col),F.where('u','>=',F.Timestamp.fromMillis(sinceMs)));
