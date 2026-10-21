@@ -789,6 +789,9 @@ button.dash-kpi.wc-kpi-link.wc-kpi-alert{border-color:#F0A1B0}
 .dash-kpi .wc-kpi-risk-detail{font-size:10px!important;color:#7D4053}
 .dash-kpi strong{white-space:normal}
 @media(max-width:1023px){.wc-kpi-hours{gap:3px;justify-content:center}.wc-kpi-hours>span{flex:1 1 40px}.wc-kpi-hours b{font-size:13px}.wc-kpi-hours small{font-size:9px!important}.dash-kpi .wc-kpi-risk-detail{font-size:9px!important}}
+
+/* 特休預測介面保留現有卡片與排版 */
+@media(max-width:700px){.ph h1{font-size:20px}.card .fgrid{min-width:0}}
 </style>
 </head>
 <body>
@@ -832,6 +835,9 @@ const ICO={
   todo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M3.5 6l1.5 1.5L7.5 5M3.5 12l1.5 1.5 2.5-2.5M3.5 18l1.5 1.5 2.5-2.5"/></svg>',
   note:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/></svg>',
   proj:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h9M4 12h14M4 18h7"/><circle cx="16" cy="6" r="2"/><circle cx="20" cy="12" r="2"/><circle cx="14" cy="18" r="2"/></svg>',
+  flag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>',
+  leave:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3a8 8 0 0 1 8 8H4a8 8 0 0 1 8-8zM12 11v8a2 2 0 0 0 4 0"/></svg>',
+  week:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M7 15h10"/></svg>',
   stat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   set:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 1.2 14H1a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 2.6 7a1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 1.2V1a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 22.8 10H23a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   chk:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg>'
@@ -1006,7 +1012,7 @@ function reasonTag(t){t=t||'';if(/突發|插件|臨時交辦|擠/.test(t))return
 function parseItem(raw,sec){
   const s=N(raw);
   const m=s.match(catRE());
-  if(!m)return{ok:false,why:'找不到分類（行首須為 專案／例行／會議）'};
+  if(!m)return{ok:false,why:'找不到分類（行首須為 '+categories().join('／')+'）'};
   const it={ok:true,sec,raw,cat:m[1],project:'',title:'',subs:[],est:null,actual:null,actualMissing:false,star:false,dl:null,
     doneCriteria:'',stopLoss:'',deliverTo:'',outcome:'',delivered:false,reason:'',newDate:null,pct:null,note:'',soft:''};
   let rest=m[2].trim();
@@ -1039,6 +1045,8 @@ function parseItem(raw,sec){
   // 舊式：第二個工時為實際
   if(content&&(mm=content.match(reLead))){it.actual=toH(mm[1],mm[2]);if(mm[3])it.note=`實際 ${mm[1]}-${mm[3]}`;content=mm[5]||mm[4]||'';if(typeof content!=='string')content=''}
   if(content&&(mm=content.match(reLead))){content=mm[5]||''}
+  // 突發：行首「完成／未完成」是狀態，不是內容
+  if(sec==='urgent'){const sm=content.match(/^(未完成|完成)\s*(?:,|$)\s*/);if(sm){it.urgentStatus=sm[1];content=content.slice(sm[0].length)}}
   // 未完成：原因與新日期
   if(sec==='undone'||/因/.test(content)){
     const ix=content.indexOf('因');
@@ -1156,7 +1164,7 @@ function applyDay(D,text,opt={}){
   const r=parseDay(text);
   const Pd=prevWorkday(D);
   const prevDay=db.days[D]||{};
-  db.days[D]={rawText:text,locations:r.header.locations||[],leaves:r.header.leaves||[],
+  db.days[D]={rawText:text,locations:r.header.locations||[],leaves:r.header.leaves||[],reviewSummary:prevDay.reviewSummary,
     warnings:r.warnings.map(w=>({line:w.i,text:w.raw,why:w.why,level:w.level,sec:w.sec||''})),updatedAt:Date.now(),createdAt:prevDay.createdAt||Date.now()};
   // 1. 還原此日上次存檔造成的影響
   for(const t of T()){
@@ -1192,7 +1200,10 @@ function applyDay(D,text,opt={}){
     if(it.newDate){const nd=resolveMD(it.newDate,D,'future');if(nd)carries.push({src:t,date:nd,it})}}
   for(const it of r.urgent){
     const t=newTask({date:Pd,origin:'urgent',source:'urgent',createdByDay:D,isUrgent:true});
-    applyItemFields(t,it,Pd);t.actual={office:it.actual??it.est};t.status=it.delivered?'已交付':'完成';if(t.status==='已交付')t.deliveredAt=Pd;
+    applyItemFields(t,it,Pd);t.actual={office:it.actual??it.est};
+    if(it.urgentStatus==='未完成'){t.status='延遲';t.delayReasonText=it.reason||'';t.delayReasonTag=reasonTag(it.reason);
+      if(it.newDate){const nd=resolveMD(it.newDate,D,'future');if(nd)carries.push({src:t,date:nd,it})}}
+    else{t.status=it.delivered?'已交付':'完成';if(t.status==='已交付')t.deliveredAt=Pd}
     if(it.doneText)t.doneText=it.doneText}
   for(const o of r.ot){
     const pl=T().filter(t=>t.date===Pd);let pid=null;
@@ -1312,22 +1323,6 @@ function csvDays(){return toCSV([['日期','辦公地','請假','加班','全文
 function csvProjects(){return toCSV([['專案','分類','狀態','計畫起','計畫迄','DL','別名'],...Object.values(db.projects).map(p=>[p.name,p.category,p.status,p.planStart||'',p.planEnd||'',p.dl||'',(p.aliases||[]).join('、')])])}
 
 /* 假勤額度：法定週年基準僅供估算，正式核給以公司紀錄為準 */
-function leaveLedger(){return db.leaveLedger||(db.leaveLedger=[])}
-function leaveGrantDays(years){if(years<.5)return 0;if(years<1)return 3;if(years<2)return 7;if(years<3)return 10;if(years<5)return 14;if(years<10)return 15;return Math.min(30,16+Math.floor(years)-10)}
-function anniversaryYears(hire,day){if(!hire||!day)return null;const a=new Date(hire+'T12:00:00'),b=new Date(day+'T12:00:00');if(!Number.isFinite(+a)||!Number.isFinite(+b)||b<a)return 0;let n=b.getFullYear()-a.getFullYear();if(b.getMonth()<a.getMonth()||(b.getMonth()===a.getMonth()&&b.getDate()<a.getDate()))n--;return n+(b-a-(new Date(b.getFullYear()-n,a.getMonth(),a.getDate())-a))/(366*86400000)}
-function leavePeriod(anchor,asOf){if(!/^\d{4}-\d{2}-\d{2}$/.test(anchor||''))return null;let st=anchor;let n=0;while(addYears(st,1)<=asOf&&n++<150)st=addYears(st,1);while(st>asOf&&n++<300)st=addYears(st,-1);return[st,addD(addYears(st,1),-1)]}
-function addYears(d,n){const y=+d.slice(0,4)+n,m=+d.slice(5,7),dd=+d.slice(8);return iso(new Date(y,m-1,Math.min(dd,new Date(y,m,0).getDate())))}
-function hoursUsed(type,start,end){return sum(Object.entries(db.days).filter(([d])=>d>=start&&d<=end),([d,v])=>sum((v.leaves||[]).filter(x=>x.type===type),x=>+x.hours||0))}
-function leaveSummary(asOf){const s=db.settings,cycle=leavePeriod(s.leaveCycleStart,asOf);const st=cycle?.[0]||`${asOf.slice(0,4)}-01-01`,ed=cycle?.[1]||`${asOf.slice(0,4)}-12-31`;const years=anniversaryYears(s.hireDate,st);const sixMonths=s.hireDate?(()=>{const a=new Date(s.hireDate+'T12:00:00');const b=new Date(a);b.setMonth(b.getMonth()+6);return iso(b)})():null;const estimate=years==null?null:(sixMonths&&st>=sixMonths?leaveGrantDays(years):0);const grant=s.leaveGrantedHours===''||s.leaveGrantedHours==null?null:+s.leaveGrantedHours;const special=hoursUsed('特休',st,asOf);const adjust=sum(leaveLedger().filter(x=>x.type==='特休'&&x.date>=st&&x.date<=asOf),x=>x.hours);const available=grant==null?null:grant+adjust;
- const compEarned=sum(leaveLedger().filter(x=>x.type==='補休'&&x.date<=asOf),x=>x.hours);const compUsed=hoursUsed('補休','1900-01-01',asOf);const compDebits=sum(leaveLedger().filter(x=>x.type==='補休結清'&&x.date<=asOf),x=>x.hours);return{st,ed,estimate,years,grant,available,special,compEarned,compUsed,compDebits,compBalance:compEarned-compUsed-compDebits}}
-function pgLeaveManage(){const asOf=today(),s=db.settings,z=leaveSummary(asOf),hr=hpd();const year=asOf.slice(0,4),mon=asOf.slice(0,7),ySum=calcStats(year+'-01-01',year+'-12-31'),mSum=calcStats(mon+'-01',iso(new Date(+year,+mon.slice(5),0)));return `<div class="ph"><h1>假勤額度管理</h1><span class="sp"></span><button class="btn sm" data-act="go" data-p="stats">返回統計</button></div>
- <div class="grid g2"><div class="card stack"><h3>特別休假</h3><div class="sub">週期 ${z.st} ～ ${z.ed}</div><b>公司核給 ${z.grant==null?'待設定':fh(z.grant/hr)+' 天'}｜已休 ${fh(z.special/hr)} 天｜剩餘 ${z.available==null?'待設定':fh((z.available-z.special)/hr)+' 天'}</b><p class="sub">法定週年級距參考：${z.estimate==null?'請先設定到職日':z.estimate+' 天'}。跨年度／曆年制以公司核給結果為準。</p></div>
- <div class="card stack"><h3>加班補休</h3><b>已登記核給 ${fh(z.compEarned)} hr｜已使用 ${fh(z.compUsed)} hr</b><b>帳面差額 ${fh(z.compBalance)} hr</b><p class="sub">僅供核對：逐批補休到期及實際沖抵順序尚需由公司確認，不能將此帳面差額直接視為可休額度。加班原始紀錄不會自動當成補休核給。</p></div></div>
- <div class="card stack"><h3>請假使用累計</h3><div class="grid g2"><div><b>本月（${esc(mon)}）</b><div class="tbl-wrap">${tbl(['假別','時數','天數'],Object.entries(mSum.leaves).map(([k,v])=>[esc(k),fh(v),fh(v/hr)]))}</div></div><div><b>本年（${esc(year)}）</b><div class="tbl-wrap">${tbl(['假別','時數','天數'],Object.entries(ySum.leaves).map(([k,v])=>[esc(k),fh(v),fh(v/hr)]))}</div></div></div><p class="sub">月／年請假依日誌逐日重算；特休額度另依週期計算，跨年不會直接歸零。</p></div>
- <div class="card stack"><h3>計算設定</h3><div class="fgrid"><label class="fl">正式到職日<input type="date" data-leaves="hireDate" value="${esc(s.hireDate||'')}"></label><label class="fl">特休週期起算日<input type="date" data-leaves="leaveCycleStart" value="${esc(s.leaveCycleStart||'')}"></label><label class="fl">公司當期核給特休（小時）<input type="number" min="0" step="0.5" data-leaves="leaveGrantedHours" placeholder="未確認留白" value="${s.leaveGrantedHours??''}"></label></div><p class="sub">每工作日折算 ${hr} 小時；到職日用於法定級距參考，週期日決定當期統計期間。請以公司正式核給資料校正。</p></div>
- <div class="card stack"><h3>新增額度／結清紀錄</h3><div class="fgrid"><label class="fl">日期<input type="date" id="lv-date" value="${today()}"></label><label class="fl">項目<select id="lv-type"><option>補休</option><option>補休結清</option><option>特休</option></select></label><label class="fl">時數（正數增加；特休調整可輸入負數）<input id="lv-hours" type="number" step="0.5"></label><label class="fl">補休到期日（選填）<input id="lv-expiry" type="date"></label></div><label class="fl">來源／原因<input id="lv-note" placeholder="例如：公司核准加班換補休"></label><button class="btn pri" data-act="addleaveledger">新增一筆</button></div>
- <div class="card stack"><h3>歷史調整流水</h3>${leaveLedger().length?leaveLedger().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<div class="row" style="border-bottom:1px solid var(--line);padding:8px 0"><span style="flex:1">${esc(x.date)}｜${esc(x.type)} ${fh(x.hours)} hr ${x.expiry?'｜到期 '+esc(x.expiry):''} ${esc(x.note||'')}</span><button class="btn sm danger" data-act="delleaveledger" data-id="${x.id}">刪除</button></div>`).join(''):'<p class="sub">尚未建立紀錄</p>'}</div>`}
-
 /* ---------- 統計 ---------- */
 function periodRange(kind,a){const y=+a.slice(0,4),m=+a.slice(5,7);
   if(kind==='day')return[a,a];if(kind==='week')return weekRange(a);
@@ -1465,7 +1460,7 @@ let liveParse=null;
 const TEAMS_CONFIRM_KEY='worklog.teams-confirm.v1';
 let teamsConfirmed={};
 try{teamsConfirmed=JSON.parse(localStorage.getItem(TEAMS_CONFIRM_KEY)||'{}')||{}}catch(e){teamsConfirmed={}}
-function saveTeamsConfirm(){try{localStorage.setItem(TEAMS_CONFIRM_KEY,JSON.stringify(teamsConfirmed))}catch(e){toast('無法儲存 Teams 確認狀態')}}
+function saveTeamsConfirm(){db.teamsConfirmed=teamsConfirmed;persist()}
 function teamsConfirmHTML(D){
  const time=teamsConfirmed[D];
  return `<section class="teams-check"><div class="row"><b>Teams 上傳確認</b><span class="${time?'teams-done':'sub'}">${time?'✓ 已上傳 Teams':'尚未確認上傳'}</span></div><p>請先複製日誌並實際上傳 Teams，確認成功後再點選；此狀態由你手動記錄。</p><div class="row"><button class="btn ${time?'':'pri'}" data-act="teamsconfirm">${time?'取消「已上傳」確認':'✓ 已上傳 Teams'}</button>${time?`<span class="sub">確認時間：${esc(new Date(time).toLocaleString('zh-TW',{hour12:false}))}</span>`:''}</div></section>`
@@ -1479,7 +1474,9 @@ function setTeamsConfirm(){
 const reminderShown=new Set();
 function checkMorningReminder(){
  const now=new Date(),D=iso(now),mins=now.getHours()*60+now.getMinutes();
- if(mins<9*60+30||!isWorkday(D)||reminderShown.has(D)||modalStack.length)return;
+ if(mins<9*60+30||!isWorkingDay(D)||reminderShown.has(D)||modalStack.length)return;
+ if(document.activeElement?.closest?.('input,textarea,select'))return;
+ if(S.page==='day'&&S.day===D)return;
  const saved=db.days[D]?.rawText||'';
  if(saved&&parseDay(saved).today.length>0)return;
  reminderShown.add(D);
@@ -1487,7 +1484,7 @@ function checkMorningReminder(){
 }
 
 
-function applyTheme(){const t=db.settings.theme;document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');
+function applyTheme(){const t=db.settings.theme;if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);else document.documentElement.removeAttribute('data-theme');
   document.documentElement.style.setProperty('--edf',db.settings.edFont==='sans'?'var(--font)':'var(--mono)')}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('on'),1800)}
 async function copy(text){try{await navigator.clipboard.writeText(text);toast('已複製');return true}catch(e){
@@ -1506,6 +1503,14 @@ function openModal({title,body,foot,wide,onMount,onClose,cls}){
   const af=$('[autofocus]',ov)||$('input,textarea,select,button',ov);af&&setTimeout(()=>af.focus(),0);
   return ov}
 function closeModal(){const m=modalStack.pop();if(!m)return;m.ov.remove();m.onClose&&m.onClose();m.prevFocus&&m.prevFocus.focus&&document.contains(m.prevFocus)&&m.prevFocus.focus()}
+/* 頁內確認：取代瀏覽器 confirm。ask() 回傳 false 並開啟確認框；按確定後重新執行 retry，此時 ask() 回傳 true。 */
+let _askOk=false;
+function ask(msg,retry,label='確定'){if(_askOk){_askOk=false;return true}
+  openModal({title:'請確認',body:`<p style="margin:0;white-space:pre-line">${esc(msg)}</p>`,foot:`<button class="btn" data-act="mclose">取消</button><button class="btn pri" id="ask-yes">${esc(label)}</button>`,
+    onMount:ov=>{$('#ask-yes',ov).onclick=()=>{closeModal();_askOk=true;try{retry()}finally{_askOk=false}}}});return false}
+function noticeBox(title,msg){openModal({title,body:`<p style="margin:0;white-space:pre-line">${esc(msg)}</p>`,foot:'<button class="btn pri" data-act="mclose">知道了</button>'})}
+function inputBox(title,label,value,done){openModal({title,body:`<label class="fl">${esc(label)}<input type="text" id="ib-v" value="${esc(value||'')}" autofocus></label>`,foot:'<button class="btn" data-act="mclose">取消</button><button class="btn pri" id="ib-ok">確定</button>',
+  onMount:ov=>{const ok=()=>{const v=$('#ib-v',ov).value;closeModal();done(v)};$('#ib-ok',ov).onclick=ok;$('#ib-v',ov).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();ok()}})}})}
 function confirmBox(msg,yes,label='確定'){openModal({title:'請確認',body:`<p style="margin:0">${msg}</p>`,foot:`<button class="btn" data-act="mclose">取消</button><button class="btn danger" id="cf-yes">${esc(label)}</button>`,
   onMount:ov=>{$('#cf-yes',ov).onclick=()=>{closeModal();yes()}}})}
 function textModal(title,text,extra=''){openModal({title,wide:true,body:`${extra}<textarea class="f mono" id="tm-ta" rows="16" style="font-size:12px">${esc(text)}</textarea>`,
@@ -1526,7 +1531,7 @@ function weekRemove(i){wkData().items.splice(i,1);weekSave();render()}
 function weekBring(i){const it=wkData().items[i];if(!it)return;const base=dayText(it.date),line=`${it.cat}-${it.title}_${hrTok(it.h)}${it.detail?'，'+it.detail:''}`;
  const parsed=parseDay(base);if(parsed.today.some(x=>x.raw.trim()===line.trim())){toast('這項工作已存在日誌');return}
  const merged=guideReplaceSection(base,'today',[...parsed.today.map(x=>x.raw),line]);
- if(db.days[it.date]?.rawText&&!confirm('將新增此項到 '+it.date+' 的今日工作項目，保留原有其他內容，確認？'))return;
+ if(db.days[it.date]?.rawText&&!ask('將新增此項到 '+it.date+' 的今日工作項目，保留原有其他內容，確認？',()=>weekBring(i),'帶入日誌'))return;
  applyDay(it.date,merged);persist();it.added=true;weekSave();render();toast('已帶入 '+it.date+' 日誌')}
 function weekReportText(){const [a,b]=weekRange(weekAnchor),prevA=addD(a,-7),prevB=addD(a,-1);
  const last=T().filter(x=>x.date>=prevA&&x.date<=prevB);
@@ -1554,7 +1559,7 @@ function pgWeekSpace(){const [a,b]=weekRange(weekAnchor),w=wkData(),total=w.item
 function mountWeekSpace(){const x=$('#wk-report');if(weekDraft){x.value=weekDraft;weekDraft=''}$('#wk-save').onclick=()=>{wkData().report=x.value;weekSave();toast('已保存本週個人回報')};$('#wk-copy').onclick=()=>copy(x.value)}
 
 /* ---------- 外殼 ---------- */
-const PAGES=[['calendar','月曆','cal'],['todo','待辦','todo'],['risk','風險決策','stat'],['notes','筆記','note'],['projects','專案','proj'],['stats','統計','stat'],['leave','假勤','stat'],['weeklyspace','週工作','stat'],['settings','設定','set']];
+const PAGES=[['calendar','月曆','cal'],['todo','待辦','todo'],['risk','風險決策','flag'],['notes','筆記','note'],['projects','專案','proj'],['stats','統計','stat'],['leave','假勤','leave'],['weeklyspace','週工作','week'],['settings','設定','set']];
 function renderNav(){
   const cur=S.page==='day'?'calendar':S.page==='import'?'settings':S.page;
   $('#nav').innerHTML=`<div class="brand"><b>工作日誌</b><span>本機測試版</span></div>`+PAGES.map(([k,l,i],n)=>`<button class="navbtn" data-act="go" data-p="${k}" ${cur===k?'aria-current="page"':''}>${ICO[i]}${l}<span class="k">Alt+${n+1}</span></button>`).join('')+
@@ -1562,13 +1567,13 @@ function renderNav(){
     <div class="navfoot"><button class="btn sm" data-act="palette">指令面板 <kbd>Ctrl K</kbd></button><button class="btn sm" data-act="search">搜尋 <kbd>/</kbd></button><button class="btn sm" data-act="help">快捷鍵 <kbd>?</kbd></button>
     <button class="btn sm" data-act="privacy" aria-pressed="${S.privacy}">${S.privacy?'隱私模式：開':'隱私模式：關'}</button>
     <div class="syncstate"><i></i>${storageOk?'資料存於此瀏覽器':'無法寫入瀏覽器儲存，重新整理會遺失'}</div></div>`;
-  $('#bnav').innerHTML=PAGES.map(([k,l,i])=>`<button class="bn" data-act="go" data-p="${k}" ${cur===k?'aria-current="page"':''}>${ICO[i]}<span>${l}</span></button>`).join('')}
+  $('#bnav').innerHTML=PAGES.map(([k,l,i])=>`<button class="bn" data-act="go" data-p="${k}" ${cur===k?'aria-current="page"':''} aria-label="${l}">${ICO[i]}<span>${({risk:'風險',weeklyspace:'週計畫'})[k]||l}</span></button>`).join('')}
 function sampleBanner(){return db.sample?`<div class="banner"><b>範例資料</b><span>目前顯示的是示範內容，不是你的紀錄。看完功能後清除即可開始使用。</span><span class="sp" style="flex:1"></span><button class="btn sm" data-act="clearsample">清除範例，開始使用</button></div>`:''}
 function isInner(){return S.page==='day'||S.page==='import'||(S.page==='notes'&&!!db.notes[S.noteSel])||(S.page==='projects'&&!!S.projSel)}
 function render(){
   document.body.classList.toggle('privacy',S.privacy);document.body.classList.toggle('inner',isInner());
   renderNav();
-  const f={calendar:pgCalendar,day:pgDay,todo:pgTodo,risk:pgRisk,notes:pgNotes,projects:pgProjects,stats:pgStats,leave:pgLeaveManage,weeklyspace:pgWeekSpace,settings:pgSettings,import:pgImport}[S.page]||pgCalendar;
+  const f={calendar:pgCalendar,day:pgDay,todo:pgTodo,risk:pgRisk,notes:pgNotes,projects:pgProjects,stats:pgStats,leave:pgLeaveManage,leaveplan:pgLeavePlan,weeklyspace:pgWeekSpace,settings:pgSettings,import:pgImport}[S.page]||pgCalendar;
   const main=$('#main');const st=main.scrollTop;main.innerHTML=sampleBanner()+f();
   after[S.page]&&after[S.page]();
   const wcDate=$('#wc-detail-date');if(wcDate)wcDate.addEventListener('change',()=>{if(/^\d{4}-\d{2}-\d{2}$/.test(wcDate.value)){S.day=wcDate.value;S.cursor=S.day;render()}});
@@ -1607,12 +1612,13 @@ function miniCalendar(D){
 function remHTML(r){return `<button class="rem-i" data-act="remgo" data-go='${esc(JSON.stringify(r.go))}'><span class="tag ${r.k}">${esc(r.tag)}</span><span>${esc(r.txt)}</span></button>`}
 
 /* ---------- 月曆 ---------- */
+function firstLogDay(){const n=Object.keys(db.days).length;if(firstLogDay._n!==n||firstLogDay._db!==db){firstLogDay._n=n;firstLogDay._db=db;firstLogDay._v=Object.keys(db.days).filter(k=>db.days[k]?.rawText).sort()[0]||null}return firstLogDay._v}
 function dayInfo(d){
   const dd=db.days[d];const ts=T().filter(t=>t.date===d&&t.status!=='待辦');const plan=ts.filter(t=>t.origin==='plan');
   const hrs=sum(ts,t=>t.actual?.office);const est=sum(plan,t=>t.estHours);
   let st=null;
   if(plan.some(t=>t.status==='延遲'))st='late';else if(plan.length&&plan.every(t=>['完成','已交付'].includes(t.status)))st='done';else if(plan.length)st='plan';
-  else if(!dd?.rawText&&isWorkingDay(d)&&d<today())st='none';
+  else if(!dd?.rawText&&isWorkingDay(d)&&d<today()&&firstLogDay()&&d>=firstLogDay())st='none';
   const urg=ts.some(t=>t.isUrgent);const lv=leaveHours(d);const trip=(dd?.locations||[]).some(l=>l.trip);
   const dls=T().filter(t=>t.dl===d&&!t.archived).length+Object.values(db.projects).filter(p=>p.dl===d).length;
   const ot=sum(db.ot.filter(o=>o.date===d),o=>o.hours);
@@ -1713,7 +1719,7 @@ function wcHoursAlert(D){
  wcHourAlertCache.set(D,signature);
  // 用系統確認視窗清楚列出異常。按確定只關閉提醒，不覆蓋資料。
  const message=`${D} 工時／出勤檢核提醒：\n\n`+data.errors.map((x,i)=>`${i+1}. ${x}`).join('\n')+'\n\n資料已保留，請確認工作、請假及辦公地紀錄。';
- alert(message);
+ noticeBox('工時／出勤檢核提醒',message);
 }
 function wcHoursAudit(D){
  // 正常或異常皆只在儲存完成時提示；畫面不常駐警示卡。
@@ -1764,12 +1770,16 @@ function pgDay(){
     <div class="savebar"><span class="state ${sc}" id="daystate"><i></i>${sl}</span><button class="btn pri" data-act="logsaveclose" ${ro?'disabled':''}>儲存並返回每日主頁</button></div>`;
   if(wcPrevSub)return `<div class="dayhead"><button class="xbtn back" data-act="wcprevclose" aria-label="返回每日主頁">‹</button><h1>${md(D)}（${wd(D)}）｜上一工作日盤點</h1><span class="sp" style="flex:1"></span>${calendarModeSwitch()}<button class="btn sm" data-act="wcprevclose">返回每日主頁</button></div><div id="guided-host"></div>`;
   if(S.guideSub)return `<div class="dayhead"><button class="xbtn back" data-act="guideclose" aria-label="返回每日主頁">‹</button><h1>${md(D)}（${wd(D)}）｜今日工作輸入</h1><span class="sp" style="flex:1"></span>${calendarModeSwitch()}<button class="btn sm" data-act="guideclose">返回每日主頁</button></div><div id="guided-host"></div><div class="wc-editor-footer"><button class="btn pri" data-act="guideclose">返回每日主頁</button></div>`;
-  return`<div class="dayhead"><button class="xbtn back" data-act="back" aria-label="上一頁（Esc）">‹</button><button class="btn sm" data-act="dayprev" aria-label="前一天">‹ <kbd>[</kbd></button><h1>${md(D)}（${wd(D)}）</h1><button class="btn sm" data-act="daynext" aria-label="後一天"><kbd>]</kbd> ›</button>
+  return`<div class="dayhead"><button class="xbtn back" data-act="back" aria-label="上一頁（Esc）">‹</button><button class="btn sm" data-act="dayprev" aria-label="前一天">前一天 <kbd>[</kbd></button><h1>${md(D)}（${wd(D)}）</h1><button class="btn sm" data-act="daynext" aria-label="後一天">後一天 <kbd>]</kbd></button>
     <span class="sub">${D}</span>${H.h[D]?`<span class="chip late">${esc(H.h[D])}</span>`:!isWorkday(D)?'<span class="chip">假日</span>':H.w[D]?'<span class="chip plan">補班日</span>':''}
     <span class="sp" style="flex:1"></span>${calendarModeSwitch()}<button class="btn sm rail-toggle" data-act="rail">待辦</button></div>
   ${wcHoursAudit(D)}
   ${wcDayKpis(D,text)}
   ${(()=>{const locs=dayOfficePlaces(text);return locs.length?`<div class="dash-locline"><span class="lbl">當日辦公地</span>${locs.map(p=>`<span class="chip pv">${esc(p)}</span>`).join('')}</div>`:'';})()}
+  <div class="wc-dual-actions">
+    <button class="btn pri" data-act="wcprevopen">開啟上一工作日內容</button>
+    <button class="btn pri" data-act="guideopen">輸入今日工作</button>
+  </div>
   <div class="tool">
     ${ro?'<span class="chip priv">隱私模式已開啟</span>':''}
     <button class="btn sm" data-act="copyai">複製給 AI <kbd class="hide-m">Ctrl⇧A</kbd></button>
@@ -1779,13 +1789,9 @@ function pgDay(){
   </div>
   <div class="wc-log-team">${teamsConfirmHTML(D)}<section class="wc-log-entry"><div><strong>📝 完整工作日誌</strong><p class="sub">查閱任何單日的完整內容與原文</p></div><button class="btn pri" data-act="wcdetailopen">查看單日完整內容 ›</button><button class="btn sm" data-act="logopen">編輯原文</button></section></div>
   ${!ro?`<div id="guided-host"></div>`:''}
-  <div class="wc-dual-actions">
-    <button class="btn pri" data-act="wcprevopen">開啟上一工作日內容</button>
-    <button class="btn pri" data-act="guideopen">輸入今日工作</button>
-  </div>
   <div class="wc-section-grid">
     <section class="wc-data-card"><div class="wc-data-head"><strong>▣ 今日工作項目</strong><span class="sub">${parseDay(text).today.length} 項</span><div class="wc-actions"><button class="btn sm" data-act="wccopy" data-sec="today" ${wcLines('today',D).length?'':'disabled'}>複製條列</button></div></div><div class="wc-data-body">${wcLinesHtml('today',D)}</div></section>
-    ${(db.days[D]?.reviewSummary||wcReviews[D])?wcPrevCards(D):['done','undone','urgent'].map(k=>wcSectionCard(k,{done:'上一工作日完成',undone:'上一工作日未完成',urgent:'上一工作日突發工作'}[k],D)).join('')}
+    ${liveReview(D)?wcPrevCards(D):['done','undone','urgent'].map(k=>wcSectionCard(k,{done:'上一工作日完成',undone:'上一工作日未完成',urgent:'上一工作日突發工作'}[k],D)).join('')}
   </div>`}
 
 /* ---------- 選項式工作日誌：輸出原始文字，延用現有解析與儲存 ---------- */
@@ -1793,7 +1799,7 @@ function pgDay(){
 function wcDayKpis(D,raw){
  const parsed=parseDay(raw), work=sum(parsed.today,x=>x.est||0);
  const leaves=(parsed.header.leaves||[]).reduce((n,x)=>n+(Number(x.hours)||0),0);
- const review=db.days[D]?.reviewSummary||wcReviews[D];
+ const review=liveReview(D);
  const finished=review?(review.done||[]).length+(review.urgent||[]).filter(x=>x.status==='完成').length:null;
  const risks=allRisk(), overdue=risks.filter(x=>x.isLate).length;
  const high=risks.filter(x=>x.level===3).length;
@@ -1922,7 +1928,7 @@ function guideMergeHeader(text){
  return lines.join('\n')
 }
 function guidePutText(text,msg){
- const before=guideSource();if(before!==text&&db.days[S.day]?.rawText&&before!==template(S.day)&&!confirm('此操作將更新下方日誌文字。請確認已檢視內容，繼續？'))return;
+ const before=guideSource();if(before!==text&&db.days[S.day]?.rawText&&before!==template(S.day)&&!ask('此操作將更新下方日誌文字。請確認已檢視內容，繼續？',()=>guidePutText(text,msg),'更新日誌'))return;
  const ta=$('#ta');
  if(ta){ta.value=text;ta.dispatchEvent(new Event('input'))}
  else{applyDay(S.day,text);delete drafts[S.day];persist();render()}
@@ -1963,8 +1969,18 @@ function guideRender(){const host=$('#guided-host');if(!host)return;
 }
 const WC_REVIEW_KEY='workcal.review.summary.v1';
 let wcReviews={};try{wcReviews=JSON.parse(localStorage.getItem(WC_REVIEW_KEY)||'{}')||{}}catch(e){wcReviews={}}
-function wcSaveReview(){try{localStorage.setItem(WC_REVIEW_KEY,JSON.stringify(wcReviews))}catch(e){toast('盤點摘要存檔失敗')}}
-function wcPrevCards(D){const R=db.days[D]?.reviewSummary||wcReviews[D];if(!R)return '';
+function wcSaveReview(){db.reviews=wcReviews;persist()}
+/* 舊版存在獨立 localStorage 的資料，第一次啟動時併入 db；之後一律跟著 db 備份、清除、還原 */
+function rebindDb(){
+  const first=!rebindDb.done;
+  if(!db.teamsConfirmed)db.teamsConfirmed=first?Object.assign({},teamsConfirmed):{};
+  if(!db.reviews)db.reviews=first?Object.assign({},wcReviews):{};
+  if(!db.weekly)db.weekly=first?Object.assign({},weekStore):{};
+  teamsConfirmed=db.teamsConfirmed;wcReviews=db.reviews;weekStore=db.weekly;
+  if(first){rebindDb.done=true;persist();try{localStorage.removeItem(TEAMS_CONFIRM_KEY);localStorage.removeItem(WC_REVIEW_KEY)}catch(e){}}}
+function reviewSig(text){return ['done','undone','urgent'].map(k=>{const ls=String(text||'').split('\n');const b=ls.findIndex(l=>secOf(N(l))===k);if(b<0)return'';let e=b+1;while(e<ls.length&&!secOf(N(ls[e]))&&!/^[—─\-=_]{3,}$/.test(N(ls[e]))&&!/^私記/.test(N(ls[e])))e++;return ls.slice(b+1,e).map(x=>N(x)).filter(x=>x&&x!=='無').join('\n')}).join('\u0001')}
+function liveReview(D){const R=db.days[D]?.reviewSummary||wcReviews[D];if(!R)return null;if(R.sig!=null&&R.sig!==reviewSig(dayText(D)))return null;return R}
+function wcPrevCards(D){const R=liveReview(D);if(!R)return '';
  return ['done','undone','urgent'].map(k=>{const items=k==='urgent'?(R.urgent||[]):(R[k]||[]).concat((R.urgent||[]).filter(u=>u.status===(k==='done'?'完成':'未完成')));const title={done:'上一工作日完成',undone:'上一工作日未完成',urgent:'上一工作日突發工作'}[k];const html=items.map(x=>`<div class="wc-data-line"><span>${esc(x.label)}${x.status?'｜'+esc(x.status):''}</span><small>${x.est!=null?'預'+fh(x.est)+'h｜':''}實${x.actual!=null?fh(x.actual)+'h':'—'}</small></div>`).join('')||'<div class="sub" style="padding:10px 0">無資料</div>';return `<section class="wc-data-card"><div class="wc-data-head"><strong>${title}</strong><span class="sub">${items.length} 項</span><div class="wc-actions"><button class="btn sm" data-act="wccopy" data-sec="${k}" ${items.length?'':'disabled'}>複製條列</button></div></div><div class="wc-data-body">${html}</div></section>`}).join('')}
 function guideOutputUrgent(){return guideUrgents.filter(u=>u.project.trim()).map(u=>u.status==='未完成'?`${u.category}-${u.project.trim()}_實${hrTok(Number(u.hours))}，未完成，因${(u.reason||'').trim()}，擬${u.date||mmdd(S.day)}完成`:`${u.category}-${u.project.trim()}_實${hrTok(Number(u.hours))}，完成${u.detail.trim()?'，'+u.detail.trim():''}`)}
 function guideOutputPrev(){const done=[],undone=[];for(const x of guidePrev()){const r=guideReview[x.id]||{};const details=(r.detail||x.detail||'').trim();if(r.status==='完成')done.push(`${x.category}-${x.project}_預${x.est!=null?hrTok(x.est):'＿hr'}，實${r.actual!==''&&r.actual!=null?hrTok(+r.actual):'＿hr'}${details?'，'+details:''}`);
@@ -1973,16 +1989,16 @@ function guideAction(type,el){
  if(type==='import-prev'){
   const D=prevWorkday(S.day), prev=guidePrev();
   if(!prev.length){toast('上一工作日 '+D+' 沒有可匯入的工作項目');return}
-  if(Object.keys(guideReview).length&&guideImportedDay&&guideImportedDay!==D&&!confirm('重新匯入將重設目前盤點結果，確定繼續？'))return;
+  if(Object.keys(guideReview).length&&guideImportedDay&&guideImportedDay!==D&&!ask('重新匯入將重設目前盤點結果，確定繼續？',()=>guideAction(type,el),'重新匯入'))return;
   guideReview={};prev.forEach(x=>guideReview[x.id]={status:'待確認',actual:'',reason:'',date:mmdd(S.day),detail:x.detail});
   guideImportedDay=D;guideRender();toast('已匯入 '+D+' 的 '+prev.length+' 項工作，請確認完成狀態');return;
  }
  if(type==='add-urgent'){guideUrgents.push({category:'突發',project:'',status:'完成',hours:'',detail:'',reason:'',date:mmdd(S.day)});guideRender();return}
- if(type==='remove-urgent'){if(confirm('確認移除這筆尚未確認的突發工作？')){guideUrgents.splice(+el.dataset.i,1);guideRender()}return}
+ if(type==='remove-urgent'){if(ask('確認移除這筆尚未確認的突發工作？',()=>guideAction(type,el),'移除')){guideUrgents.splice(+el.dataset.i,1);guideRender()}return}
 
  if(type==='save-header'){
   const before=guideSource(),text=guideMergeHeader(before);
-  if(text!==before&&db.days[S.day]?.rawText&&before!==template(S.day)&&!confirm('確認更新當日日誌的辦公地與請假欄位？其餘文字會保留。'))return;
+  if(text!==before&&db.days[S.day]?.rawText&&before!==template(S.day)&&!ask('確認更新當日日誌的辦公地與請假欄位？其餘文字會保留。',()=>guideAction(type,el),'儲存'))return;
   applyDay(S.day,text);delete drafts[S.day];persist();render();wcHoursAlert(S.day);toast('基本資料已儲存，當日首頁與統計已更新');return;
  }
  if(type==='add-place'){
@@ -2010,11 +2026,11 @@ function guideAction(type,el){
   for(const x of guidePrev()){const r=guideReview[x.id]||{};if(r.status==='完成'&&(r.actual===''||r.actual==null||!Number.isFinite(Number(r.actual))||Number(r.actual)<0)){toast('請填寫「'+x.project+'」的有效實際工時');return}if(r.status==='未完成'&&!String(r.reason||'').trim()){toast('請填寫「'+x.project+'」的未完成原因');return}}
   for(const u of guideUrgents){if(!u.project.trim()||u.hours===''||!Number.isFinite(Number(u.hours))||Number(u.hours)<0){toast('請完整填寫突發工作的名稱及有效實際工時');return}}
   const before=guideSource();let text=guideReplaceSection(before,'done',done);text=guideReplaceSection(text,'undone',undone);text=guideReplaceSection(text,'urgent',guideOutputUrgent());
-  if(text!==before&&db.days[S.day]?.rawText&&before!==template(S.day)&&!confirm('確認將上一工作日盤點寫入今日日誌的「昨日完成／未完成」段落？其他段落會保留。'))return;
+  if(text!==before&&db.days[S.day]?.rawText&&before!==template(S.day)&&!ask('確認將上一工作日盤點寫入今日日誌的「昨日完成／未完成」段落？其他段落會保留。',()=>guideAction(type,el),'寫入日誌'))return;
   const reviewed={done:[],undone:[],urgent:[],source:prevWorkday(S.day)};
   for(const x of guidePrev()){const r=guideReview[x.id]||{};if(r.status==='完成'||r.status==='未完成')reviewed[r.status==='完成'?'done':'undone'].push({label:x.category+'－'+x.project,status:r.status,est:x.est,actual:r.actual!==''&&r.actual!=null?Number(r.actual):null})}
   for(const u of guideUrgents)reviewed.urgent.push({label:u.category+'－'+u.project,status:u.status,est:null,actual:u.hours===''?null:Number(u.hours),origin:'urgent'});
-  wcReviews[S.day]=reviewed;wcSaveReview();
+  reviewed.sig=reviewSig(text);wcReviews[S.day]=reviewed;wcSaveReview();
   applyDay(S.day,text);db.days[S.day].reviewSummary=reviewed;delete drafts[S.day];guideUrgents=[];persist();wcPrevSub=false;render();wcHoursAlert(S.day);toast('上一工作日盤點已確認並儲存，首頁與日誌已更新');return;
  }
 }
@@ -2375,11 +2391,59 @@ function addYears(d,n){const y=+d.slice(0,4)+n,m=+d.slice(5,7),dd=+d.slice(8);re
 function hoursUsed(type,start,end){return sum(Object.entries(db.days).filter(([d])=>d>=start&&d<=end),([d,v])=>sum((v.leaves||[]).filter(x=>x.type===type),x=>+x.hours||0))}
 function leaveSummary(asOf){const s=db.settings,cycle=leavePeriod(s.leaveCycleStart,asOf);const st=cycle?.[0]||`${asOf.slice(0,4)}-01-01`,ed=cycle?.[1]||`${asOf.slice(0,4)}-12-31`;const years=anniversaryYears(s.hireDate,st);const sixMonths=s.hireDate?(()=>{const a=new Date(s.hireDate+'T12:00:00');const b=new Date(a);b.setMonth(b.getMonth()+6);return iso(b)})():null;const estimate=years==null?null:(sixMonths&&st>=sixMonths?leaveGrantDays(years):0);const grant=s.leaveGrantedHours===''||s.leaveGrantedHours==null?null:+s.leaveGrantedHours;const special=hoursUsed('特休',st,asOf);const adjust=sum(leaveLedger().filter(x=>x.type==='特休'&&x.date>=st&&x.date<=asOf),x=>x.hours);const available=grant==null?null:grant+adjust;
  const compEarned=sum(leaveLedger().filter(x=>x.type==='補休'&&x.date<=asOf),x=>x.hours);const compUsed=hoursUsed('補休','1900-01-01',asOf);const compDebits=sum(leaveLedger().filter(x=>x.type==='補休結清'&&x.date<=asOf),x=>x.hours);return{st,ed,estimate,years,grant,available,special,compEarned,compUsed,compDebits,compBalance:compEarned-compUsed-compDebits}}
+/* --- 特休規劃：規劃獨立保存，不影響正式請假與核給流水 --- */
+function leavePlans(){return db.leavePlans||(db.leavePlans=[])}
+function leaveMinutes(h){return Math.round((Number(h)||0)*60)}
+function leaveDisplay(min){return fh(min/60)}
+function planDates(a,b){let out=[];if(!/^\d{4}-\d\d-\d\d$/.test(a||'')||!/^\d{4}-\d\d-\d\d$/.test(b||'')||b<a)return out;
+ for(let d=a;d<=b&&out.length<370;d=addD(d,1))if(isWorkday(d))out.push(d);return out}
+function officialLeaveMin(d){return Math.max(0,leaveMinutes(sum((db.days[d]?.leaves||[]).filter(x=>x.type==='特休'),x=>x.hours)))}
+function leavePlanProjection(){
+ const now=today(),z=leaveSummary(now),hrs=hpd(),periodStart=z.st,periodEnd=z.ed,next=addD(periodEnd,1);
+ const grant=z.available==null?null:leaveMinutes(z.available);
+ const used=leaveMinutes(hoursUsed('特休',periodStart,now));
+ const futureOfficial=leaveMinutes(hoursUsed('特休',addD(now,1),periodEnd));
+ const planned=leavePlans().filter(p=>p.start<=periodEnd&&p.end>=periodStart).sort((a,b)=>a.start.localeCompare(b.start)||a.end.localeCompare(b.end));
+ const events=new Map(),warnings=[];
+ const dateSet=new Map();
+ // 正式請假已寫入當日日誌，永遠先扣正式紀錄
+ for(const [d,day] of Object.entries(db.days))if(d>now&&d<=periodEnd){const m=officialLeaveMin(d);if(m)events.set(d,{date:d,official:m,sim:0,conflict:0,items:[]})}
+ for(const p of planned){const dates=planDates(p.start,p.end);if(!dates.length)continue;
+  const pm=leaveMinutes(p.hours);for(const d of dates){if(d<periodStart||d>periodEnd)continue;
+   if(d<now)continue; // 已經過去的模擬不會再次耗用目前可用額度
+   const event=events.get(d)||{date:d,official:d>now?officialLeaveMin(d):0,sim:0,conflict:0,items:[]};
+   const taken=(dateSet.get(d)||0),capacity=Math.max(0,leaveMinutes(hrs)-officialLeaveMin(d)-taken),usable=Math.min(pm,capacity);
+   event.sim+=usable;event.conflict+=pm-usable;event.items.push(p.title||'休假規劃');dateSet.set(d,taken+usable);events.set(d,event);
+  }
+ }
+ const timeline=[...events.values()].sort((a,b)=>a.date.localeCompare(b.date));
+ let bal=grant===null?null:grant-used;let firstShort='';
+ for(const row of timeline){if(bal!==null){bal-=row.official+row.sim;if(bal<0&&!firstShort)firstShort=row.date}}
+ const futureSim=timeline.reduce((n,r)=>n+r.sim,0),overlap=timeline.reduce((n,r)=>n+r.conflict,0);
+ return {now,z,hrs,next,grant,used,futureOfficial,futureSim,overlap,balance:bal,firstShort,timeline,plans:planned};
+}
+function pgLeavePlan(){const q=leavePlanProjection(),z=q.z,hr=q.hrs,remaining=q.grant===null?null:q.grant-q.used;const reserve=leaveMinutes(db.settings.leaveReserveHours||0);
+ const fmt=v=>v==null?'待設定':leaveDisplay(v)+' hr';
+ const plans=leavePlans().slice().sort((a,b)=>a.start.localeCompare(b.start));
+ return `<div class="ph"><h1>特休規劃與預測</h1><span class="sp"></span><button class="btn sm" data-act="go" data-p="leave">返回假勤管理</button></div>
+ <div class="card stack"><h3>當期特休額度（以小時計算）</h3><div class="sub">當期 ${z.st} ～ ${z.ed}｜下次週期開始 ${q.next}｜距下次起算 ${Math.max(0,diffD(q.now,q.next))} 個日曆天</div>
+ <div class="grid g2"><div><div class="sub">公司核給及當期調整</div><b>${fmt(q.grant)}</b></div><div><div class="sub">截至今日已登記特休</div><b>${fmt(q.used)}</b></div><div><div class="sub">目前帳面餘額</div><b>${fmt(remaining)}</b></div><div><div class="sub">下次起算前已登記的未來特休</div><b>${fmt(q.futureOfficial)}</b></div><div><div class="sub">另外模擬規劃用量</div><b>${fmt(q.futureSim)}</b></div><div><div class="sub">全數休完後預測剩餘</div><b style="color:${q.balance!==null&&q.balance<0?'#be123c':'inherit'}">${fmt(q.balance)}</b></div></div>
+ <p class="sub">預留臨時特休：${leaveDisplay(reserve)} hr｜扣除預留後可再安排：${q.balance===null?'待設定':leaveDisplay(q.balance-reserve)+' hr'}</p>
+ ${q.grant===null?'<p class="sub" style="color:#b45309">請先至「假勤管理」設定公司當期核給特休時數，才能可靠計算剩餘額度。</p>':''}
+ ${q.firstShort?`<p class="sub" style="color:#be123c">依目前核給及排程，特休最早於 ${q.firstShort} 超出可用額度 ${leaveDisplay(-q.balance)} hr（超出額度合計）。請調整規劃或確認正式核給數。</p>`:''}
+ ${q.overlap?`<p class="sub" style="color:#b45309">已有正式請假或其他模擬占用同日期時段，共 ${leaveDisplay(q.overlap)} hr 未列入額外扣款，避免超過當日 ${fh(hr)} hr。請檢查是否需要修改規劃。</p>`:''}
+ <p class="sub">實際扣帳以當日正式特休記錄為準。模擬規劃只影響本頁預測；此處按每工作日 ${fh(hr)} hr 上限計算，非工作日依假日及補班設定排除。預測不包含薪資扣款。</p></div>
+ <div class="card stack"><h3>新增休假模擬</h3><div class="fgrid"><label class="fl">規劃名稱<input id="lvp-title" placeholder="例如：春節長休"></label><label class="fl">開始日期<input type="date" id="lvp-from" value="${q.now}"></label><label class="fl">結束日期<input type="date" id="lvp-to" value="${q.now}"></label><label class="fl">每個工作日使用特休（hr）<input type="number" min="0.5" max="${hr}" step="0.5" id="lvp-hours" value="${hr}"></label></div>
+ <div class="row"><button class="btn pri" data-act="addleaveplan">加入規劃</button><span class="sub">若單日只休幾小時，可建立該日期的單日規劃；長休則依工作日逐日計算。</span></div></div>
+ <div class="card stack"><h3>已儲存的休假規劃</h3>${plans.length?plans.map(p=>`<div class="row" style="border-bottom:1px solid var(--line);padding:9px 0"><div style="flex:1"><b>${esc(p.title||'休假規劃')}</b><div class="sub">${esc(p.start)}${p.start===p.end?'':' ～ '+esc(p.end)}｜每工作日 ${fh(p.hours)} hr｜${planDates(p.start,p.end).length} 個工作日</div></div><button class="btn sm danger" data-act="delleaveplan" data-id="${esc(p.id)}">刪除</button></div>`).join(''):'<p class="sub">尚未安排模擬休假</p>'}</div>
+ <div class="card stack"><h3>剩餘額度時間軸</h3>${q.timeline.length?(()=>{let balance=q.grant===null?null:q.grant-q.used;return `<div class="tbl-wrap">${tbl(['日期','已登記特休','新增模擬','當日後餘額'],q.timeline.map(r=>{if(balance!==null)balance-=r.official+r.sim;return [r.date,fmt(r.official),fmt(r.sim),fmt(balance)]}))}</div>`})():'<p class="sub">當期剩餘時間內尚無已登記或模擬休假。</p>'}<p class="sub">目前僅模擬本特休週期。跨下一週期的休假請待核給額度確認後，再依新週期規劃；過期的模擬不會扣除現有餘額。</p></div>`;
+}
 function pgLeaveManage(){const asOf=today(),s=db.settings,z=leaveSummary(asOf),hr=hpd();const year=asOf.slice(0,4),mon=asOf.slice(0,7),ySum=calcStats(year+'-01-01',year+'-12-31'),mSum=calcStats(mon+'-01',iso(new Date(+year,+mon.slice(5),0)));return `<div class="ph"><h1>假勤額度管理</h1><span class="sp"></span><button class="btn sm" data-act="go" data-p="stats">返回統計</button></div>
- <div class="grid g2"><div class="card stack"><h3>特別休假</h3><div class="sub">週期 ${z.st} ～ ${z.ed}</div><b>公司核給 ${z.grant==null?'待設定':fh(z.grant/hr)+' 天'}｜已休 ${fh(z.special/hr)} 天｜剩餘 ${z.available==null?'待設定':fh((z.available-z.special)/hr)+' 天'}</b><p class="sub">法定週年級距參考：${z.estimate==null?'請先設定到職日':z.estimate+' 天'}。跨年度／曆年制以公司核給結果為準。</p></div>
+ <div class="card"><div class="row"><div style="flex:1"><h3>特休規劃與預測</h3><p class="sub">依小時模擬長休與單日休假，預測距下次起算前的餘額；不影響正式請假。</p></div><button class="btn pri" data-act="go" data-p="leaveplan">開始規劃 ›</button></div></div>
+ <div class="grid g2"><div class="card stack"><h3>特別休假</h3><div class="sub">週期 ${z.st} ～ ${z.ed}</div><b>公司核給 ${z.grant==null?'待設定':fh(z.available)+' hr'}｜已休 ${fh(z.special)} hr｜剩餘 ${z.available==null?'待設定':fh(z.available-z.special)+' hr'}</b><p class="sub">法定週年級距參考：${z.estimate==null?'請先設定到職日':z.estimate+' 天'}。跨年度／曆年制以公司核給結果為準。</p></div>
  <div class="card stack"><h3>加班補休</h3><b>已登記核給 ${fh(z.compEarned)} hr｜已使用 ${fh(z.compUsed)} hr</b><b>帳面差額 ${fh(z.compBalance)} hr</b><p class="sub">僅供核對：逐批補休到期及實際沖抵順序尚需由公司確認，不能將此帳面差額直接視為可休額度。加班原始紀錄不會自動當成補休核給。</p></div></div>
  <div class="card stack"><h3>請假使用累計</h3><div class="grid g2"><div><b>本月（${esc(mon)}）</b><div class="tbl-wrap">${tbl(['假別','時數','天數'],Object.entries(mSum.leaves).map(([k,v])=>[esc(k),fh(v),fh(v/hr)]))}</div></div><div><b>本年（${esc(year)}）</b><div class="tbl-wrap">${tbl(['假別','時數','天數'],Object.entries(ySum.leaves).map(([k,v])=>[esc(k),fh(v),fh(v/hr)]))}</div></div></div><p class="sub">月／年請假依日誌逐日重算；特休額度另依週期計算，跨年不會直接歸零。</p></div>
- <div class="card stack"><h3>計算設定</h3><div class="fgrid"><label class="fl">正式到職日<input type="date" data-leaves="hireDate" value="${esc(s.hireDate||'')}"></label><label class="fl">特休週期起算日<input type="date" data-leaves="leaveCycleStart" value="${esc(s.leaveCycleStart||'')}"></label><label class="fl">公司當期核給特休（小時）<input type="number" min="0" step="0.5" data-leaves="leaveGrantedHours" placeholder="未確認留白" value="${s.leaveGrantedHours??''}"></label></div><p class="sub">每工作日折算 ${hr} 小時；到職日用於法定級距參考，週期日決定當期統計期間。請以公司正式核給資料校正。</p></div>
+ <div class="card stack"><h3>計算設定</h3><div class="fgrid"><label class="fl">正式到職日<input type="date" data-leaves="hireDate" value="${esc(s.hireDate||'')}"></label><label class="fl">特休週期起算日<input type="date" data-leaves="leaveCycleStart" value="${esc(s.leaveCycleStart||'')}"></label><label class="fl">公司當期核給特休（小時）<input type="number" min="0" step="0.5" data-leaves="leaveGrantedHours" placeholder="未確認留白" value="${s.leaveGrantedHours??''}"></label><label class="fl">自行預留特休（hr）<input type="number" min="0" step="0.5" data-leaves="leaveReserveHours" value="${s.leaveReserveHours??0}"></label></div><p class="sub">每工作日折算 ${hr} 小時；到職日用於法定級距參考，週期日決定當期統計期間。請以公司正式核給資料校正。</p></div>
  <div class="card stack"><h3>新增額度／結清紀錄</h3><div class="fgrid"><label class="fl">日期<input type="date" id="lv-date" value="${today()}"></label><label class="fl">項目<select id="lv-type"><option>補休</option><option>補休結清</option><option>特休</option></select></label><label class="fl">時數（正數增加；特休調整可輸入負數）<input id="lv-hours" type="number" step="0.5"></label><label class="fl">補休到期日（選填）<input id="lv-expiry" type="date"></label></div><label class="fl">來源／原因<input id="lv-note" placeholder="例如：公司核准加班換補休"></label><button class="btn pri" data-act="addleaveledger">新增一筆</button></div>
  <div class="card stack"><h3>歷史調整流水</h3>${leaveLedger().length?leaveLedger().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<div class="row" style="border-bottom:1px solid var(--line);padding:8px 0"><span style="flex:1">${esc(x.date)}｜${esc(x.type)} ${fh(x.hours)} hr ${x.expiry?'｜到期 '+esc(x.expiry):''} ${esc(x.note||'')}</span><button class="btn sm danger" data-act="delleaveledger" data-id="${x.id}">刪除</button></div>`).join(''):'<p class="sub">尚未建立紀錄</p>'}</div>`}
 
@@ -2452,7 +2516,7 @@ function pgStats(){
     ${chartCard('acc','估時準確度',accChart,accT)}
     ${chartCard('delay','延遲原因',delChart,delT,`<span class="sub">共 ${s.delays.n} 次</span>`)}
     <div class="card pv"><h3 style="margin-bottom:8px">加班與補休</h3><dl class="kv"><dt>無償加班</dt><dd>${fh(s.unpaid)}hr</dd><dt>申報加班</dt><dd>${fh(s.decl)}hr</dd><dt>轉補休（本期）</dt><dd>${fh(s.comp)}hr</dd>
-      <dt>${to.slice(0,4)} 補休累積</dt><dd>${fh(s.compEarned)}hr</dd><dt>${to.slice(0,4)} 補休已用</dt><dd>${fh(s.compUsed)}hr</dd><dt>補休餘額</dt><dd><b>${fh(s.compEarned-s.compUsed)}hr</b></dd></dl></div>
+      <dt>${to.slice(0,4)} 私記轉補休</dt><dd>${fh(s.compEarned)}hr <span class="sub">待公司核給</span></dd><dt>${to.slice(0,4)} 補休已用</dt><dd>${fh(s.compUsed)}hr</dd><dt>補休帳面餘額</dt><dd><b>${fh(leaveSummary(today()).compBalance)}hr</b> <span class="sub">依假勤頁核給紀錄</span></dd></dl></div>
     <div class="card pv"><div class="row"><h3 style="margin-bottom:8px">請假</h3><span class="sp"></span><button class="btn sm" data-act="go" data-p="leave">假勤額度管理 ›</button></div><div class="tbl-wrap">${lvT}</div></div>
     <div class="card pv"><h3 style="margin-bottom:8px">辦公地／出差｜年月查詢</h3>${officeControl}<div class="tbl-wrap">${locT}</div>${officeSummary}</div>
   </div>`}
@@ -2537,7 +2601,7 @@ after.settings=()=>{
     const kind=btn.dataset.common,i=+btn.dataset.i,items=commonPlaces();
     if(kind==='add'){const input=$('#common-add-place');const v=(input?.value||'').trim();if(!v){toast('請輸入地點名稱');return}if(v==='其他'||items.includes(v)){toast('選項已存在或名稱保留');return}items.push(v)}
     if(kind==='up'){if(i<=0)return;[items[i-1],items[i]]=[items[i],items[i-1]]}
-    if(kind==='edit'){const v=prompt('修改常用辦公地名稱（原歷史紀錄保留）',items[i]);if(v===null)return;const n=v.trim();if(!n||n==='其他'||items.some((x,j)=>j!==i&&x===n)){toast('名稱不可空白、重複或使用「其他」');return}items[i]=n}
+    if(kind==='edit'){inputBox('修改常用辦公地','名稱（原歷史紀錄保留）',items[i],v=>{const n=v.trim();if(!n||n==='其他'||items.some((x,j)=>j!==i&&x===n)){toast('名稱不可空白、重複或使用「其他」');return}items[i]=n;db.settings.places=items;persist();render();toast('常用地點選單已更新')});return}
     const commit=()=>{db.settings.places=items;persist();render();toast('常用地點選單已更新')};
     if(kind==='delete'){confirmBox('確定從常用選單移除「'+items[i]+'」？歷史工作日誌與統計不會被刪除。',()=>{items.splice(i,1);commit()},'移除選項');return}
     if(kind==='clear'){confirmBox('確定清空全部常用辦公地選項？僅刪除選單設定，歷史日誌與統計原始資料會保留。',()=>{db.settings.places=[];persist();render();toast('已清空常用選項')},'清空選單');return}
@@ -2553,7 +2617,7 @@ function backupModal(){const json=JSON.stringify(db);
 function importJsonModal(){openModal({title:'還原 JSON 備份',wide:true,body:`<p class="sub" style="margin:0">會<b>取代</b>目前全部資料。</p><input type="file" id="ij-f" accept=".json,application/json"><textarea class="f mono" id="ij-x" rows="8" placeholder="或把備份內容貼在這裡" style="font-size:11px"></textarea>`,
   foot:`<button class="btn" data-act="mclose">取消</button><button class="btn danger" id="ij-ok">取代並還原</button>`,
   onMount:ov=>{$('#ij-f',ov).onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('#ij-x',ov).value=r.result};r.readAsText(f)};
-    $('#ij-ok',ov).onclick=()=>{try{const d=JSON.parse($('#ij-x',ov).value);if(!d.days||!d.tasks)throw 0;d.settings=Object.assign(structuredClone(DEF_SET),d.settings||{});d.ot=d.ot||[];closeModal();confirmBox('確定以備份內容取代全部現有資料？此操作會覆蓋目前日誌、待辦與設定。請先完成備份。',()=>{db=d;weekStore=db.weekly||{};drafts={};HOL_SRC=null;persist();applyTheme();toast('已還原');render()},'確認取代全部資料')}catch(e){toast('內容不是有效的備份')}}}})}
+    $('#ij-ok',ov).onclick=()=>{try{const d=JSON.parse($('#ij-x',ov).value);if(!d.days||!d.tasks)throw 0;d.settings=Object.assign(structuredClone(DEF_SET),d.settings||{});d.ot=d.ot||[];closeModal();confirmBox('確定以備份內容取代全部現有資料？此操作會覆蓋目前日誌、待辦與設定。請先完成備份。',()=>{db=d;rebindDb();drafts={};HOL_SRC=null;persist();applyTheme();toast('已還原');render()},'確認取代全部資料')}catch(e){toast('內容不是有效的備份')}}}})}
 
 
 /* ---------- 歷史資料安全匯入：workcal-history-v1 ---------- */
@@ -2608,13 +2672,13 @@ function historyImportModal(){
   $('#hist-file',ov).onchange=e=>{if(e.target.files[0])read(e.target.files[0])};
   commit.onclick=()=>{if(!historyPack)return;const chosen=historyPack.records.filter(r=>historyChoices[r.date]!=='skip');if(!chosen.length){toast('尚未選取要匯入的日期');return}
     const overwriteCount=chosen.filter(r=>historyChoices[r.date]==='overwrite').length;
-    if(!confirm(`匯入前最後確認：預計處理 ${chosen.length} 天，其中覆蓋既有日誌 ${overwriteCount} 天。\n請先下載完整備份。\n確定繼續？`))return;
+    if(!ask(`匯入前最後確認：預計處理 ${chosen.length} 天，其中覆蓋既有日誌 ${overwriteCount} 天。\n請先下載完整備份。\n確定繼續？`,()=>commit.onclick(),'開始匯入'))return;
     let count=0,skipped=0;try{for(const r of chosen.sort((a,b)=>a.date.localeCompare(b.date))){const action=historyChoices[r.date],existing=!!db.days[r.date]?.rawText;
       if((action==='write'&&existing)||(action==='overwrite'&&!existing)){skipped++;continue;}
       const text=r.variants[+(r._chosen||0)].text;
       // Imported history stays as original text first; parsing tasks from previous-workday sections requires chronological caution.
       applyDay(r.date,text);count++}
-      persist();closeModal();toast(`已匯入 ${count} 天，略過 ${skipped} 天；請抽查歷史日誌`);render();alert(`歷史匯入完成\n成功：${count} 天\n執行時因衝突略過：${skipped} 天\n未選取：${historyPack.records.length-chosen.length} 天\n建議抽查不同月份的日誌與工時。`)
+      persist();closeModal();toast(`已匯入 ${count} 天，略過 ${skipped} 天；請抽查歷史日誌`);render();noticeBox('歷史匯入完成',`歷史匯入完成\n成功：${count} 天\n執行時因衝突略過：${skipped} 天\n未選取：${historyPack.records.length-chosen.length} 天\n建議抽查不同月份的日誌與工時。`)
     }catch(e){persist();toast(`匯入中斷：已處理 ${count} 天，${e.message}`)}};
  }});
 }
@@ -2767,7 +2831,7 @@ function listModal(title,ph,getItems,onPick){
       draw()}})}
 function openSearch(){listModal('搜尋','搜尋任務、筆記、專案、日誌、私記…',searchAll,it=>doAct(it.act))}
 function openPalette(){
-  const cmds=[['前往月曆','go:calendar','Alt+1'],['前往待辦','go:todo','Alt+2'],['前往筆記','go:notes','Alt+3'],['前往專案','go:projects','Alt+4'],['前往統計','go:stats','Alt+5'],['前往設定','go:settings','Alt+6'],
+  const cmds=[...PAGES.map(([k,l],i)=>['前往'+l,'go:'+k,'Alt+'+(i+1)]),
     ['寫今天日誌','today','T'],['新增待辦','newtodo','N'],['新增筆記','newnote',''],['複製今天 Teams 版','teams',''],['產生週報','weekly',''],['產生 AI 資料包','aipack',''],['甘特時間軸','gantt',''],
     ['匯入舊日誌','go:import',''],['完整備份','backup',''],['切換深淺色','theme',''],['切換隱私模式','privacy',''],['快捷鍵說明','help','?']];
   listModal('指令面板','輸入指令、日期（2026-10-01 或 10/1）、專案名…',q=>{q=q.trim();const out=[];
@@ -2782,7 +2846,7 @@ function openPalette(){
       else if(c==='gantt'){S.projSel=null;S.projTab='gantt';go('projects')}else if(c==='backup')backupModal();else if(c==='theme'){const cur=document.documentElement.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');db.settings.theme=cur==='dark'?'light':'dark';persist();applyTheme();render()}
       else if(c==='privacy'){S.privacy=!S.privacy;render()}else if(c==='help')helpModal()})}
 function helpModal(){const sec=(t,rows)=>`<h3>${t}</h3><table class="t"><tbody>${rows.map(([k,v])=>`<tr><td style="width:46%">${k.split(' / ').map(x=>`<kbd>${x}</kbd>`).join(' 或 ')}</td><td>${v}</td></tr>`).join('')}</tbody></table>`;
-  openModal({title:'快捷鍵',wide:true,body:sec('全域',[['Ctrl+K','指令面板'],['Alt+1～6','月曆／待辦／筆記／專案／統計／設定'],['/','全文搜尋'],['?','本說明'],['T','開今天日誌（非編輯中）'],['N','新增待辦（筆記頁為新增筆記）'],['Esc','關閉視窗／返回上層']])+
+  openModal({title:'快捷鍵',wide:true,body:sec('全域',[['Ctrl+K','指令面板'],['Alt+1～'+PAGES.length,PAGES.map(x=>x[1]).join('／')],['/','全文搜尋'],['?','本說明'],['T','開今天日誌（非編輯中）'],['N','新增待辦（筆記頁為新增筆記）'],['Esc','關閉視窗／返回上層']])+
     sec('月曆',[['方向鍵','移動日期'],['Enter','進入當天'],['PgUp / PgDn','上／下個月'],['W / M / Y','週／月／年檢視']])+
     sec('每日頁',[['Enter / E','進入編輯'],['Esc','離開編輯；再按一次回上一頁'],['手機往右滑','回上一頁／關閉視窗'],['Ctrl+S','存檔'],['Ctrl+Shift+A / Ctrl+Alt+A','複製給 AI'],['Ctrl+Shift+V / Ctrl+Alt+V','貼回定稿'],['Ctrl+Shift+C / Ctrl+Alt+C','複製 Teams 版'],['Ctrl+Shift+T / Ctrl+Alt+T','帶入待辦'],['[ / ]','前／後一天（非編輯中）'],['Alt+PgUp / Alt+PgDn','前／後一天（編輯中）']])+
     sec('待辦清單',[['↑ / ↓','選擇'],['N','新增'],['Enter','編輯'],['Space','完成／取消'],['D','設 DL'],['S','排入某天'],['Del','封存']])+
@@ -2828,9 +2892,9 @@ const ACT={
   palette:()=>openPalette(),search:()=>openSearch(),help:()=>helpModal(),
   privacy:()=>{S.privacy=!S.privacy;render()},
   rail:()=>$('#rail').classList.toggle('open'),
-  clearsample:()=>confirmBox('清除全部範例資料，從空白開始？（設定會保留）',()=>{db=emptyDb(db.settings);weekStore={};drafts={};persist();S.page='calendar';render();toast('已清除，開始使用吧')},'清除'),
-  loadsample:()=>confirmBox('重新載入範例會取代目前全部資料，確定？',()=>{buildSample();render()},'載入範例'),
-  resetall:()=>confirmBox('清除全部資料（含設定以外的所有紀錄），無法還原。確定？',()=>{db=emptyDb(db.settings);weekStore={};drafts={};persist();render()},'全部清除'),
+  clearsample:()=>confirmBox('清除全部範例資料，從空白開始？（設定會保留）',()=>{db=emptyDb(db.settings);rebindDb();drafts={};persist();S.page='calendar';render();toast('已清除，開始使用吧')},'清除'),
+  loadsample:()=>confirmBox('重新載入範例會取代目前全部資料，確定？',()=>{buildSample();rebindDb();persist();render()},'載入範例'),
+  resetall:()=>confirmBox('清除全部資料（含設定以外的所有紀錄），無法還原。確定？',()=>{db=emptyDb(db.settings);rebindDb();drafts={};persist();render()},'全部清除'),
   remgo:el=>{const g=JSON.parse(el.dataset.go);doAct(g)},
   calmove:el=>{const n=+el.dataset.n;const c=S.cursor;if(S.calView==='month')S.cursor=iso(new Date(+c.slice(0,4),+c.slice(5,7)-1+n,1));else if(S.calView==='week')S.cursor=addD(c,7*n);else S.cursor=`${+c.slice(0,4)+n}${c.slice(4)}`;render()},
   caltoday:()=>{S.cursor=today();render()},calview:el=>{if(S.page==='day'){saveDraftNow();S.cursor=S.day;S.guideSub=false;S.logSub=false;wcPrevSub=false;S.dayDetail=false;S.calView=el.dataset.v;go('calendar')}else{S.calView=el.dataset.v;render()}},calmonth:el=>{S.cursor=`${S.cursor.slice(0,4)}-${pad(el.dataset.m)}-01`;S.calView='month';render()},
@@ -2846,6 +2910,14 @@ const ACT={
   archive:el=>{const t=db.tasks[el.dataset.id];t.archived=true;persist();toast('已封存，可在「封存」還原');render._keep=true;render()},
   restore:el=>{const t=db.tasks[el.dataset.id];t.archived=false;if(['已交付','放棄'].includes(t.status))t.status=t.date?'規劃':'待辦';persist();render._keep=true;render()},
   hardel:el=>safeDeleteTask(el.dataset.id),
+  addleaveplan:()=>{const start=$('#lvp-from')?.value,end=$('#lvp-to')?.value,h=+$('#lvp-hours')?.value,title=$('#lvp-title')?.value.trim()||'休假規劃',q=leavePlanProjection();
+    if(!start||!end||end<start){toast('請確認休假起訖日期');return}
+    if(start<q.now||start<q.z.st||end>q.z.ed){toast('請選擇今日起、當期結束前的日期；跨期規劃請分開安排');return}
+    if(!Number.isFinite(h)||h<=0||h>hpd()||Math.abs(h*2-Math.round(h*2))>1e-7){toast('請輸入有效的每工作日特休時數（每 0.5 小時）');return}
+    if(!planDates(start,end).length){toast('選取的日期範圍沒有工作日');return}
+    leavePlans().push({id:uid(),title,start,end,hours:h});persist();render();toast('已加入模擬，不影響正式特休');
+  },
+  delleaveplan:el=>{const p=leavePlans().find(x=>x.id===el.dataset.id);if(p)confirmBox(`確定刪除「${esc(p.title)}」規劃？正式請假紀錄不會更動。`,()=>{db.leavePlans=leavePlans().filter(x=>x.id!==p.id);persist();render()},'刪除休假規劃')},
   addleaveledger:()=>{const date=$('#lv-date')?.value,type=$('#lv-type')?.value,hours=+$('#lv-hours')?.value,expiry=$('#lv-expiry')?.value||'',note=$('#lv-note')?.value.trim()||'';if(!date||!Number.isFinite(hours)||hours===0||(!note)){toast('請填日期、有效時數與來源／原因');return}if(type!=='特休'&&hours<0){toast('補休流水請輸入正數');return}leaveLedger().push({id:uid(),date,type,hours,expiry,note});persist();render()},
   delleaveledger:el=>{const x=leaveLedger().find(v=>v.id===el.dataset.id);if(x)confirmBox(`確定刪除 ${esc(x.date)} 的 ${esc(x.type)} ${fh(x.hours)}hr？`,()=>{db.leaveLedger=leaveLedger().filter(v=>v.id!==x.id);persist();render()},'刪除額度紀錄')},
   deldayline:el=>{const raw=el.dataset.raw;const d=S.day;const txt=dayText(d);const lines=txt.split('\n');const match=lines.findIndex(x=>x===raw);if(match<0){toast('找不到精確原文，請在完整日誌子層修改');return}confirmBox('確定刪除這一筆今日工作？只會移除本日精確對應的文字。',()=>{applyDay(d,lines.filter((_,i)=>i!==match).join('\n'));delete drafts[d];persist();render()},'刪除工作項目')},
@@ -2870,7 +2942,7 @@ const ACT={
   impview:el=>{const c=IMP.chunks[+el.dataset.i];const r=parseDay(c.text);openModal({title:`${c.date} 解析結果`,wide:true,body:`<pre class="mono" style="white-space:pre-wrap;font-size:12px;background:var(--surface-2);padding:10px;border-radius:8px;margin:0">${hlHTML(c.text,r,true)}</pre>${r.warnings.map(w=>`<div class="warn">第 ${w.i+1} 行：${esc(w.why)}｜<code>${esc(w.raw)}</code></div>`).join('')}<div class="sub">今日 ${r.today.length}・昨日完成 ${r.done.length}・未完成 ${r.undone.length}・突發 ${r.urgent.length}・加班 ${r.ot.length}</div>`,foot:'<button class="btn" data-act="mclose">關閉</button>'})},
   teamsconfirm:()=>setTeamsConfirm(),
   impcommit:()=>{const C=IMP.chunks.filter(c=>!c.bad&&c.date&&['write','overwrite','merge'].includes(c.action)).sort(by(c=>c.date));
-    const wasSample=db.sample;if(wasSample){db=emptyDb(db.settings);drafts={}}
+    const wasSample=db.sample;if(wasSample){db=emptyDb(db.settings);rebindDb();drafts={}}
     C.forEach(c=>{let text=c.text;if(c.action==='merge'&&db.days[c.date]?.rawText)text=db.days[c.date].rawText+'\n\n'+c.text.split('\n').slice(2).join('\n');applyDay(c.date,text)});
     persist();IMP=null;toast(`已匯入 ${C.length} 天${wasSample?'（已清除範例資料）':''}`);S.page='calendar';if(C.length)S.cursor=C[C.length-1].date;render()}
 };
@@ -2890,7 +2962,7 @@ document.addEventListener('keydown',e=>{
     if(isInner())back();return}
   if(ctrl&&!e.shiftKey&&!e.altKey&&(k==='k'||k==='K')){e.preventDefault();if(!modalStack.length)openPalette();return}
   if(modalStack.length)return;
-  if(e.altKey&&!ctrl&&/^[1-6]$/.test(k)){e.preventDefault();const p=PAGES[+k-1][0];if(p==='projects')S.projSel=null;go(p);return}
+  if(e.altKey&&!ctrl&&/^[1-9]$/.test(k)&&PAGES[+k-1]){e.preventDefault();const p=PAGES[+k-1][0];if(p==='projects')S.projSel=null;go(p);return}
   if(S.page==='day'){
     const combo=(L)=>ctrl&&((e.shiftKey&&!e.altKey)||(e.altKey&&!e.shiftKey))&&(k.toLowerCase()===L||e.code==='Key'+L.toUpperCase());
     if(ctrl&&!e.shiftKey&&!e.altKey&&(k==='s'||k==='S')){e.preventDefault();if(!S.privacy)saveDay();return}
@@ -2959,6 +3031,7 @@ matchMedia('(max-width:1023px)').addEventListener('change',()=>render());
 
 /* ---------- 啟動 ---------- */
 if(!db){db=emptyDb();persist()}
+rebindDb();
 applyTheme();render();
 setTimeout(checkMorningReminder,700);
 setInterval(()=>{if(document.visibilityState==='visible')checkMorningReminder()},60000);
