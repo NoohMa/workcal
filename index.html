@@ -1019,6 +1019,26 @@ label.fl .enh-wrap,.fgrid .enh-wrap{display:flex;width:100%}
 .enh-menu li.enh-new{color:var(--w-fg2);cursor:default}
 .srow .sbtns{display:flex;gap:6px;flex:none}
 @media(max-width:1023px){.srow .sdet{flex:1 1 50%!important;padding-left:0}.srow .sbtns{order:10;flex-basis:100%;justify-content:flex-end}.srow .sdet+.sp{display:none}}
+
+/* ===== 對比修正 ===== */
+/* 手機分頁列：選中＝深底白字 */
+@media(max-width:1023px){.gtabs .gtab[aria-current="page"]{color:#fff!important;background:var(--w-acc)!important}:root[data-theme="dark"] .gtabs .gtab[aria-current="page"]{color:#062226!important}.gtabs .gtab{font-size:13px;padding:8px 2px;white-space:nowrap}}
+/* 淺色：完成綠標、週末灰字加深 */
+:root:not([data-theme="dark"]) .chip.done{color:#1F7A4A!important;background:#E3F3EA!important}
+:root{--wk-fg:#5E7A82}
+/* 深色：寫死淺底的卡片一律改深底淺字 */
+:root[data-theme="dark"] :is(.risk-item,.risk-line,.risk-fields,.risk-stat,.risk-sim,.wc-detail-card,.wc-detail-row,.wc-detail-hero,.wc-detail-original,.wc-detail-original pre,.wc-log-banner,.wc-detail-title,.wc-detail-content,.week-stats,.lv-empty,.sempty,.tprev pre,.yai-prompt){background:var(--dk-card)!important;color:var(--dk-fg)!important;border-color:var(--dk-line)!important;background-image:none!important}
+:root[data-theme="dark"] :is(.risk-item,.risk-line,.wc-detail-card,.risk-fields) :is(b,strong,h3,span:not(.risk-light):not(.stag):not(.chip)){color:var(--dk-fg)!important}
+:root[data-theme="dark"] :is(.risk-stat span,.risk-line small,.wc-detail-nav label,.wc-detail-count,.wc-log-banner small,.wc-log-banner span,.guided .fl,.guide-header .fl,.risk-fields .fl,.wc-detail-hours){color:var(--dk-fg2)!important}
+:root[data-theme="dark"] .risk-stat b{color:var(--dk-acc)!important}
+:root[data-theme="dark"] :is(.guided h2,.guide-header h2){color:var(--dk-fg)!important}
+:root[data-theme="dark"] .step.is-active .snum{color:#062226!important}
+:root[data-theme="dark"] .chip.done{color:#7FD9A6!important;background:#17402B!important}
+:root[data-theme="dark"] .sub{color:var(--dk-fg3)!important}
+
+:root[data-theme="dark"]{--wk-fg:#A3C2C6}
+:root[data-theme="dark"] .wc-detail-hero span{background:var(--dk-card2)!important;color:var(--dk-fg)!important;border-color:var(--dk-line)!important}
+:root[data-theme="dark"] .wc-detail-empty{color:var(--dk-fg3)!important}
 </style>
 </head>
 <body>
@@ -2095,7 +2115,10 @@ function dayStep1(D,st,ro){
  return `<section class="step ${st.reported?'is-done':st.prev.length?'is-active':''}" aria-label="步驟一 盤點昨日">${stepHead(1,st.reported,'盤點昨日',meta,right)}${rows?`<div class="srows">${rows}</div>`:''}${st.reported&&!ro?'<button class="step-tap" data-act="wcprevopen" aria-label="查看盤點"></button>':''}</section>`}
 function dayStep2(D,st,ro,s1done){
  const items=st.p.today,n=openTodoCount();
- const rows=items.map((it,i)=>`<div class="srow">${it.star?'<span class="sstar" title="主星">★</span>':'<span class="sstar"></span>'}<span class="stag cat">${esc(it.cat)}</span><b class="sname">${esc(it.project||it.title)}</b>${it.title&&it.title!==it.project?`<span class="sdet">${esc(it.title)}</span>`:''}<span class="sp"></span>${it.dl?`<span class="sdl">DL ${esc(dlShort(it.dl))}</span>`:''}<b class="sh">${it.est!=null?fh(it.est)+'h':'—'}</b>${ro?'':`<span class="sbtns"><button class="btn sm sx" data-act="todayedit" data-i="${i}" aria-label="編輯 ${esc(it.project||it.title)}">編輯</button><button class="btn sm sx" data-act="todaydel" data-i="${i}" aria-label="移除 ${esc(it.project||it.title)}">移除</button></span>`}</div>`).join('');
+ const rows=items.map((it,i)=>`<div class="srow">${it.star?'<span class="sstar" title="主星">★</span>':'<span class="sstar"></span>'}<span class="stag cat">${esc(it.cat)}</span><b class="sname">${esc(it.project||it.title)}</b>${it.title&&it.title!==it.project?`<span class="sdet">${esc(it.title)}</span>`:''}<span class="sp"></span>${it.dl?`<span class="sdl">DL ${esc(dlShort(it.dl))}</span>`:''}${(()=>{const tk=T().find(x=>x.date===D&&x.rawLine&&x.rawLine.trim()===it.raw.trim());const closed=tk&&tk.closedByDay&&tk.closedByDay!==D;
+  if(!closed)return `<b class="sh">${it.est!=null?fh(it.est)+'h':'—'}</b>`;
+  const ok=['完成','已交付'].includes(tk.status),act=tk.actual?.office;
+  return `<span class="stag ${ok?'ok':'warn'}">${ok?'完成':'未完成'}</span>${it.est!=null?`<small>預 ${fh(it.est)}h</small>`:''}${act!=null?`<b class="sh">實 ${fh(act)}h</b>`:''}`})()}${ro?'':`<span class="sbtns"><button class="btn sm sx" data-act="todayedit" data-i="${i}" aria-label="編輯 ${esc(it.project||it.title)}">編輯</button><button class="btn sm sx" data-act="todaydel" data-i="${i}" aria-label="移除 ${esc(it.project||it.title)}">移除</button></span>`}</div>`).join('');
  const projs=Object.values(db.projects).filter(p=>p.status!=='結案').map(p=>`<option value="${esc(p.name)}">`).join('');
  const cat=S.qaCat&&categories().includes(S.qaCat)?S.qaCat:categories()[0];
  const form=ro?'':`${S.qaOpen?'':'<button class="btn qopen" data-act="qaopen">＋ 新增工作</button>'}<div class="qadd ${S.qaOpen?'open':''}" role="group" aria-label="新增今日工作"><label>分類<select id="qa-cat">${categories().map(c=>`<option ${c===cat?'selected':''}>${esc(c)}</option>`).join('')}</select></label><label class="qp">專案<input id="qa-proj" type="text" list="qa-projs" placeholder="輸入或選擇" autocomplete="off"><datalist id="qa-projs">${projs}</datalist></label><label class="qd">內容<input id="qa-detail" type="text" placeholder="例如：上架＋回饋處理"></label><label class="qh">時數<input id="qa-h" type="text" inputmode="decimal" placeholder="1.5"></label><button class="btn pri" data-act="todayadd">加入</button></div>`;
