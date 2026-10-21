@@ -1608,13 +1608,13 @@ function mountWeekSpace(){const x=$('#wk-report');if(weekDraft){x.value=weekDraf
 const PAGES=[['calendar','月曆','cal'],['todo','待辦','todo'],['risk','風險決策','flag'],['notes','筆記','note'],['projects','專案','proj'],['stats','統計','stat'],['leave','假勤','leave'],['weeklyspace','週工作','week'],['settings','設定','set']];
 function renderNav(){
   const cur=S.page==='day'?'calendar':S.page==='import'?'settings':S.page;
-  $('#nav').innerHTML=`<div class="brand"><b>工作日誌</b><span>本機測試版</span></div>`+PAGES.map(([k,l,i],n)=>`<button class="navbtn" data-act="go" data-p="${k}" ${cur===k?'aria-current="page"':''}>${ICO[i]}${l}<span class="k">Alt+${n+1}</span></button>`).join('')+
+  $('#nav').innerHTML=`<div class="brand"><b>工作日誌</b><span>WorkCal</span></div>`+PAGES.map(([k,l,i],n)=>`<button class="navbtn" data-act="go" data-p="${k}" ${cur===k?'aria-current="page"':''}>${ICO[i]}${l}<span class="k">Alt+${n+1}</span></button>`).join('')+
     `<button class="navbtn" data-act="openday" data-d="${today()}">${ICO.cal}今天 ${md(today())}<span class="k">T</span></button>
     <div class="navfoot"><button class="btn sm" data-act="palette">指令面板 <kbd>Ctrl K</kbd></button><button class="btn sm" data-act="search">搜尋 <kbd>/</kbd></button><button class="btn sm" data-act="help">快捷鍵 <kbd>?</kbd></button>
     <button class="btn sm" data-act="privacy" aria-pressed="${S.privacy}">${S.privacy?'隱私模式：開':'隱私模式：關'}</button>
-    <div class="syncstate"><i></i>${storageOk?'資料存於此瀏覽器':'無法寫入瀏覽器儲存，重新整理會遺失'}</div></div>`;
+    ${syncNavHTML()}</div>`;
   $('#bnav').innerHTML=PAGES.map(([k,l,i])=>`<button class="bn" data-act="go" data-p="${k}" ${cur===k?'aria-current="page"':''} aria-label="${l}">${ICO[i]}<span>${({risk:'風險',weeklyspace:'週計畫'})[k]||l}</span></button>`).join('')}
-function sampleBanner(){return db.sample?`<div class="banner"><b>範例資料</b><span>目前顯示的是示範內容，不是你的紀錄。看完功能後清除即可開始使用。</span><span class="sp" style="flex:1"></span><button class="btn sm" data-act="clearsample">清除範例，開始使用</button></div>`:''}
+function sampleBanner(){return syncBanner()+(db.sample?`<div class="banner"><b>範例資料</b><span>目前顯示的是示範內容，不是你的紀錄。看完功能後清除即可開始使用。</span><span class="sp" style="flex:1"></span><button class="btn sm" data-act="clearsample">清除範例，開始使用</button></div>`:'')}
 function isInner(){return S.page==='day'||S.page==='import'||(S.page==='notes'&&!!db.notes[S.noteSel])||(S.page==='projects'&&!!S.projSel)}
 function render(){
   document.body.classList.toggle('privacy',S.privacy);document.body.classList.toggle('inner',isInner());
@@ -3086,10 +3086,136 @@ document.addEventListener('touchend',e=>{if(!SW)return;const t=e.changedTouches[
     if(!isInner())return;const m=$('#main');m.classList.add('swipe-back');setTimeout(()=>{m.classList.remove('swipe-back');back()},140)}},{passive:true});
 matchMedia('(max-width:1023px)').addEventListener('change',()=>render());
 
+/* ---------- 雲端同步（Firebase Auth＋Firestore） ----------
+   資料結構：users/{uid}/{集合}/{文件}
+   - days、tasks、projects、notes、reviews、teamsConfirmed、weekly：一筆一份文件
+   - 其他（settings、ot、leaveLedger、leavePlans…）：meta/k_{名稱}
+   文件內容：{ j: JSON 字串, d: 是否刪除, u: 伺服器時間 }。只抓 u 比上次新的文件，省讀取額度。
+   合併：以「上次同步時的版本」做三方比對；兩邊都改過時，保留 updatedAt 較新的一方，另一方存到衝突備份。 */
+const SYNC_KEY='worklog.sync.v1',SYNC_CONFLICT_KEY='worklog.sync.conflicts.v1';
+const SYNC_MAP=['days','tasks','projects','notes','reviews','teamsConfirmed','weekly'];
+const SYNC_COLS=[...SYNC_MAP,'meta'];
+const SYNC={api:null,uid:null,email:'',state:null,status:'off',msg:'',lastAt:0,unsubs:[],ready:false,pushT:null,pushing:false,again:false,
+  inflight:new Map(),pendingRender:false,loaded:new Set(),buffer:[],choosing:false,retryT:null};
+function syncHash(s){let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}
+  h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
+  return(4294967296*(2097151&h2)+(h1>>>0)).toString(36)}
+function syncDocs(){const out={};for(const k of Object.keys(db)){const v=db[k];if(v===undefined)continue;
+    if(SYNC_MAP.includes(k)&&v&&typeof v==='object'&&!Array.isArray(v)){for(const id of Object.keys(v)){if(v[id]!==undefined)out[k+'/'+id]=JSON.stringify(v[id])}}
+    else out['meta/k_'+k]=JSON.stringify(v)}
+  return out}
+function syncLoadState(uid){let s=null;try{s=JSON.parse(localStorage.getItem(SYNC_KEY)||'null')}catch(e){}
+  if(!s||s.uid!==uid)s={uid,h:{},since:0,fresh:true};return s}
+function syncSaveState(){try{localStorage.setItem(SYNC_KEY,JSON.stringify(SYNC.state))}catch(e){}}
+function syncSetStatus(st,msg){SYNC.status=st;SYNC.msg=msg||'';if(st==='synced')SYNC.lastAt=Date.now();
+  const el=$('#nav .syncstate');if(el)el.outerHTML=syncNavHTML();const b=$('#sync-banner');if(b)b.outerHTML=syncBanner()}
+function syncLabel(){const t=SYNC.lastAt?new Date(SYNC.lastAt):null;
+  return {off:'未登入：資料只存在這台裝置',loading:'雲端連線中…',syncing:'同步中'+(SYNC.msg?'：'+SYNC.msg:'…'),synced:'已同步'+(t?` ${pad(t.getHours())}:${pad(t.getMinutes())}`:''),
+    error:'同步失敗：'+SYNC.msg,offline:'雲端元件無法載入（離線？）資料仍存在本機',choose:'等待你選擇合併方式'}[SYNC.status]||''}
+function syncNavHTML(){const c={synced:'var(--done)',syncing:'var(--plan)',loading:'var(--plan)',error:'var(--late)',offline:'var(--pend)',off:'var(--pend)',choose:'var(--pend)'}[SYNC.status]||'var(--none)';
+  return `<button class="syncstate" data-act="syncpanel" style="border:0;background:none;padding:0;cursor:pointer;text-align:left;color:inherit;font:inherit"><i style="background:${c}"></i>${esc(storageOk?syncLabel():'無法寫入瀏覽器儲存，重新整理會遺失')}</button>`}
+function syncBanner(){
+  if(SYNC.status==='off'&&SYNC.api)return `<div class="banner" id="sync-banner"><b>雲端同步未開啟</b><span>用 Google 帳號登入後，電腦和手機的資料會自動同步。</span><span class="sp" style="flex:1"></span><button class="btn sm pri" data-act="cloudlogin">用 Google 登入</button></div>`;
+  if(SYNC.status==='error')return `<div class="banner" id="sync-banner"><b>同步失敗</b><span>${esc(SYNC.msg)}。資料仍保存在這台裝置，恢復後會自動補傳。</span><span class="sp" style="flex:1"></span><button class="btn sm" data-act="syncnow">重試</button></div>`;
+  if(S.page==='settings'&&SYNC.uid)return `<div class="banner" id="sync-banner" style="background:var(--surface-2)"><b>雲端同步</b><span>${esc(SYNC.email)}｜${esc(syncLabel())}</span><span class="sp" style="flex:1"></span><button class="btn sm" data-act="syncnow">立即同步</button><button class="btn sm" data-act="cloudlogout">登出</button></div>`;
+  return `<span id="sync-banner" hidden></span>`}
+function syncRawSave(){const p=window.__persistLocal||persist;p()}
+function syncApply(path,json){const i=path.indexOf('/'),col=path.slice(0,i),id=path.slice(i+1);
+  if(col==='meta'){const key=id.slice(2);if(json===null){if(key!=='settings')delete db[key]}else db[key]=JSON.parse(json);return}
+  if(!db[col]||typeof db[col]!=='object')db[col]={};
+  if(json===null)delete db[col][id];else db[col][id]=JSON.parse(json)}
+function syncUpdatedAt(json){try{const o=JSON.parse(json);return +o?.updatedAt||0}catch(e){return 0}}
+function syncSaveConflict(path,json){try{const a=JSON.parse(localStorage.getItem(SYNC_CONFLICT_KEY)||'[]');a.unshift({path,at:new Date().toISOString(),json});localStorage.setItem(SYNC_CONFLICT_KEY,JSON.stringify(a.slice(0,30)))}catch(e){}}
+/* 收到雲端變更：三方比對後套用 */
+function syncMerge(list){const st=SYNC.state,local=syncDocs();let changed=false,conflicts=0;
+  for(const c of list){const path=c.path,rj=c.j,rh=rj==null?null:syncHash(rj);
+    if(c.uMs&&c.uMs>st.since)st.since=c.uMs;
+    const lj=local[path]??null,lh=lj==null?null:syncHash(lj),sh=st.h[path]??null;
+    if(SYNC.inflight.has(path)&&SYNC.inflight.get(path)===rh)continue; // 自己剛寫出去的回音
+    if(rh===lh){if(rh===null)delete st.h[path];else st.h[path]=rh;continue}
+    if(rh===sh)continue; // 雲端沒變，本機較新，稍後上傳
+    const localChanged=lh!==sh;
+    if(!localChanged){syncApply(path,rj);if(rh===null)delete st.h[path];else st.h[path]=rh;changed=true;continue}
+    conflicts++;
+    if(rj===null){delete st.h[path];continue}               // 雲端刪了、本機改了：保留本機
+    if(lj===null){syncApply(path,rj);st.h[path]=rh;changed=true;continue} // 本機刪了、雲端改了：保留資料
+    if(syncUpdatedAt(rj)>=syncUpdatedAt(lj)){syncSaveConflict(path,lj);syncApply(path,rj);st.h[path]=rh;changed=true}
+    else{syncSaveConflict(path,rj);st.h[path]=rh}}
+  syncSaveState();
+  if(changed){try{rebindDb()}catch(e){}HOL_SRC=null;syncRawSave();applyTheme();syncRender()}
+  if(conflicts)toast(`同步時有 ${conflicts} 筆兩邊都改過，已保留較新的版本`);
+  return changed}
+function syncRender(){const a=document.activeElement;
+  if(modalStack.length||(a&&a.closest&&a.closest('input,textarea,select'))){SYNC.pendingRender=true;return}
+  SYNC.pendingRender=false;render._keep=true;render()}
+document.addEventListener('focusout',()=>setTimeout(()=>{if(SYNC.pendingRender)syncRender()},50));
+/* 上傳本機變更 */
+function syncSchedule(){if(!SYNC.uid||!SYNC.ready)return;clearTimeout(SYNC.pushT);SYNC.pushT=setTimeout(syncPush,1500)}
+async function syncPush(){if(!SYNC.uid||!SYNC.ready)return;if(SYNC.pushing){SYNC.again=true;return}
+  const st=SYNC.state,local=syncDocs(),ops=[];
+  for(const p in local){const h=syncHash(local[p]);if(h!==st.h[p])ops.push({path:p,j:local[p],h})}
+  for(const p in st.h)if(!(p in local))ops.push({path:p,j:null,h:null});
+  if(!ops.length){syncSetStatus('synced');return}
+  SYNC.pushing=true;const total=ops.length;let done=0;
+  try{
+    while(ops.length){let size=0,n=0;while(n<ops.length&&n<400&&size<3e6){size+=(ops[n].j||'').length*3+200;n++}
+      const chunk=ops.splice(0,n);chunk.forEach(o=>SYNC.inflight.set(o.path,o.h));
+      syncSetStatus('syncing',total>20?`上傳 ${done}/${total}`:'');
+      await SYNC.api.write(SYNC.uid,chunk);
+      for(const o of chunk){if(o.h===null)delete st.h[o.path];else st.h[o.path]=o.h;SYNC.inflight.delete(o.path)}
+      done+=chunk.length;syncSaveState()}
+    st.fresh=false;syncSaveState();syncSetStatus('synced');if(total>50)toast(`已上傳 ${total} 筆到雲端`)
+  }catch(e){SYNC.inflight.clear();syncSetStatus('error',syncErr(e));clearTimeout(SYNC.retryT);SYNC.retryT=setTimeout(syncPush,30000)}
+  finally{SYNC.pushing=false;if(SYNC.again){SYNC.again=false;syncSchedule()}}}
+function syncErr(e){const c=e&&e.code||'';return c==='permission-denied'?'沒有權限（請確認 Firestore 規則與登入帳號）':c==='unavailable'?'目前連不上雲端':c==='resource-exhausted'?'今天的免費額度已用完，明天會自動恢復':(e&&e.message||String(e)).slice(0,80)}
+/* 登入後啟動 */
+function syncStart(user){syncStop();SYNC.uid=user.uid;SYNC.email=user.email||'';SYNC.state=syncLoadState(user.uid);SYNC.ready=false;SYNC.loaded=new Set();SYNC.buffer=[];
+  syncSetStatus('loading');const since=Math.max(0,(SYNC.state.since||0)-60000);
+  for(const col of SYNC_COLS){SYNC.unsubs.push(SYNC.api.listen(user.uid,col,since,list=>{
+      const items=list.filter(x=>!x.pending).map(x=>({path:col+'/'+x.id,j:x.j,uMs:x.uMs}));
+      if(!SYNC.ready){SYNC.buffer.push(...items);SYNC.loaded.add(col);if(SYNC.loaded.size===SYNC_COLS.length)syncInitial();return}
+      if(items.length)syncMerge(items)},
+    err=>{syncSetStatus('error',syncErr(err))}))}}
+function syncInitial(){const buf=SYNC.buffer;SYNC.buffer=[];
+  const localHas=Object.keys(db.days||{}).length+Object.keys(db.tasks||{}).length+Object.keys(db.notes||{}).length>0;
+  const remoteHas=buf.some(x=>x.j!=null&&!x.path.startsWith('meta/'));
+  if(SYNC.state.fresh&&localHas&&remoteHas){syncChoose(buf);return}
+  syncFinishInitial(buf)}
+function syncFinishInitial(buf){syncMerge(buf);SYNC.ready=true;SYNC.state.fresh=false;syncSaveState();syncPush()}
+function syncChoose(buf){SYNC.choosing=true;syncSetStatus('choose');
+  const days=new Set(buf.filter(x=>x.j!=null&&x.path.startsWith('days/')).map(x=>x.path)).size;
+  openModal({title:'這台裝置和雲端都有資料',body:`<p style="margin:0">雲端已有 <b>${days}</b> 天的日誌，這台裝置也有 <b>${Object.keys(db.days||{}).length}</b> 天。要怎麼處理？</p>
+    <div class="stack"><div class="card"><b>以雲端為準（建議）</b><div class="sub">這台裝置的本機資料改成雲端內容。原本的本機資料會先另存一份備份，之後可以從設定還原。</div></div>
+    <div class="card"><b>合併兩邊</b><div class="sub">兩邊的資料都保留；同一天兩邊都有時，保留較新的一份。適合兩台裝置都各自記錄過的情況。</div></div></div>`,
+    foot:'<button class="btn" id="sc-merge">合併兩邊</button><button class="btn pri" id="sc-cloud">以雲端為準</button>',
+    onMount:ov=>{const go=fn=>{SYNC.choosing=false;closeModal();fn()};
+      $('#sc-cloud',ov).onclick=()=>go(()=>{try{localStorage.setItem('worklog.backup.beforeCloud',JSON.stringify(db))}catch(e){}
+        const keep=db.settings;db=emptyDb(keep);SYNC.state.h={};for(const x of buf){if(x.j!=null){syncApply(x.path,x.j);SYNC.state.h[x.path]=syncHash(x.j)}if(x.uMs>SYNC.state.since)SYNC.state.since=x.uMs}
+        drafts={};try{rebindDb()}catch(e){}HOL_SRC=null;syncRawSave();applyTheme();SYNC.state.fresh=false;syncSaveState();SYNC.ready=true;render();syncPush();toast('已改用雲端資料')});
+      $('#sc-merge',ov).onclick=()=>go(()=>syncFinishInitial(buf))},
+    onClose:()=>{if(SYNC.choosing){SYNC.choosing=false;syncStop();SYNC.api.signOut();toast('已取消，維持本機資料、未同步')}}})}
+function syncStop(){SYNC.unsubs.forEach(u=>{try{u()}catch(e){}});SYNC.unsubs=[];SYNC.ready=false;SYNC.uid=null;clearTimeout(SYNC.pushT);clearTimeout(SYNC.retryT)}
+function cloudBoot(){
+  const attach=api=>{SYNC.api=api;api.onAuth(user=>{if(user)syncStart(user);else{syncStop();syncSetStatus('off')}});
+    window.addEventListener('online',()=>{if(SYNC.uid)syncPush()})};
+  if(window.WorkCalCloud)attach(window.WorkCalCloud);
+  else{window.addEventListener('cloud-ready',()=>attach(window.WorkCalCloud),{once:true});
+    window.addEventListener('cloud-failed',()=>syncSetStatus('offline'),{once:true});
+    setTimeout(()=>{if(!SYNC.api)syncSetStatus('offline')},15000)}}
+window.__persistLocal=persist;
+persist=function(){window.__persistLocal();syncSchedule()};
+Object.assign(ACT,{
+  cloudlogin:()=>{if(!SYNC.api){toast('雲端元件尚未載入');return}SYNC.api.signIn().catch(e=>toast('登入失敗：'+syncErr(e)))},
+  cloudlogout:()=>confirmBox('登出後這台裝置的資料仍會保留，但不再同步。確定登出？',()=>{SYNC.api.signOut()},'登出'),
+  syncnow:()=>{if(SYNC.uid){syncPush()}else ACT.cloudlogin()},
+  syncpanel:()=>{if(!SYNC.uid){ACT.cloudlogin();return}S.page='settings';render()}
+});
+
 /* ---------- 啟動 ---------- */
 if(!db){db=emptyDb();persist()}
 rebindDb();
 applyTheme();render();
+cloudBoot();
 setTimeout(checkMorningReminder,700);
 setInterval(()=>{if(document.visibilityState==='visible')checkMorningReminder()},60000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkMorningReminder()});
@@ -3097,6 +3223,46 @@ window.addEventListener('focus',checkMorningReminder);
 
 if ('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
+<script type="module">
+/* Firebase 連線（只負責登入與讀寫，同步邏輯在主程式 SYNC 區段） */
+const firebaseConfig={
+  apiKey:"AIzaSyDu9x1Z-TFe5PBcHwEPIYVBlfYXXoVKZPM",
+  authDomain:"workcal-983cb.firebaseapp.com",
+  projectId:"workcal-983cb",
+  storageBucket:"workcal-983cb.firebasestorage.app",
+  messagingSenderId:"561827672271",
+  appId:"1:561827672271:web:348b08f5fcb41fee2ac7ba"
+};
+// 部署在 Firebase Hosting 時，用目前網域當登入網域，避免手機瀏覽器擋第三方 Cookie 導致登入失敗
+if(/\.(web\.app|firebaseapp\.com)$/.test(location.hostname))firebaseConfig.authDomain=location.hostname;
+const V='10.12.2',B=`https://www.gstatic.com/firebasejs/${V}/`;
+try{
+  const [{initializeApp},A,F]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')]);
+  const app=initializeApp(firebaseConfig),auth=A.getAuth(app),fs=F.getFirestore(app);
+  const provider=new A.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});
+  const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+  A.getRedirectResult(auth).catch(()=>{});
+  window.WorkCalCloud={
+    onAuth:cb=>A.onAuthStateChanged(auth,u=>cb(u?{uid:u.uid,email:u.email}:null)),
+    async signIn(){
+      if(standalone)return A.signInWithRedirect(auth,provider);
+      try{await A.signInWithPopup(auth,provider)}
+      catch(e){if(['auth/popup-blocked','auth/operation-not-supported-in-this-environment','auth/cancelled-popup-request'].includes(e.code))return A.signInWithRedirect(auth,provider);
+        if(e.code==='auth/popup-closed-by-user')return;throw e}},
+    signOut:()=>A.signOut(auth),
+    listen(uid,col,sinceMs,onList,onErr){
+      const q=F.query(F.collection(fs,'users',uid,col),F.where('u','>=',F.Timestamp.fromMillis(sinceMs)));
+      return F.onSnapshot(q,snap=>{onList(snap.docChanges().filter(c=>c.type!=='removed').map(c=>{const d=c.doc.data({serverTimestamps:'estimate'});
+        return{id:decodeURIComponent(c.doc.id),j:d.d?null:(typeof d.j==='string'?d.j:null),uMs:d.u&&d.u.toMillis?d.u.toMillis():0,pending:c.doc.metadata.hasPendingWrites}}))},onErr)},
+    async write(uid,ops){const b=F.writeBatch(fs);
+      for(const o of ops){const i=o.path.indexOf('/'),col=o.path.slice(0,i),id=o.path.slice(i+1);
+        b.set(F.doc(fs,'users',uid,col,encodeURIComponent(id)),o.j==null?{d:true,u:F.serverTimestamp()}:{j:o.j,d:false,u:F.serverTimestamp()})}
+      await b.commit()}
+  };
+  window.dispatchEvent(new Event('cloud-ready'));
+}catch(e){console.warn('雲端元件載入失敗',e);window.dispatchEvent(new Event('cloud-failed'))}
+</script>
+
 
 </body>
 </html>
