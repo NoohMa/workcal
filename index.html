@@ -1039,6 +1039,22 @@ label.fl .enh-wrap,.fgrid .enh-wrap{display:flex;width:100%}
 :root[data-theme="dark"]{--wk-fg:#A3C2C6}
 :root[data-theme="dark"] .wc-detail-hero span{background:var(--dk-card2)!important;color:var(--dk-fg)!important;border-color:var(--dk-line)!important}
 :root[data-theme="dark"] .wc-detail-empty{color:var(--dk-fg3)!important}
+
+.dlsoon{margin:10px 0 2px;padding:10px 12px;border:1px dashed var(--w-warn);border-radius:10px;background:var(--w-warnbg);color:var(--w-fg)}
+.dlsoon>b{font-size:13px;color:var(--w-warn)}
+.dlsoon-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:6px}
+.dlsoon-t{min-width:0}.dlsoon-t small{color:var(--w-fg2);margin-left:4px}
+.risk-jump{width:100%;font:inherit;text-align:left;cursor:pointer;color:inherit}
+.risk-jump .rj-t{min-width:0}.risk-jump .rj-go{color:var(--w-acc);font-size:13px;white-space:nowrap}
+.risk-jump:hover{border-color:var(--w-lake)!important}
+.rk-hl{outline:3px solid var(--w-lake);outline-offset:2px;transition:outline-color .3s}
+:root[data-theme="dark"] .dlsoon{background:var(--w-warnbg)!important;border-color:var(--w-warn)!important}
+
+.lv-bar{display:flex}.lv-bar i.bk{background:var(--w-lake);opacity:.45;border-radius:0 6px 6px 0}
+.lv-item .lv-d{flex:none;width:9.5em;font-variant-numeric:tabular-nums;color:var(--w-fg2)}.lv-item .lv-t{flex:1;min-width:0}
+.lr-prev{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--w-bg);border:1px solid var(--w-line);color:var(--w-fg)}
+.lr-days{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.lr-days span{font-size:13px;padding:3px 8px;border-radius:999px;background:var(--w-soft2)}
+:root[data-theme="dark"] .lr-prev{background:var(--dk-card)!important;border-color:var(--dk-line)!important}
 </style>
 </head>
 <body>
@@ -1415,7 +1431,7 @@ function applyItemFields(t,it,ref){
 function applyDay(D,text,opt={}){
   let r=parseDay(text);
   // 待辦預填的那一行若與日誌另一行是同一件事 → 拿掉預填行，避免重複
-  for(const t of T().filter(t=>t.date===D&&t.source==='todo'&&!t.closedByDay&&!t.archived)){
+  for(const t of T().filter(t=>t.date===D&&t.source==='todo'&&!t.closedByDay&&!t.archived&&!t.userSched&&!(t.subItems||[]).length&&!(t.progressLog||[]).length&&!t.dl)){
     const own=[t.rawLine,lineFromTask(t)].filter(Boolean).map(x=>x.trim());const mine=r.today.find(it=>own.includes(it.raw.trim()));if(!mine)continue;
     const mc=mine.title||mine.project;const twin=r.today.find(it=>it!==mine&&(sim(mc,it.title||it.project)>=.6||(nk(it.project)===nk(mine.project)&&sim(mc,it.title)>=.4)));
     if(twin){const nt=prevLineReplace(text,mine.raw,null);if(nt!=null){text=nt;r=parseDay(text)}}}
@@ -1501,7 +1517,7 @@ function applyDay(D,text,opt={}){
     if(it.delivered&&t.status!=='已交付'){t.status='已交付';t.deliveredAt=D}}
   for(const t of plan){if(used.has(t.id))continue;
     // 待辦預填與日誌原文是同一件事（同日、內容相近）→ 合併成日誌那一筆，DL 帶過去
-    if(t.source==='todo'&&!t.closedByDay){const tc=taskContent(t)||t.title;const twin=plan.find(u=>used.has(u.id)&&(sim(tc,taskContent(u)||u.title)>=.6||(u.projectId===t.projectId&&sim(tc,taskContent(u)||u.title)>=.4)));
+    if(t.source==='todo'&&!t.closedByDay&&!t.userSched&&!(t.subItems||[]).length&&!(t.progressLog||[]).length&&!t.dl){const tc=taskContent(t)||t.title;const twin=plan.find(u=>used.has(u.id)&&(sim(tc,taskContent(u)||u.title)>=.6||(u.projectId===t.projectId&&sim(tc,taskContent(u)||u.title)>=.4)));
       if(twin){if(t.dl&&!twin.dl)twin.dl=t.dl;if(!twin.deliverTo&&t.deliverTo)twin.deliverTo=t.deliverTo;if(!twin.doneCriteria&&t.doneCriteria)twin.doneCriteria=t.doneCriteria;delete db.tasks[t.id];continue}}
     if(t.source==='daily'&&t.createdByDay===D&&t.closedByDay==null){delete db.tasks[t.id];continue}
     if(t.source==='daily'&&t.closedByDay){continue}
@@ -2122,8 +2138,11 @@ function dayStep2(D,st,ro,s1done){
  const projs=Object.values(db.projects).filter(p=>p.status!=='結案').map(p=>`<option value="${esc(p.name)}">`).join('');
  const cat=S.qaCat&&categories().includes(S.qaCat)?S.qaCat:categories()[0];
  const form=ro?'':`${S.qaOpen?'':'<button class="btn qopen" data-act="qaopen">＋ 新增工作</button>'}<div class="qadd ${S.qaOpen?'open':''}" role="group" aria-label="新增今日工作"><label>分類<select id="qa-cat">${categories().map(c=>`<option ${c===cat?'selected':''}>${esc(c)}</option>`).join('')}</select></label><label class="qp">專案<input id="qa-proj" type="text" list="qa-projs" placeholder="輸入或選擇" autocomplete="off"><datalist id="qa-projs">${projs}</datalist></label><label class="qd">內容<input id="qa-detail" type="text" placeholder="例如：上架＋回饋處理"></label><label class="qh">時數<input id="qa-h" type="text" inputmode="decimal" placeholder="1.5"></label><button class="btn pri" data-act="todayadd">加入</button></div>`;
- return `<section class="step ${s1done?'is-active':''}" aria-label="步驟二 今日工作">${stepHead(2,false,'今日工作',`${items.length} 項・預估 ${fh(st.est)}h`,ro?'':`<button class="btn sm" data-act="picktodo">帶入待辦（${n}）</button><button class="lnk hide-m" data-act="guideopen">逐項編輯</button>`)}
-  <div class="srows">${rows||'<div class="sempty">還沒有今日工作。用下方欄位加入，或帶入待辦。</div>'}</div>${form}</section>`}
+ return `<section class="step ${s1done?'is-active':''}" aria-label="步驟二 今日工作">${stepHead(2,false,'今日工作',`${items.length} 項・${st.isActual?`實際 ${fh(st.work)}h`:`預估 ${fh(st.est)}h`}`,ro?'':`<button class="btn sm" data-act="picktodo">帶入待辦（${n}）</button><button class="lnk hide-m" data-act="guideopen">逐項編輯</button>`)}
+  ${ro?'':dlSoonHTML(D)}<div class="srows">${rows||'<div class="sempty">還沒有今日工作。用下方欄位加入，或帶入待辦。</div>'}</div>${form}</section>`}
+function dlSoon(D){return T().filter(t=>t.source==='todo'&&!t.date&&!t.archived&&t.dl&&!['完成','已交付','放棄'].includes(t.status)&&diffD(D,t.dl)<=3).sort(by(t=>t.dl))}
+function dlSoonHTML(D){const L=dlSoon(D);if(!L.length)return '';
+ return `<div class="dlsoon" role="note"><b>DL 快到的待辦</b>${L.map(t=>{const n=diffD(D,t.dl);return `<div class="dlsoon-row"><span class="stag ${n<0?'warn':'pend'}">${n<0?`逾期 ${-n} 天`:n===0?'今天到期':`剩 ${n} 天`}</span><span class="dlsoon-t">${esc(t.title)}<small> DL ${md(t.dl)}</small></span><span class="sp"></span><button class="btn sm" data-act="dlbring" data-id="${t.id}">帶入今天</button></div>`}).join('')}</div>`}
 function dayStep3(D,st){
  const t=teamsConfirmed[D],has=!!db.days[D]?.rawText;
  const o=Object.assign({},db.settings.exportDefaults);if(S.privacy)o.priv=false;
@@ -2346,7 +2365,7 @@ function guideHeaderHTML(){
  guideInitHeader();
  const loc=guidePlaces.map((x,i)=>`<div class="g-item"><div class="fgrid">${placePicker(i,x.place)}<label class="fl">工作性質<select data-gplace="${i}" data-gfield="trip"><option value="0" ${!x.trip?'selected':''}>一般辦公</option><option value="1" ${x.trip?'selected':''}>出差</option></select></label><label class="fl">實際工作項目<select data-gplace="${i}" data-gfield="activity"><option value="" ${!x.activity?'selected':''}>請選擇（選填）</option>${['授課','助教','導師','考官','跟課','聽課','會議','異地辦公','其他'].concat(x.activity&&!['授課','助教','導師','考官','跟課','聽課','會議','異地辦公','其他'].includes(x.activity)?[x.activity]:[]).map(a=>`<option value="${esc(a)}" ${(a==='其他'?String(x.activity||'').startsWith('其他'):x.activity===a)?'selected':''}>${esc(a)}${a==='授課／助教／導師／考官'||a==='跟課／聽課'?'（歷史資料）':''}</option>`).join('')}</select></label><label class="fl" data-other-wrap="${i}" style="${String(x.activity||'').startsWith('其他')?'':'display:none'}">其他工作項目<input data-gplace="${i}" data-gfield="activityOther" value="${esc(String(x.activity||'').startsWith('其他：')?x.activity.slice(3):'')}" placeholder="請輸入工作項目"></label><label class="fl">開始時間<input type="time" data-gplace="${i}" data-gfield="start" value="${esc(x.start||'08:30')}"></label><label class="fl">結束時間<input type="time" data-gplace="${i}" data-gfield="end" value="${esc(x.end||'17:30')}"></label></div><button class="btn sm" data-guide="remove-place" data-i="${i}">移除</button></div>`).join('');
  const leave=guideLeaves.map((x,i)=>`<div class="g-item"><div class="fgrid"><label class="fl">假別<select data-gleave="${i}" data-gfield="type">${leaveTypeList().map(y=>`<option ${x.type===y?'selected':''}>${esc(y)}</option>`).join('')}${!leaveTypeList().includes(x.type)?`<option selected>${esc(x.type)}</option>`:''}</select></label><label class="fl">請假時數 hr<input type="number" min="0" step="0.5" data-gleave="${i}" data-gfield="hours" value="${esc(x.hours)}"></label></div><button class="btn sm" data-guide="remove-leave" data-i="${i}">移除</button></div>`).join('');
- return `<div class="guide-header"><h2>當日基本資料</h2><div class="sub">辦公地可分時段、請假可多筆；填寫後按「儲存基本資料」，同步更新當日日誌及統計。</div><div class="row" style="justify-content:space-between;margin:10px 0 6px"><b>辦公地／出差</b><button class="btn sm" data-guide="add-place">＋ 新增地點／時段</button></div>${loc||'<div class="sub">尚未設定辦公地</div>'}<div class="row" style="justify-content:space-between;margin:12px 0 6px"><b>請假</b><button class="btn sm" data-guide="add-leave">＋ 新增請假</button></div>${leave||'<div class="sub">無請假</div>'}<div class="g-actions guide-confirm-actions"><button class="btn pri guide-wide-btn" data-guide="save-header">儲存基本資料</button><span class="sub">儲存後同步更新當日首頁及統計</span></div></div>`;
+ return `<div class="guide-header"><h2>當日基本資料</h2><div class="sub">辦公地可分時段、請假可多筆；填寫後按「儲存基本資料」，同步更新當日日誌及統計。</div><div class="row" style="justify-content:space-between;margin:10px 0 6px"><b>辦公地／出差</b><button class="btn sm" data-guide="add-place">＋ 新增地點／時段</button></div>${loc||'<div class="sub">尚未設定辦公地</div>'}<div class="row" style="justify-content:space-between;margin:12px 0 6px"><b>請假</b><span class="row" style="gap:6px"><button class="btn sm" data-act="leaverange">＋ 連續請假</button><button class="btn sm" data-guide="add-leave">＋ 新增請假</button></span></div>${leave||'<div class="sub">無請假</div>'}<div class="g-actions guide-confirm-actions"><button class="btn pri guide-wide-btn" data-guide="save-header">儲存基本資料</button><span class="sub">儲存後同步更新當日首頁及統計</span></div></div>`;
 }
 function guideLoadToday(){guideItems=parseDay(guideSource()).today.map(i=>({category:i.cat,project:i.project,hours:i.est,detail:i.doneText||((i.title!==i.project)?i.title:''),raw:i.raw.trim()}));guideItemsDay=S.day}
 function guideLine(x){return x.raw||`${x.category}-${x.project}${x.hours!=null&&x.hours!==''?'_'+hrTok(x.hours):''}${x.detail?'，'+x.detail:''}`}
@@ -2596,8 +2615,8 @@ function taskForm(t,isNew){
   <div class="fgrid">
   <label class="fl">預估工時（hr）<input type="number" step="0.5" min="0" id="tf-est" value="${t.estHours??''}"></label>
   ${isNew?'':`<label class="fl">實際工時（hr）<input type="number" step="0.5" min="0" id="tf-act" value="${t.actual?.office??''}"></label>`}
-  <label class="fl">DL<input type="date" id="tf-dl" value="${t.dl||''}"></label>
   <label class="fl">排入日期<input type="date" id="tf-date" value="${t.date||''}"></label>
+  <label class="fl">DL<input type="date" id="tf-dl" value="${t.dl||''}"></label>
   <label class="fl">狀態<select id="tf-st">${STATUSES.map(s=>`<option ${t.status===s?'selected':''}>${s}</option>`).join('')}</select></label>
   <label class="fl">⭐ 主星<select id="tf-star"><option value="0">否</option><option value="1" ${t.isStar?'selected':''}>是</option></select></label></div>
   <label class="fl" id="tf-dlr-w" hidden>DL 改期原因<input type="text" id="tf-dlr" placeholder="例：講師延後回覆"></label>
@@ -2618,7 +2637,7 @@ function openTask(id,opts={}){
   const isNew=!id;const t=isNew?Object.assign({category:'專案',projectId:opts.projectId||null,title:opts.title||'',subItems:[],estHours:null,actual:{office:null},status:'待辦',isStar:false,dl:null,dlHistory:[],doneCriteria:'',stopLoss:'',deliverTo:'',outcome:'',delayReasonTag:'',delayReasonText:'',date:null},opts):db.tasks[id];
   if(!t)return;
   openModal({title:isNew?'新增待辦':'編輯任務',body:taskForm(t,isNew),
-    foot:`${isNew?'':`<button class="btn danger" id="tf-del">${t.archived?'永久移除':'移除'}</button><span style="flex:1"></span>`}${isNew?'<button class="btn" data-act="mclose">取消</button>':'<span class="state saved" id="tf-st"><i></i>修改即自動儲存</span>'}<button class="btn pri" id="tf-ok">${isNew?'新增':'儲存並返回'}</button>`,
+    foot:`${isNew?'':`<button class="btn danger" id="tf-del">${t.archived?'永久移除':'移除'}</button><span style="flex:1"></span>`}${isNew?'<button class="btn" data-act="mclose">取消</button>':'<span class="state saved" id="tf-saved"><i></i>修改即自動儲存</span>'}<button class="btn pri" id="tf-ok">${isNew?'新增':'儲存並返回'}</button>`,
     onMount:ov=>{
       $$('.long-entry',ov).forEach(bindLongEntry);
       const chk=()=>{const w=[];const dl=$('#tf-dl',ov).value;const pid=findProject($('#tf-proj',ov).value)?.id;const p=pid&&P(pid);
@@ -2650,17 +2669,17 @@ function openTask(id,opts={}){
           if(nd)scheduleTask(o.id,nd,true);else{o.date=null;if(o.status==='規劃')o.status='待辦';o.source=o.source==='daily'?'todo':o.source}}
         else if(o.date&&o.origin==='plan'&&db.days[o.date]?.rawText&&oldLine){const nl=lineFromTask(o);if(nl!==oldLine){const txt=db.days[o.date].rawText.split('\n').map(l=>l===oldLine?nl:l).join('\n');const keep=o.status;applyDay(o.date,txt);o.status=keep}}
         persist();render._keep=true;render();
-        if(close)toast(isNew?'已新增待辦':'已儲存');else{const s2=$('#tf-st',ov);if(s2){const d=new Date();s2.innerHTML=`<i></i>已自動儲存 ${pad(d.getHours())}:${pad(d.getMinutes())}`}}};
+        if(close)toast(isNew?'已新增待辦':'已儲存');else{const s2=$('#tf-saved',ov);if(s2){const d=new Date();s2.innerHTML=`<i></i>已自動儲存 ${pad(d.getHours())}:${pad(d.getMinutes())}`}}};
       $('#tf-ok',ov).onclick=()=>commit(true);
-      if(!isNew){let at,pend=false;const auto=()=>{clearTimeout(at);pend=true;const s2=$('#tf-st',ov);if(s2){s2.className='state dirty';s2.innerHTML='<i></i>輸入中…'}at=setTimeout(()=>{pend=false;if(document.contains(ov)){commit(false);const s3=$('#tf-st',ov);if(s3)s3.className='state saved'}},800)};
+      if(!isNew){let at,pend=false;const auto=()=>{clearTimeout(at);pend=true;const s2=$('#tf-saved',ov);if(s2){s2.className='state dirty';s2.innerHTML='<i></i>輸入中…'}at=setTimeout(()=>{pend=false;if(document.contains(ov)){commit(false);const s3=$('#tf-saved',ov);if(s3)s3.className='state saved'}},800)};
         $$('input,textarea',ov).forEach(el=>el.addEventListener('input',auto));$$('select,input[type=date]',ov).forEach(el=>el.addEventListener('change',auto));
         const m=modalStack[modalStack.length-1];const oc=m.onClose;m.onClose=()=>{clearTimeout(at);if(pend){pend=false;commit(false)}oc&&oc()}}
       const del=$('#tf-del',ov);if(del)del.onclick=()=>{closeModal();safeDeleteTask(t.id)}}})}
 function scheduleTask(id,date,silent){
-  const t=db.tasks[id];if(!t)return;t.date=date;t.origin='plan';if(t.status==='待辦')t.status='規劃';if(t.source==='daily')t.source='todo';
+  const t=db.tasks[id];if(!t)return;t.date=date;t.origin='plan';t.userSched=true;if(t.status==='待辦')t.status='規劃';if(t.source==='daily')t.source='todo';
   const dd=db.days[date];
   if(S.page==='day'&&S.day===date&&$('#ta')){const ta=$('#ta');ta.value=insertTodayLine(ta.value,lineFromTask(t));ta.dispatchEvent(new Event('input'));t.rawLine=lineFromTask(t)}
-  else if(dd?.rawText){applyDay(date,insertTodayLine(dd.rawText,lineFromTask(t)))}
+  else if(dd?.rawText){const ln=lineFromTask(t);if(!parseDay(dd.rawText).today.some(it=>it.raw.trim()===ln.trim()))applyDay(date,insertTodayLine(dd.rawText,ln));else{t.rawLine=ln;applyDay(date,dd.rawText)}}
   persist();if(!silent)toast(`已排入 ${md(date)}`)}
 function schedPrompt(id){const t=db.tasks[id];if(!t)return;
   openModal({title:'排入某天',body:`<div class="sub">${esc(t.title)}</div><label class="fl">日期<input type="date" id="sp-d" value="${t.date||today()}" autofocus></label><div class="row">${[0,1,2].map(n=>{const d=n===0?today():n===1?nextWorkday(today()):nextWorkday(nextWorkday(today()));return`<button class="btn sm" data-q="${d}">${n===0?'今天':n===1?'下個工作日':'再下個工作日'} ${md(d)}</button>`}).join('')}</div>`,
@@ -2872,14 +2891,30 @@ function pgLeavePlan(){const q=leavePlanProjection(),z=q.z,hr=q.hrs,remaining=q.
  <div class="card stack"><h3>已儲存的休假規劃</h3>${plans.length?plans.map(p=>`<div class="row" style="border-bottom:1px solid var(--line);padding:9px 0"><div style="flex:1"><b>${esc(p.title||'休假規劃')}</b><div class="sub">${esc(p.start)}${p.start===p.end?'':' ～ '+esc(p.end)}｜每工作日 ${fh(p.hours)} hr｜${planDates(p.start,p.end).length} 個工作日</div></div><button class="btn sm danger" data-act="delleaveplan" data-id="${esc(p.id)}">移除</button></div>`).join(''):'<p class="sub">尚未安排模擬休假</p>'}</div>
  <div class="card stack"><h3>剩餘額度時間軸</h3>${q.timeline.length?(()=>{let balance=q.grant===null?null:q.grant-q.used;return `<div class="tbl-wrap">${tbl(['日期','已登記特休','新增模擬','當日後餘額'],q.timeline.map(r=>{if(balance!==null)balance-=r.official+r.sim;return [r.date,fmt(r.official),fmt(r.sim),fmt(balance)]}))}</div>`})():'<p class="sub">當期剩餘時間內尚無已登記或模擬休假。</p>'}<p class="sub">目前僅模擬本特休週期。跨下一週期的休假請待核給額度確認後，再依新週期規劃；過期的模擬不會扣除現有餘額。</p></div>`;
 }
+function setDayLeave(text,type,hours){const ls=String(text).split('\n');const p=parseDay(text).header.leaves||[];const L=p.filter(x=>x.type!==type).map(x=>({...x}));if(hours>0)L.push({type,hours});
+  const line='請假：'+L.map(x=>`${x.type} ${fh(x.hours)}hr`).join(' | ');const i=ls.findIndex(l=>/^請假\s*[:：]/.test(l.trim()));
+  if(i>=0)ls[i]=line;else{const di=ls.findIndex(l=>/^(辦公地|日期)\s*[:：]/.test(l.trim()));ls.splice(Math.max(0,di+1),0,line)}return ls.join('\n')}
+function leaveRangeModal(start){const T0=start||today(),hr=hpd();
+ openModal({title:'連續請假',body:`<div class="fgrid"><label class="fl">假別<select id="lr-type">${leaveTypeList().map(x=>`<option ${x==='特休'?'selected':''}>${esc(x)}</option>`).join('')}</select></label><label class="fl">每天時數（hr）<input id="lr-h" type="number" min="1" max="${hr}" step="1" value="${hr}"></label><label class="fl">起日<input type="date" id="lr-a" value="${T0}"></label><label class="fl">迄日<input type="date" id="lr-b" value="${T0}"></label></div><div id="lr-prev" class="lr-prev"></div><p class="sub">週末和國定假日（設定 › 假日）自動跳過，補班日算上班要請。已寫日誌的日子只更新「請假」那一欄。</p>`,
+  foot:'<button class="btn" data-act="mclose">取消</button><button class="btn pri" id="lr-ok">登記請假</button>',
+  onMount:ov=>{const calc=()=>{const a=$('#lr-a',ov).value,b=$('#lr-b',ov).value,h=+$('#lr-h',ov).value||0,type=$('#lr-type',ov).value;const ds=planDates(a,b);const box=$('#lr-prev',ov);
+    if(!a||!b||b<a){box.innerHTML='<span class="warnc">迄日要在起日之後</span>';return null}
+    if(!ds.length){box.innerHTML='<span class="warnc">這段期間沒有要上班的日子</span>';return null}
+    const skip=[];for(let d=a;d<=b;d=addD(d,1))if(!ds.includes(d)){const H=hol();if(H.h[d])skip.push(md(d)+' '+H.h[d])}
+    box.innerHTML=`<b>實際請 ${ds.length} 天・共 ${fmtLeave(type,ds.length*h)}</b><div class="lr-days">${ds.map(d=>`<span>${md(d)}（${wd(d)}）${db.days[d]?.leaves?.length?'<small class="warnc">已有請假</small>':''}</span>`).join('')}</div>${skip.length?`<div class="sub">跳過國定假日：${esc(skip.join('、'))}</div>`:''}`;
+    return {ds,h,type}};
+   ['#lr-a','#lr-b','#lr-h','#lr-type'].forEach(k=>{const el=$(k,ov);el.addEventListener('change',calc);el.addEventListener('input',calc)});calc();
+   $('#lr-ok',ov).onclick=()=>{const r=calc();if(!r)return;if(!(r.h>0&&r.h<=hpd())){toast('每天時數要在 1～'+hpd()+' 之間');return}
+    if(r.type==='生日假'&&r.ds.length>1){toast('生日假一次只能請一天');return}
+    saveDraftNow();for(const d of r.ds){applyDay(d,setDayLeave(dayText(d),r.type,r.h));delete drafts[d]}persist();guideHeaderDay='';closeModal();render._keep=true;render();toast(`已登記 ${r.type} ${r.ds.length} 天`)}}})}
 function leaveRecords(st,ed){return Object.keys(db.days).filter(d=>d>=st&&d<=ed&&(db.days[d].leaves||[]).some(x=>Number(x.hours)>0)).sort().reverse().map(d=>({d,list:(db.days[d].leaves||[]).filter(x=>Number(x.hours)>0)}))}
 function ymdSpan(a,b){if(!/^\d{4}-\d\d-\d\d$/.test(a||'')||b<a)return null;const [y1,m1,d1]=a.split('-').map(Number),[y2,m2,d2]=b.split('-').map(Number);let t=(y2-y1)*12+(m2-m1)-(d2<d1?1:0);const anc=k=>{const yy=y1+Math.floor((m1-1+k)/12),mm=(m1-1+k)%12;return new Date(yy,mm,Math.min(d1,new Date(yy,mm+1,0).getDate()))};if(anc(t)>new Date(y2,m2-1,d2))t--;const d=Math.round((new Date(y2,m2-1,d2)-anc(t))/864e5);return{y:Math.floor(t/12),m:t%12,d}}
 function slashDate(d){return d?d.replace(/-/g,'/'):''}
 function pgLeaveManage(){const asOf=today(),s=db.settings,z=leaveSummary(asOf),hr=hpd();
  const year=asOf.slice(0,4),mon=asOf.slice(0,7),ySum=calcStats(year+'-01-01',year+'-12-31'),mSum=calcStats(mon+'-01',iso(new Date(+year,+mon.slice(5),0)));
  const yTotal=Object.values(ySum.leaves).reduce((n,v)=>n+v,0),mTotal=Object.values(mSum.leaves).reduce((n,v)=>n+v,0);
- const rem=z.available==null?null:z.available-z.special,left=Math.max(0,diffD(asOf,z.ed));
- const usedPct=z.available?Math.min(100,z.special/z.available*100):0;
+ const booked=hoursUsed('特休',addD(asOf,1),z.ed);const rem=z.available==null?null:z.available-z.special-booked,left=Math.max(0,diffD(asOf,z.ed));
+ const usedPct=z.available?Math.min(100,z.special/z.available*100):0,bookPct=z.available?Math.min(100-usedPct,booked/z.available*100):0;
  const compPct=z.compEarned>0?Math.min(100,(z.compUsed+z.compDebits)/z.compEarned*100):0;
  const otH=sum(db.ot.filter(o=>o.date>=z.st&&o.date<=z.ed),o=>o.hours);
  const types=['特休','補休','病假','事假'].concat(Object.keys(ySum.leaves).filter(k=>!['特休','補休','病假','事假'].includes(k)));
@@ -2896,7 +2931,7 @@ function pgLeaveManage(){const asOf=today(),s=db.settings,z=leaveSummary(asOf),h
   <section class="lv-card" aria-label="今年請假"><div class="lv-l">${year} 年已請</div><div class="lv-n"><b>${dayHour(yTotal)}</b></div><div class="lv-chips">${types.map(k=>`<span>${esc(k)} ${(ySum.leaves[k]||0)?fmtLeave(k,ySum.leaves[k]):0}</span>`).join('')}</div><div class="lv-s">本月 ${mTotal?dayHour(mTotal):'0'}</div></section>
   <section class="lv-card" aria-label="特休"><div class="lv-l">特休剩餘</div>
    ${rem==null?`<div class="lv-n"><b>待設定</b></div><div class="lv-s">先在「編輯設定」填到職日（或公司核給時數），才算得出剩多少。</div><div><button class="btn sm pri" data-act="leaveedit">填核給額度</button></div>`:
-   `<div class="lv-n"><b>${dayHour(rem)}</b></div><div class="lv-bar"><i style="width:${usedPct}%"></i></div><div class="lv-s">已休 ${dayHour(z.special)}／核給 ${dayHour(z.available)}</div><div class="lv-s warnc">${slashDate(z.ed)} 到期・還有 ${left} 天</div>${z.estimated?`<div class="lv-s">依年資法定 ${z.estimate} 天估算；公司核給不同時到「編輯設定」填寫</div>`:''}`}
+   `<div class="lv-n"><b>${dayHour(rem)}</b></div><div class="lv-bar"><i style="width:${usedPct}%"></i><i class="bk" style="width:${bookPct}%"></i></div><div class="lv-s">已休 ${dayHour(z.special)}${booked?`／已排 ${dayHour(booked)}`:''}／核給 ${dayHour(z.available)}</div><div class="lv-s warnc">${slashDate(z.ed)} 到期・還有 ${left} 天</div>${z.estimated?`<div class="lv-s">依年資法定 ${z.estimate} 天估算；公司核給不同時到「編輯設定」填寫</div>`:''}`}
   </section>
   <section class="lv-card" aria-label="補休"><div class="lv-l">補休餘額</div><div class="lv-n"><b>${fh(z.compBalance)}</b><span> h</span></div><div class="lv-bar"><i style="width:${compPct}%"></i></div><div class="lv-s">公司核給 ${fh(z.compEarned)}h・已用 ${fh(z.compUsed+z.compDebits)}h</div><div class="lv-s">${otH?`本期加班紀錄 ${fh(otH)}h（不會自動轉成補休）`:'本期沒有加班紀錄'}</div></section>
  </div>
@@ -2906,8 +2941,8 @@ function pgLeaveManage(){const asOf=today(),s=db.settings,z=leaveSummary(asOf),h
    <div class="lv-chart" style="grid-template-columns:repeat(${months.length||1},minmax(0,1fr))">${months.map((m,i)=>`<div class="lv-col" title="${m}：${fh(per[i])} 天"><i style="height:${Math.max(3,per[i]/pmax*100)}%" class="${per[i]?'on':''}"></i></div>`).join('')}</div>
    <div class="lv-axis" style="grid-template-columns:repeat(${months.length||1},minmax(0,1fr))">${months.map(m=>`<span>${+m.slice(5)}月</span>`).join('')}</div>
    <div class="lv-s">長條＝各月已請＋已排的特休天數。按「排休」挑日期，只是規劃，不會變成正式請假。</div></section>
-  <section class="card lv-rec" aria-label="本期請假紀錄"><h3 style="margin:0 0 8px">本期請假紀錄</h3>
-   ${recs.length?`<div class="lv-list">${recs.slice(0,40).map(r=>`<button class="lv-item" data-act="openday" data-d="${r.d}"><span>${md(r.d)}（${wd(r.d)}）${r.d>asOf?'<small class="muted"> 預定</small>':''}</span><span class="sp"></span><span>${r.list.map(x=>`${esc(x.type)} ${fmtLeave(x.type,x.hours)}`).join('、')}</span></button>`).join('')}</div>${recs.length>40?`<div class="lv-s">只列最近 40 筆，共 ${recs.length} 筆</div>`:''}`:
+  <section class="card lv-rec" aria-label="本期請假紀錄"><div class="row" style="margin:0 0 8px"><h3 style="margin:0;flex:1">本期請假紀錄</h3><button class="btn sm" data-act="leaverange">＋ 連續請假</button></div>
+   ${recs.length?`<div class="lv-list">${recs.slice(0,40).map(r=>`<button class="lv-item" data-act="openday" data-d="${r.d}"><span class="lv-d">${slashDate(r.d)}（${wd(r.d)}）</span><span class="lv-t">${r.list.map(x=>`${esc(x.type)} ${fmtLeave(x.type,x.hours)}`).join('、')}${r.d>asOf?'<small class="muted"> 預定</small>':''}</span></button>`).join('')}</div>${recs.length>40?`<div class="lv-s">只列最近 40 筆，共 ${recs.length} 筆</div>`:''}`:
    '<div class="lv-empty">本期還沒有請假。<br>在「今天」頁按「編輯辦公地／請假」填寫後，會自動列在這裡。</div>'}</section>
  </div>
  <section class="lv-set" aria-label="額度設定"><span>到職日 <b>${esc(hire)}</b></span><span>年資 <b>${ten?`${ten.y} 年 ${ten.m} 月 ${ten.d} 天`:'—'}</b>${z.estimate!=null?`（本期法定 ${z.estimate} 天）`:''}</span><span>週期 <b>${s.leaveCycleStart?'自訂':'依到職日'}</b></span><span>公司核給 <b>${z.grant==null?(z.estimate!=null?'未填（用法定 '+z.estimate+' 天）':'待設定'):dayHour(z.grant)}</b></span>${+s.leaveReserveHours?`<span>自留 <b>${fh(s.leaveReserveHours)}h</b></span>`:''}<span class="sp"></span>
@@ -3303,8 +3338,8 @@ function riskApply(){if(!riskDraft)riskDraft=riskModels();const key=$('#risk-cho
  openModal({title:'確認套用情境',body,foot:'<button class="btn" data-act="mclose">取消模擬</button><button class="btn pri" id="risk-apply-ok">確認調整排程</button>',onMount:ov=>{$('#risk-apply-ok',ov).onclick=()=>{const changed=[];for(const x of changes){const t=db.tasks[x.id];if(!t)continue;const old=t.date||null;if(old&&old!==x.date&&db.days[old]?.rawText&&t.rawLine){applyDay(old,removeLine(db.days[old].rawText,t.rawLine))}scheduleTask(t.id,x.date,true);t.riskHistory=t.riskHistory||[];t.riskHistory.push({at:new Date().toISOString(),from:old||'未排日',to:x.date,note:'由情境模擬確認調整排程'});changed.push(x.title)}riskDraft=null;persist();closeModal();render();toast('已確認調整 '+changed.length+' 項排程')}}})}
 function riskTrendRows(){const byMonth={};for(const t of T()){const d=t.deliveredAt||t.date||t.updatedAt&&new Date(t.updatedAt).toISOString().slice(0,10)||null;if(!d)continue;const m=d.slice(0,7);(byMonth[m]??=[]).push(t)}return Object.keys(byMonth).sort().reverse().slice(0,12).map(m=>{const a=byMonth[m],over=a.filter(t=>t.dl&&t.deliveredAt&&t.deliveredAt>t.dl).length;const delayed=a.filter(t=>t.dl&&t.deliveredAt&&t.deliveredAt>t.dl).map(t=>diffD(t.dl,t.deliveredAt));return {month:m,total:a.length,over,mean:delayed.length?(delayed.reduce((n,v)=>n+v,0)/delayed.length).toFixed(1):'—'}})}
 function pgRisk(){const all=allRisk(),red=all.filter(x=>x.level===3),late=all.filter(x=>x.isLate),soon=all.filter(x=>x.days!==null&&x.days>=0&&x.days<=7),pending=all.filter(x=>x.pending),cap=riskAvailableWindow(7),total=all.reduce((n,x)=>n+(x.remain||0),0),models=riskDraft||riskModels();return `<div class="pagehead"><h1>工作風險與決策</h1><p class="sub">依既有待辦與工時資料計算；風險、預測及情境模擬皆可追溯。決策由你確認。</p></div>${(()=>{const n=T().filter(riskStale).length;return n?`<div class="banner"><b>舊項目 ${n} 筆未列入</b><span>兩週前、沒有 DL、也沒標完成的項目（多半是匯入的舊日誌），不算進風險與工時缺口。</span><span class="sp" style="flex:1"></span><button class="btn sm" data-act="riskstalearch">全部封存</button></div>`:''})()}<div class="risk-kpis"><div class="risk-stat"><span>高風險</span><b>${red.length}</b></div><div class="risk-stat"><span>7 天內到期</span><b>${soon.length}</b></div><div class="risk-stat"><span>已逾期</span><b>${late.length}</b></div><div class="risk-stat"><span>本週工時缺口（估）</span><b>${Math.max(0,total-cap).toFixed(1)}h</b></div></div>
- <div class="card stack"><div class="row"><h2>今日最值得關注</h2><span class="sub">待評估 ${pending.length} 項｜未有 DL 也納入</span></div>${all.length?all.slice(0,5).map(x=>`<div class="risk-line"><span class="risk-light r${x.level}">${RLEVEL[x.level]}</span><span style="flex:1"><b>${esc(x.t.title)}</b><small>${esc(x.why.join('；'))}</small></span><button class="btn sm" data-act="riskedit" data-id="${x.t.id}">開啟原待辦</button></div>`).join(''):'<p class="sub">目前沒有進行中的待辦。</p>'}</div>
- <div class="card stack"><h2>風險清單與處理追蹤</h2>${all.length?all.map(x=>`<div class="risk-item"><div class="row" style="gap:10px;flex-wrap:wrap"><span class="risk-light r${x.level}">${RLEVEL[x.level]}</span><b style="flex:1">${esc(x.t.title)}</b><button class="btn sm" data-act="riskedit" data-id="${x.t.id}">編輯</button><button class="btn sm" data-act="riskaction" data-id="${x.t.id}">處理／追蹤</button></div><p class="sub">${esc(pname(x.t.projectId))}｜DL ${x.t.dl||'未設定'}｜剩餘 ${x.remain===null?'未知':x.remain+'h'}｜${x.pending?'待評估':'已評估'}｜${esc(riskStatusText(x.t))}</p><p class="sub">原因：${esc(x.why.join('；'))}</p><p class="sub">建議：${esc(x.advice.join('；'))}</p>${x.t.riskHistory?.length?`<details><summary>處理歷程（${x.t.riskHistory.length} 筆）</summary>${x.t.riskHistory.map(h=>`<p class="sub">${esc(h.at.slice(0,16))} ${esc(h.from)} → ${esc(h.to)} ${esc(h.note||'')}</p>`).join('')}</details>`:''}</div>`).join(''):'<p class="sub">無進行中風險。</p>'}</div>
+ <div class="card stack"><div class="row"><h2>今日最值得關注</h2><span class="sub">待評估 ${pending.length} 項｜未有 DL 也納入</span></div>${all.length?all.slice(0,5).map(x=>`<button type="button" class="risk-line risk-jump" data-act="riskjump" data-id="${x.t.id}"><span class="risk-light r${x.level}">${RLEVEL[x.level]}</span><b class="rj-t">${esc(x.t.title)}</b><span class="sp"></span><span class="rj-go">看詳細 ›</span></button>`).join(''):'<p class="sub">目前沒有進行中的待辦。</p>'}</div>
+ <div class="card stack"><h2>風險清單與處理追蹤</h2>${all.length?all.map(x=>`<div class="risk-item" id="rk-${x.t.id}"><div class="row" style="gap:10px;flex-wrap:wrap"><span class="risk-light r${x.level}">${RLEVEL[x.level]}</span><b style="flex:1">${esc(x.t.title)}</b><button class="btn sm" data-act="riskedit" data-id="${x.t.id}">編輯</button><button class="btn sm" data-act="riskaction" data-id="${x.t.id}">處理／追蹤</button></div><p class="sub">${esc(pname(x.t.projectId))}｜DL ${x.t.dl||'未設定'}｜剩餘 ${x.remain===null?'未知':x.remain+'h'}｜${x.pending?'待評估':'已評估'}｜${esc(riskStatusText(x.t))}</p><p class="sub">原因：${esc(x.why.join('；'))}</p><p class="sub">建議：${esc(x.advice.join('；'))}</p>${x.t.riskHistory?.length?`<details><summary>處理歷程（${x.t.riskHistory.length} 筆）</summary>${x.t.riskHistory.map(h=>`<p class="sub">${esc(h.at.slice(0,16))} ${esc(h.from)} → ${esc(h.to)} ${esc(h.note||'')}</p>`).join('')}</details>`:''}</div>`).join(''):'<p class="sub">無進行中風險。</p>'}</div>
  <div class="card stack" id="risk-sim"><div class="row"><h2>情境模擬｜${riskHorizon} 天</h2><button class="btn" data-act="riskscenario">重新模擬</button></div><p class="sub">可用時間 ${cap}h；已知剩餘工作量 ${total.toFixed(1)}h。未知工時另列；模擬不變更正式任務。方案 D 的額外 4h 為假設，未經核准不得視為實際可用。</p><div class="risk-sims">${models.map(m=>`<div class="risk-sim"><b>${m.label}</b><div>預估缺口 ${m.shortage}h</div><div>可安排 ${m.done.length} 項｜可能延後 ${m.late.length} 項</div><small>剩餘可用 ${m.left}h｜工時未知 ${m.unknown.length} 項</small></div>`).join('')}</div><label class="fl">選擇模擬方案<select id="risk-choice">${models.map(m=>`<option value="${m.key}">${m.label}</option>`).join('')}</select><div class="row"><button class="btn pri" data-act="riskapply">預覽排程變更並確認</button><button class="btn" data-act="riskreset">取消模擬</button></div></div>
  <div class="card stack"><h2>歷史趨勢｜有來源資料的月份</h2><p class="sub">以下按任務已有的排程／交付日期歸月，屬觀察資料；缺乏歷史風險快照時不會臆測每月高風險數或解除率。</p><div class="tbl-wrap"><table class="t"><thead><tr><th>月份</th><th>有記錄任務</th><th>逾期交付</th><th>平均延誤</th></tr></thead><tbody>${riskTrendRows().map(x=>`<tr><td>${x.month}</td><td>${x.total}</td><td>${x.over}</td><td>${x.mean==='—'?'—':x.mean+' 天'}</td></tr>`).join('')||'<tr><td colspan="4">尚無可統計的歷史紀錄</td></tr>'}</tbody></table></div></div><p class="sub">版本限制：資料儲存在此瀏覽器。跨裝置同步及關閉 App 後的推播須另行連接後端與通知服務；本版未聲稱已支援。</p>`}
 
@@ -3445,6 +3480,9 @@ const ACT={
   teamscopy:()=>{saveDraftNow();copy(teamsText(S.day,Object.assign({},db.settings.exportDefaults)))},
   riskstalearch:()=>{const L=T().filter(riskStale);confirmBox(`把 ${L.length} 筆兩週前、沒有 DL 的未結項目移到封存？封存後仍可在「待辦 › 封存」查到或還原，日誌原文不變。`,()=>{L.forEach(t=>t.archived=true);persist();render();toast(`已封存 ${L.length} 筆`)},'封存')},
   dayclose:()=>{const D=S.day;if(!parseDay(dayText(D)).today.length){toast('今天還沒有工作項目');return}saveDraftNow();const N=nextWorkday(D);openDay(N);S.closeFrom=D;ACT.wcprevopen()},
+  dlbring:el=>{scheduleTask(el.dataset.id,S.day,true);render._keep=true;render();toast('已帶入今日工作')},
+  riskjump:el=>{const x=document.getElementById('rk-'+el.dataset.id);if(x){x.scrollIntoView({block:'center',behavior:'smooth'});x.classList.add('rk-hl');setTimeout(()=>x.classList.remove('rk-hl'),1600)}},
+  leaverange:()=>leaveRangeModal(S.page==='day'?S.day:today()),
   todayadd:()=>todayAdd(),todayedit:el=>todayEdit(el.dataset.i),qaopen:()=>{S.qaOpen=true;render._keep=true;render();setTimeout(()=>$('#qa-proj')?.focus(),0)},todaydel:el=>todayDel(el.dataset.i),
   hdropen:()=>{saveDraftNow();closeDaySubs();guideHeaderDay='';S.hdrSub=true;render();$('#main').scrollTop=0},hdrclose:()=>{S.hdrSub=false;render()},
   leaveedit:()=>{S.leaveEdit=!S.leaveEdit;render._keep=true;render()},leaveadd:()=>{S.leaveAdd=!S.leaveAdd;render._keep=true;render()},
