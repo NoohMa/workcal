@@ -1055,6 +1055,19 @@ label.fl .enh-wrap,.fgrid .enh-wrap{display:flex;width:100%}
 .lr-prev{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--w-bg);border:1px solid var(--w-line);color:var(--w-fg)}
 .lr-days{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.lr-days span{font-size:13px;padding:3px 8px;border-radius:999px;background:var(--w-soft2)}
 :root[data-theme="dark"] .lr-prev{background:var(--dk-card)!important;border-color:var(--dk-line)!important}
+
+.lv-groups{display:flex;flex-direction:column;gap:6px}.lv-g{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.lv-gn{font-size:12px;color:var(--w-fg2);width:3.5em;flex:none}.lv-chip{font-size:12px;padding:3px 10px;border-radius:999px;background:var(--w-soft2);color:var(--w-fg)}
+.lv-cut{color:var(--w-warn);white-space:nowrap;margin-left:auto}
+.lv-pay,.lv-miss{flex:1 1 360px}
+.lv-pay-n{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:8px}.lv-pay-n b{display:block;font-size:26px;color:var(--w-warn)}
+.lv-pay-list>div{display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid var(--w-line2)}
+.lv-mrow{cursor:default}.lv-mrow select{flex:1;min-width:0;max-width:12em}
+:root{--stop-bg:#E3ECF5;--stop-fg:#2F5577}:root[data-theme="dark"]{--stop-bg:#1F3549;--stop-fg:#A9C8E8}
+.yr .mmg button.mmc.y2.holi.stopd{background:var(--stop-bg)!important;color:var(--stop-fg)!important}
+:root .cal .cell.holi.stopd:nth-child(n){background:var(--stop-bg)!important}.cell.holi.stopd .dn,.cell.holi.stopd .hn{color:var(--stop-fg)!important}
+.ylegend .lg-stop{background:var(--stop-bg);border-color:transparent}
+.chip.stopchip{background:var(--stop-bg)!important;color:var(--stop-fg)!important}
 </style>
 </head>
 <body>
@@ -1181,7 +1194,7 @@ const DEF_PROMPT=`請根據以下我的工作紀錄，撰寫「{期間}」的個
 5. 繁體中文，條列為主，適合放進年終自評。`;
 
 const DEF_SET={displayName:'馬哥',teamsName:'馬哥',hoursPerDay:8,leaveUnit:1,
-  leaveTypes:['特休','補休','生日假','病假','事假','公假','婚假','喪假','產檢假','陪產假','家庭照顧假','生理假','其他'],places:['花壇','總部','中辦','中所'],
+  leaveTypes:['特休','補休','生日假','病假','事假','家庭照顧假','公假','公傷病假','婚假','喪假','陪產檢及陪產假','停班','其他'],places:['花壇','總部','中辦','中所'],
   dailyItemLimit:5,workCategories:['專案','例行','會議','突發','授課','助教','導師','考官','跟課','聽課','異地辦公','其他'],exportDefaults:{priv:false,extras:false,loc:false,leave:false},
   holidaysText:HOLI_TEXT,theme:'auto',edFont:'mono',aiPrompt:DEF_PROMPT,lastBackup:null,importStartYear:2024};
 const PCOLORS=['#0A97D9','#4C9F38','#FD6925','#DD1367','#26BDE2','#A21942','#FCC30B','#3F7E44','#E5243B','#BF8B2E','#FD9D24','#19486A','#DDA63A','#56C02B','#00689D','#FD6925','#E5243B'];
@@ -1949,16 +1962,16 @@ function pgCalendar(){
   else{body=`<div class="yr">${[...Array(12)].map((_,mi)=>{const f=`${y}-${pad(mi+1)}-01`;const g=(pd(f).getDay()+6)%7;const n=new Date(y,mi+1,0).getDate();
       let cells='';for(let i=0;i<g;i++)cells+='<span class="mmc e"></span>';
       const H=hol();for(let k=1;k<=n;k++){const d=`${y}-${pad(mi+1)}-${pad(k)}`;const I=dayInfo(d);const v=Math.min(1,(I.hrs+I.ot)/(hpd()+2));
-        const g2=pd(d).getDay(),cls=[H.h[d]?'holi':H.w[d]?'mkup':(g2===0||g2===6)?'wkend':'',d===today()?'today':'',(I.hrs||I.ot)?'heat':'',I.st==='none'&&!H.h[d]?'unf':''].filter(Boolean).join(' ');
+        const g2=pd(d).getDay(),cls=[H.h[d]?(/停班/.test(H.h[d])?'holi stopd':'holi'):H.w[d]?'mkup':(g2===0||g2===6)?'wkend':'',d===today()?'today':'',(I.hrs||I.ot)?'heat':'',I.st==='none'&&!H.h[d]?'unf':''].filter(Boolean).join(' ');
         const bg=(I.hrs||I.ot)&&!H.h[d]?`--heat:color-mix(in srgb,var(--w-lake) ${Math.round(14+v*46)}%,var(--w-card))`:'';
         cells+=`<button class="mmc y2 ${cls}" data-act="openday" data-d="${d}" title="${d}${H.h[d]?' '+H.h[d]:H.w[d]?' 補班':''}${I.hrs?' '+fh(I.hrs)+'h':''}" style="${bg}" aria-label="${d}${H.h[d]?' '+H.h[d]:''}">${k}</button>`}
       return`<div class="mm"><h4 data-act="calmonth" data-m="${mi+1}">${mi+1} 月</h4><div class="mmg">${cells}</div></div>`}).join('')}</div>
-      <div class="legend ylegend"><span><i style="background:color-mix(in srgb,var(--w-lake) 18%,var(--w-card))"></i>工時少</span><span><i style="background:color-mix(in srgb,var(--w-lake) 60%,var(--w-card))"></i>工時多（含加班）</span><span><i class="lg-holi"></i>國定假日</span><span><i class="lg-mk"></i>補班日</span><span><i class="lg-unf"></i>工作日未填</span><span><i class="lg-today"></i>今天</span></div>`}
+      <div class="legend ylegend"><span><i class="lg-stop"></i>颱風停班</span><span><i style="background:color-mix(in srgb,var(--w-lake) 18%,var(--w-card))"></i>工時少</span><span><i style="background:color-mix(in srgb,var(--w-lake) 60%,var(--w-card))"></i>工時多（含加班）</span><span><i class="lg-holi"></i>國定假日</span><span><i class="lg-mk"></i>補班日</span><span><i class="lg-unf"></i>工作日未填</span><span><i class="lg-today"></i>今天</span></div>`}
   const legend=S.calView==='month'?`<div class="legend"><span><i class="dot" style="background:var(--done)"></i>全部完成</span><span><i class="dot" style="background:var(--plan)"></i>進行中</span><span><i class="dot" style="background:var(--late)"></i>有延遲</span><span><i class="dot" style="background:var(--pend)"></i>有突發</span><span><i class="dot" style="background:var(--none)"></i>未填</span><span>🚩 DL</span><span>💼 出差</span><span>請假時數</span><span>方向鍵移動・Enter 進入</span></div>`:'';
   return head+remBox+body+legend}
 function calCell(d,out){
   const I=dayInfo(d);const H=hol();const off=!isWorkday(d);
-  return`<button class="cell ${out?'out':''} ${off?'off':''} ${H.h[d]?'holi':H.w[d]?'mkup':''} ${d===today()?'today':''} ${d===S.cursor?'cur':''}" data-act="openday" data-d="${d}" data-cell="${d}" aria-label="${d}" tabindex="${d===S.cursor?0:-1}">
+  return`<button class="cell ${out?'out':''} ${off?'off':''} ${H.h[d]?(/停班/.test(H.h[d])?'holi stopd':'holi'):H.w[d]?'mkup':''} ${d===today()?'today':''} ${d===S.cursor?'cur':''}" data-act="openday" data-d="${d}" data-cell="${d}" aria-label="${d}" tabindex="${d===S.cursor?0:-1}">
     
     <span class="dn">${+d.slice(8)}${I.st?`<span class="dot" style="background:var(--${I.st})"></span>`:''}${I.urg?'<span class="dot" style="background:var(--pend)"></span>':''}${I.warn?'<span class="chip pend" style="padding:0 4px;line-height:14px;font-size:10px">!</span>':''}</span>
     ${H.h[d]?`<span class="hn">${esc(H.h[d])}</span>`:H.w[d]?`<span class="hn" style="color:var(--plan)">補班</span>`:''}
@@ -2097,7 +2110,7 @@ function pgDayMain(D,text,ro,H){
  const places=(st.h.locations||[]).filter(l=>String(l.place||'').trim()).map(l=>`${l.trip?'出差 ':''}<b>${esc(l.place)}</b>${l.start&&l.end?` <small>${esc(l.start)}–${esc(l.end)}</small>`:''}`).join('、');
  const leaves=(st.h.leaves||[]).filter(x=>Number(x.hours)>0).map(x=>`${esc(x.type)} ${fmtLeave(x.type,x.hours)}`).join('、');
  const s1done=st.reported||!st.prev.length;
- const chip=H.h[D]?`<span class="chip late">${esc(H.h[D])}</span>`:!isWorkday(D)?'<span class="chip">假日</span>':H.w[D]?'<span class="chip plan">補班日</span>':'';
+ const chip=H.h[D]?`<span class="chip ${/停班/.test(H.h[D])?'stopchip':'late'}">${esc(H.h[D])}</span>`:!isWorkday(D)?'<span class="chip">假日</span>':H.w[D]?'<span class="chip plan">補班日</span>':'';
  return `<div class="dayhead day3-head">${isInner()?'<button class="xbtn back" data-act="back" aria-label="上一頁（Esc）">‹</button>':''}<h1>${md(D)}（${wd(D)}）</h1>${isToday?'<span class="chip plan">今天</span>':`<button class="btn sm" data-act="openday" data-d="${today()}">回今天 <kbd class="hide-m">T</kbd></button>`}${chip}
    <span class="sp" style="flex:1"></span><button class="btn sm" data-act="dayprev" aria-label="前一天">‹<span class="hide-m"> 前一天 <kbd>[</kbd></span></button><button class="btn sm" data-act="daynext" aria-label="後一天"><span class="hide-m">後一天 <kbd>]</kbd> </span>›</button><button class="btn sm rail-toggle" data-act="rail">待辦</button><button class="btn sm m-only gear" data-act="go" data-p="settings" aria-label="設定">${ICO.set}</button></div>
  ${ro?'<div class="banner"><b>隱私模式</b><span>畫面唯讀，私記已隱藏。</span></div>':''}
@@ -2300,7 +2313,7 @@ function wcSectionCard(key,label,D,extra=''){
 function wcLeaveText(d){
  const leaves=parseDay(dayText(d)).header.leaves||[];
  const total=leaves.reduce((n,v)=>n+(Number(v.hours)||0),0);
- return total>0?'請假 '+leaves.filter(v=>Number(v.hours)>0).map(v=>fmtLeave(v.type,v.hours)).join('＋'):'';
+ if(!(total>0))return '';const L=leaves.filter(v=>Number(v.hours)>0),st=L.filter(v=>v.type==='停班'),lv=L.filter(v=>v.type!=='停班');return [lv.length?'請假 '+lv.map(v=>fmtLeave(v.type,v.hours)).join('＋'):'',st.length?'停班 '+st.map(v=>fmtLeave(v.type,v.hours)).join('＋'):''].filter(Boolean).join('・');
 }
 function wcClock(d){
  const info=dayInfo(d), dd=dayText(d), loc=parseDay(dd).header.locations||[];
@@ -2365,7 +2378,7 @@ function guideHeaderHTML(){
  guideInitHeader();
  const loc=guidePlaces.map((x,i)=>`<div class="g-item"><div class="fgrid">${placePicker(i,x.place)}<label class="fl">工作性質<select data-gplace="${i}" data-gfield="trip"><option value="0" ${!x.trip?'selected':''}>一般辦公</option><option value="1" ${x.trip?'selected':''}>出差</option></select></label><label class="fl">實際工作項目<select data-gplace="${i}" data-gfield="activity"><option value="" ${!x.activity?'selected':''}>請選擇（選填）</option>${['授課','助教','導師','考官','跟課','聽課','會議','異地辦公','其他'].concat(x.activity&&!['授課','助教','導師','考官','跟課','聽課','會議','異地辦公','其他'].includes(x.activity)?[x.activity]:[]).map(a=>`<option value="${esc(a)}" ${(a==='其他'?String(x.activity||'').startsWith('其他'):x.activity===a)?'selected':''}>${esc(a)}${a==='授課／助教／導師／考官'||a==='跟課／聽課'?'（歷史資料）':''}</option>`).join('')}</select></label><label class="fl" data-other-wrap="${i}" style="${String(x.activity||'').startsWith('其他')?'':'display:none'}">其他工作項目<input data-gplace="${i}" data-gfield="activityOther" value="${esc(String(x.activity||'').startsWith('其他：')?x.activity.slice(3):'')}" placeholder="請輸入工作項目"></label><label class="fl">開始時間<input type="time" data-gplace="${i}" data-gfield="start" value="${esc(x.start||'08:30')}"></label><label class="fl">結束時間<input type="time" data-gplace="${i}" data-gfield="end" value="${esc(x.end||'17:30')}"></label></div><button class="btn sm" data-guide="remove-place" data-i="${i}">移除</button></div>`).join('');
  const leave=guideLeaves.map((x,i)=>`<div class="g-item"><div class="fgrid"><label class="fl">假別<select data-gleave="${i}" data-gfield="type">${leaveTypeList().map(y=>`<option ${x.type===y?'selected':''}>${esc(y)}</option>`).join('')}${!leaveTypeList().includes(x.type)?`<option selected>${esc(x.type)}</option>`:''}</select></label><label class="fl">請假時數 hr<input type="number" min="0" step="0.5" data-gleave="${i}" data-gfield="hours" value="${esc(x.hours)}"></label></div><button class="btn sm" data-guide="remove-leave" data-i="${i}">移除</button></div>`).join('');
- return `<div class="guide-header"><h2>當日基本資料</h2><div class="sub">辦公地可分時段、請假可多筆；填寫後按「儲存基本資料」，同步更新當日日誌及統計。</div><div class="row" style="justify-content:space-between;margin:10px 0 6px"><b>辦公地／出差</b><button class="btn sm" data-guide="add-place">＋ 新增地點／時段</button></div>${loc||'<div class="sub">尚未設定辦公地</div>'}<div class="row" style="justify-content:space-between;margin:12px 0 6px"><b>請假</b><span class="row" style="gap:6px"><button class="btn sm" data-act="leaverange">＋ 連續請假</button><button class="btn sm" data-guide="add-leave">＋ 新增請假</button></span></div>${leave||'<div class="sub">無請假</div>'}<div class="g-actions guide-confirm-actions"><button class="btn pri guide-wide-btn" data-guide="save-header">儲存基本資料</button><span class="sub">儲存後同步更新當日首頁及統計</span></div></div>`;
+ return `<div class="guide-header"><h2>當日基本資料</h2><div class="sub">辦公地可分時段、請假可多筆；填寫後按「儲存基本資料」，同步更新當日日誌及統計。</div><div class="row" style="justify-content:space-between;margin:10px 0 6px"><b>辦公地／出差</b><button class="btn sm" data-guide="add-place">＋ 新增地點／時段</button></div>${loc||'<div class="sub">尚未設定辦公地</div>'}<div class="row" style="justify-content:space-between;margin:12px 0 6px"><b>請假</b><span class="row" style="gap:6px"><button class="btn sm" data-act="stopday">颱風停班</button><button class="btn sm" data-act="leaverange">＋ 連續請假</button><button class="btn sm" data-guide="add-leave">＋ 新增請假</button></span></div>${leave||'<div class="sub">無請假</div>'}<div class="g-actions guide-confirm-actions"><button class="btn pri guide-wide-btn" data-guide="save-header">儲存基本資料</button><span class="sub">儲存後同步更新當日首頁及統計</span></div></div>`;
 }
 function guideLoadToday(){guideItems=parseDay(guideSource()).today.map(i=>({category:i.cat,project:i.project,hours:i.est,detail:i.doneText||((i.title!==i.project)?i.title:''),raw:i.raw.trim()}));guideItemsDay=S.day}
 function guideLine(x){return x.raw||`${x.category}-${x.project}${x.hours!=null&&x.hours!==''?'_'+hrTok(x.hours):''}${x.detail?'，'+x.detail:''}`}
@@ -2398,10 +2411,35 @@ function bdayWarnings(D,leaves){const W=[],y=D.slice(0,4),hr=hpd();
   for(const x of leaves||[]){if(x.type!=='生日假')continue;if(Number(x.hours)!==hr)W.push(`生日假是一次請一天（${hr} 小時），這筆填了 ${fh(Number(x.hours)||0)} 小時。`)}
   if((leaves||[]).some(x=>x.type==='生日假')){const other=Object.keys(db.days).filter(d=>d!==D&&d.slice(0,4)===y&&(db.days[d].leaves||[]).some(x=>x.type==='生日假'));if(other.length)W.push(`${y} 年已經在 ${other.map(md).join('、')} 請過生日假。`)}
   return W}
+const LEAVE_GROUPS=[['扣額度',['特休','補休','生日假']],['全薪',['婚假','喪假','公假','公傷病假','陪產檢及陪產假']],['半薪',['病假']],['無薪',['事假','家庭照顧假']]];
+const NOT_LEAVE=['停班'];
+function leaveGroupOf(t){for(const [g,L] of LEAVE_GROUPS)if(L.includes(t))return g;return NOT_LEAVE.includes(t)?'停班':'其他'}
+function payRate(t){const s=db.settings;const r={病假:s.rateSick,事假:s.ratePersonal,家庭照顧假:s.rateFamily}[t];const d={病假:50,事假:100,家庭照顧假:100}[t]??0;const v=r===''||r==null?d:+r;return Number.isFinite(v)?Math.max(0,Math.min(100,v))/100:0}
+function hourlyPay(){const b=+db.settings.payBase;return b>0?b/30/8:null}
+function money(n){return '$'+Math.round(n).toLocaleString('zh-TW')}
+/* 預估扣薪：請假扣薪＋（選填）全勤；from~to 逐月計算 */
+function payEstimate(from,to){const hp=hourlyPay();if(hp==null)return null;const bonus=+db.settings.attendBonus||0;const byType={},byMonth={};let total=0,bonusCut=0;
+  for(const [d,v] of Object.entries(db.days)){if(d<from||d>to)continue;for(const x of v.leaves||[]){const h=+x.hours||0;if(!h)continue;const cut=h*hp*payRate(x.type);if(cut>0){byType[x.type]=(byType[x.type]||0)+cut;total+=cut}
+    const m=d.slice(0,7);const o=byMonth[m]||(byMonth[m]={sick:0,personal:0});if(x.type==='病假')o.sick+=h;if(x.type==='事假')o.personal+=h}}
+  if(bonus>0)for(const o of Object.values(byMonth)){if(o.personal>0)bonusCut+=bonus;else if(o.sick>0)bonusCut+=Math.min(bonus,bonus/30*Math.ceil(o.sick/hpd()))}
+  return{byType,total,bonusCut,all:total+bonusCut}}
+function leaveCut(type,h){const hp=hourlyPay();return hp==null?0:(+h||0)*hp*payRate(type)}
+function isStopDay(d){const n=hol().h[d];return !!n&&/停班/.test(n)}
+function stopDaysIn(from,to){return Object.keys(hol().h).filter(d=>d>=from&&d<=to&&isStopDay(d))}
+function setStopDay(d,on,name){let L=String(db.settings.holidaysText||'').split('\n').filter(l=>!(l.trim().startsWith(d)&&/停班/.test(l)));if(on)L.push(`${d} ${name||'颱風停班'}`);db.settings.holidaysText=L.join('\n').replace(/\n{2,}/g,'\n');HOL_SRC=null;persist()}
+function stopModal(D){const full=isStopDay(D);
+ openModal({title:`颱風停班｜${md(D)}（${wd(D)}）`,body:`<p class="sub" style="margin-top:0">政府宣布停止上班，不算請假、不扣假、不扣薪。</p><div class="stack"><label class="row" style="gap:8px"><input type="radio" name="stp" value="full" ${full?'checked':''}> 全天停班（當天不算工作日）</label><label class="row" style="gap:8px"><input type="radio" name="stp" value="half" ${!full?'checked':''}> 部分停班，時數 <input id="stp-h" type="number" min="1" max="${hpd()-1}" step="1" value="4" style="width:5em"> hr</label>${full?'<label class="row" style="gap:8px"><input type="radio" name="stp" value="off"> 取消停班</label>':''}</div>`,
+  foot:'<button class="btn" data-act="mclose">取消</button><button class="btn pri" id="stp-ok">儲存</button>',
+  onMount:ov=>{$('#stp-ok',ov).onclick=()=>{const v=ov.querySelector('input[name=stp]:checked')?.value;saveDraftNow();
+   if(v==='full'){setStopDay(D,true);if(db.days[D]?.rawText)applyDay(D,setDayLeave(db.days[D].rawText,'停班',0))}
+   else if(v==='half'){const h=+$('#stp-h',ov).value;if(!(h>0&&h<hpd())){toast('時數要在 1～'+(hpd()-1)+' 之間');return}setStopDay(D,false);applyDay(D,setDayLeave(dayText(D),'停班',h));delete drafts[D]}
+   else{setStopDay(D,false)}
+   persist();guideHeaderDay='';closeModal();render._keep=true;render();toast('已更新停班')}}})}
+function missingDays(from,to){const out=[];for(let d=from;d<=to;d=addD(d,1)){if(!isWorkday(d))continue;if(db.days[d]?.rawText)continue;out.push(d)}return out}
 function dayHour(h){h=Math.round((Number(h)||0)*100)/100;const hr=hpd(),neg=h<0;h=Math.abs(h);const d=Math.floor(h/hr+1e-9),r=Math.round((h-d*hr)*100)/100;const t=d&&r?`${d} 天 ${fh(r)}h`:d?`${d} 天`:`${fh(r)}h`;return (neg?'-':'')+t}
 function fmtLeave(type,h){h=Number(h)||0;if(type==='補休')return fh(h)+'h';if(type==='生日假'){const d=h/hpd();return Number.isInteger(Math.round(d*100)/100)?`${fh(d)} 天`:dayHour(h)}return dayHour(h)}
-function leaveTypeList(){const L=db.settings.leaveTypes;return Array.isArray(L)&&L.length?L:['特休','補休','生日假','病假','事假','公假','婚假','喪假','產檢假','陪產假','家庭照顧假','生理假','其他']}
-function migrateLeaveTypes(){const st=db.settings;if(!st||(st.leaveTypesVer||0)>=1)return false;st.leaveTypesVer=1;const cur=Array.isArray(st.leaveTypes)?st.leaveTypes:[];const add=['特休','補休','生日假','病假','事假','公假','婚假','喪假','產檢假','陪產假','家庭照顧假','生理假','其他'].filter(x=>!cur.includes(x));const oth=cur.includes('其他');st.leaveTypes=cur.filter(x=>x!=='其他').concat(add.filter(x=>x!=='其他'),'其他');return true}
+function leaveTypeList(){const L=db.settings.leaveTypes;return Array.isArray(L)&&L.length?L:['特休','補休','生日假','病假','事假','家庭照顧假','公假','公傷病假','婚假','喪假','陪產檢及陪產假','停班','其他']}
+function migrateLeaveTypes(){const st=db.settings;if(!st||(st.leaveTypesVer||0)>=2)return false;if((st.leaveTypesVer||0)>=1){st.leaveTypes=(st.leaveTypes||[]).map(x=>x==='陪產假'?'陪產檢及陪產假':x).filter(x=>!['生理假','產檢假'].includes(x))}st.leaveTypesVer=2;const cur=Array.isArray(st.leaveTypes)?st.leaveTypes:[];const add=['特休','補休','生日假','病假','事假','家庭照顧假','公假','公傷病假','婚假','喪假','陪產檢及陪產假','停班','其他'].filter(x=>!cur.includes(x));const oth=cur.includes('其他');st.leaveTypes=cur.filter(x=>x!=='其他').concat(add.filter(x=>x!=='其他'),'其他');return true}
 function migrateHoli(){const st=db.settings;if(!st||(st.holiVer||0)>=2)return false;st.holiVer=2;
   if(st.holidaysText&&/^2027-\d\d-\d\d.*待核/m.test(st.holidaysText)){const keep=st.holidaysText.split('\n').filter(l=>!/^2027-/.test(l.trim())).join('\n').replace(/\s+$/,'');const add=HOLI_TEXT.split('\n').filter(l=>/^2027-/.test(l)).join('\n');st.holidaysText=keep+'\n'+add;HOL_SRC=null}return true}
 function rebindDb(){
@@ -2901,7 +2939,7 @@ function leaveRangeModal(start){const T0=start||today(),hr=hpd();
     if(!a||!b||b<a){box.innerHTML='<span class="warnc">迄日要在起日之後</span>';return null}
     if(!ds.length){box.innerHTML='<span class="warnc">這段期間沒有要上班的日子</span>';return null}
     const skip=[];for(let d=a;d<=b;d=addD(d,1))if(!ds.includes(d)){const H=hol();if(H.h[d])skip.push(md(d)+' '+H.h[d])}
-    box.innerHTML=`<b>實際請 ${ds.length} 天・共 ${fmtLeave(type,ds.length*h)}</b><div class="lr-days">${ds.map(d=>`<span>${md(d)}（${wd(d)}）${db.days[d]?.leaves?.length?'<small class="warnc">已有請假</small>':''}</span>`).join('')}</div>${skip.length?`<div class="sub">跳過國定假日：${esc(skip.join('、'))}</div>`:''}`;
+    const cut=leaveCut(type,ds.length*h);box.innerHTML=`<b>實際請 ${ds.length} 天・共 ${fmtLeave(type,ds.length*h)}</b>${cut>0&&!S.privacy?`<span class="warnc">　預估扣薪約 ${money(cut)}</span>`:''}<div class="lr-days">${ds.map(d=>`<span>${md(d)}（${wd(d)}）${db.days[d]?.leaves?.length?'<small class="warnc">已有請假</small>':''}</span>`).join('')}</div>${skip.length?`<div class="sub">跳過國定假日：${esc(skip.join('、'))}</div>`:''}`;
     return {ds,h,type}};
    ['#lr-a','#lr-b','#lr-h','#lr-type'].forEach(k=>{const el=$(k,ov);el.addEventListener('change',calc);el.addEventListener('input',calc)});calc();
    $('#lr-ok',ov).onclick=()=>{const r=calc();if(!r)return;if(!(r.h>0&&r.h<=hpd())){toast('每天時數要在 1～'+hpd()+' 之間');return}
@@ -2912,12 +2950,15 @@ function ymdSpan(a,b){if(!/^\d{4}-\d\d-\d\d$/.test(a||'')||b<a)return null;const
 function slashDate(d){return d?d.replace(/-/g,'/'):''}
 function pgLeaveManage(){const asOf=today(),s=db.settings,z=leaveSummary(asOf),hr=hpd();
  const year=asOf.slice(0,4),mon=asOf.slice(0,7),ySum=calcStats(year+'-01-01',year+'-12-31'),mSum=calcStats(mon+'-01',iso(new Date(+year,+mon.slice(5),0)));
- const yTotal=Object.values(ySum.leaves).reduce((n,v)=>n+v,0),mTotal=Object.values(mSum.leaves).reduce((n,v)=>n+v,0);
+ const realL=o=>Object.entries(o).filter(([k])=>!NOT_LEAVE.includes(k));const yTotal=realL(ySum.leaves).reduce((n,[,v])=>n+v,0),mTotal=realL(mSum.leaves).reduce((n,[,v])=>n+v,0);
+ const stopY=stopDaysIn(year+'-01-01',year+'-12-31').length,stopYh=ySum.leaves['停班']||0;
+ const groups=LEAVE_GROUPS.map(([g,L])=>[g,L.concat(g==='扣額度'?[]:[]).filter(t=>t==='特休'||t==='補休'||(ySum.leaves[t]||0)>0)]).filter(([g,L])=>L.length);const others=realL(ySum.leaves).map(([k])=>k).filter(k=>leaveGroupOf(k)==='其他');
+ const pe=payEstimate(year+'-01-01',year+'-12-31'),pm=payEstimate(mon+'-01',iso(new Date(+year,+mon.slice(5),0)));
+ const miss=missingDays(z.st,addD(asOf,-1));
  const booked=hoursUsed('特休',addD(asOf,1),z.ed);const rem=z.available==null?null:z.available-z.special-booked,left=Math.max(0,diffD(asOf,z.ed));
  const usedPct=z.available?Math.min(100,z.special/z.available*100):0,bookPct=z.available?Math.min(100-usedPct,booked/z.available*100):0;
  const compPct=z.compEarned>0?Math.min(100,(z.compUsed+z.compDebits)/z.compEarned*100):0;
  const otH=sum(db.ot.filter(o=>o.date>=z.st&&o.date<=z.ed),o=>o.hours);
- const types=['特休','補休','病假','事假'].concat(Object.keys(ySum.leaves).filter(k=>!['特休','補休','病假','事假'].includes(k)));
  // 特休規劃：到期前每月平均、各月已排（正式請假＋規劃）
  const months=[];for(let m=asOf.slice(0,7);m<=z.ed.slice(0,7)&&months.length<13;){months.push(m);const [y,mm]=m.split('-').map(Number);m=mm===12?`${y+1}-01`:`${y}-${pad(mm+1)}`}
  const byM={};for(const r of leavePlanProjection().timeline){const k=r.date.slice(0,7);byM[k]=(byM[k]||0)+r.official+r.sim}
@@ -2928,7 +2969,7 @@ function pgLeaveManage(){const asOf=today(),s=db.settings,z=leaveSummary(asOf),h
  const hire=s.hireDate?slashDate(s.hireDate):'未設定',yrs=z.years==null?null:Math.floor(z.years);const ten=s.hireDate?ymdSpan(s.hireDate,asOf):null;
  return `<div class="ph"><h1>假勤</h1><span class="sub">本期 ${slashDate(z.st)} ～ ${slashDate(z.ed)}</span></div>
  <div class="lv-cards">
-  <section class="lv-card" aria-label="今年請假"><div class="lv-l">${year} 年已請</div><div class="lv-n"><b>${dayHour(yTotal)}</b></div><div class="lv-chips">${types.map(k=>`<span>${esc(k)} ${(ySum.leaves[k]||0)?fmtLeave(k,ySum.leaves[k]):0}</span>`).join('')}</div><div class="lv-s">本月 ${mTotal?dayHour(mTotal):'0'}</div></section>
+  <section class="lv-card" aria-label="今年請假"><div class="lv-l">${year} 年已請</div><div class="lv-n"><b>${dayHour(yTotal)}</b></div><div class="lv-groups">${groups.map(([g,L])=>`<div class="lv-g"><span class="lv-gn">${g}</span>${L.map(k=>`<span class="lv-chip">${esc(k)} ${(ySum.leaves[k]||0)?fmtLeave(k,ySum.leaves[k]):0}</span>`).join('')}</div>`).join('')}${others.length?`<div class="lv-g"><span class="lv-gn">其他</span>${others.map(k=>`<span class="lv-chip">${esc(k)} ${fmtLeave(k,ySum.leaves[k])}</span>`).join('')}</div>`:''}</div><div class="lv-s">本月 ${mTotal?dayHour(mTotal):'0'}${stopY||stopYh?`・颱風停班 ${[stopY?'全天 '+stopY+' 天':'',stopYh?'部分 '+fmtLeave('停班',stopYh):''].filter(Boolean).join('、')}（不算請假）`:''}</div></section>
   <section class="lv-card" aria-label="特休"><div class="lv-l">特休剩餘</div>
    ${rem==null?`<div class="lv-n"><b>待設定</b></div><div class="lv-s">先在「編輯設定」填到職日（或公司核給時數），才算得出剩多少。</div><div><button class="btn sm pri" data-act="leaveedit">填核給額度</button></div>`:
    `<div class="lv-n"><b>${dayHour(rem)}</b></div><div class="lv-bar"><i style="width:${usedPct}%"></i><i class="bk" style="width:${bookPct}%"></i></div><div class="lv-s">已休 ${dayHour(z.special)}${booked?`／已排 ${dayHour(booked)}`:''}／核給 ${dayHour(z.available)}</div><div class="lv-s warnc">${slashDate(z.ed)} 到期・還有 ${left} 天</div>${z.estimated?`<div class="lv-s">依年資法定 ${z.estimate} 天估算；公司核給不同時到「編輯設定」填寫</div>`:''}`}
@@ -2942,12 +2983,22 @@ function pgLeaveManage(){const asOf=today(),s=db.settings,z=leaveSummary(asOf),h
    <div class="lv-axis" style="grid-template-columns:repeat(${months.length||1},minmax(0,1fr))">${months.map(m=>`<span>${+m.slice(5)}月</span>`).join('')}</div>
    <div class="lv-s">長條＝各月已請＋已排的特休天數。按「排休」挑日期，只是規劃，不會變成正式請假。</div></section>
   <section class="card lv-rec" aria-label="本期請假紀錄"><div class="row" style="margin:0 0 8px"><h3 style="margin:0;flex:1">本期請假紀錄</h3><button class="btn sm" data-act="leaverange">＋ 連續請假</button></div>
-   ${recs.length?`<div class="lv-list">${recs.slice(0,40).map(r=>`<button class="lv-item" data-act="openday" data-d="${r.d}"><span class="lv-d">${slashDate(r.d)}（${wd(r.d)}）</span><span class="lv-t">${r.list.map(x=>`${esc(x.type)} ${fmtLeave(x.type,x.hours)}`).join('、')}${r.d>asOf?'<small class="muted"> 預定</small>':''}</span></button>`).join('')}</div>${recs.length>40?`<div class="lv-s">只列最近 40 筆，共 ${recs.length} 筆</div>`:''}`:
+   ${recs.length?`<div class="lv-list">${recs.slice(0,40).map(r=>`<button class="lv-item" data-act="openday" data-d="${r.d}"><span class="lv-d">${slashDate(r.d)}（${wd(r.d)}）</span><span class="lv-t">${r.list.map(x=>`${esc(x.type)} ${fmtLeave(x.type,x.hours)}`).join('、')}${r.d>asOf?'<small class="muted"> 預定</small>':''}</span>${(()=>{const c=r.list.reduce((n,x)=>n+leaveCut(x.type,x.hours),0);return c>0&&!S.privacy?`<small class="lv-cut">約 -${money(c)}</small>`:''})()}</button>`).join('')}</div>${recs.length>40?`<div class="lv-s">只列最近 40 筆，共 ${recs.length} 筆</div>`:''}`:
    '<div class="lv-empty">本期還沒有請假。<br>在「今天」頁按「編輯辦公地／請假」填寫後，會自動列在這裡。</div>'}</section>
+ </div>
+ <div class="lv-row">
+  <section class="card lv-pay" aria-label="預估扣薪"><div class="row" style="margin:0 0 8px"><h3 style="margin:0;flex:1">預估扣薪</h3>${pe?'<span class="sub">預估，以薪資單為準</span>':''}</div>
+   ${S.privacy?'<div class="lv-empty">隱私模式下不顯示金額</div>':!pe?`<div class="lv-empty">填「扣薪基數（月工資）」後，就會估算請假可能少領多少。<br><button class="btn sm pri" data-act="leaveedit" style="margin-top:8px">去填扣薪基數</button></div>`:
+   `<div class="lv-pay-n"><div><span class="lv-l">本月</span><b>${money(pm.all)}</b></div><div><span class="lv-l">${year} 年</span><b>${money(pe.all)}</b></div></div>
+    <div class="lv-pay-list">${Object.entries(pe.byType).map(([k,v])=>`<div><span>${esc(k)}（扣 ${Math.round(payRate(k)*100)}%）</span><b>${money(v)}</b></div>`).join('')||'<div class="sub">今年請的假都不扣薪</div>'}${pe.bonusCut?`<div><span>全勤獎金</span><b>${money(pe.bonusCut)}</b></div>`:''}</div>
+    <div class="lv-s">時薪 ${money(hourlyPay())}（月工資 ÷ 30 ÷ 8）。病假依 2026 新制按天數比例扣全勤；事假當月全勤不發。</div>`}</section>
+  <section class="card lv-miss" aria-label="補登請假"><div class="row" style="margin:0 0 8px"><h3 style="margin:0;flex:1">本期沒寫日誌的工作日</h3><span class="chip">${miss.length}</span></div>
+   ${miss.length?`<p class="lv-s" style="margin:0 0 6px">多半是請假的日子。補登後特休、今年已請、扣薪才會準。</p><div class="lv-list">${miss.slice().reverse().slice(0,40).map(d=>`<div class="lv-item lv-mrow"><span class="lv-d">${slashDate(d)}（${wd(d)}）</span><select data-miss="${d}" aria-label="${d} 補登類型"><option value="">選擇…</option>${leaveTypeList().filter(x=>x!=='停班'&&x!=='其他').map(x=>`<option>${esc(x)}</option>`).join('')}<option value="__stop">颱風停班</option><option value="__work">有上班，去寫日誌</option></select><button class="btn sm" data-act="fillmiss" data-d="${d}">補登</button></div>`).join('')}</div>`:'<div class="lv-empty">本期每個工作日都有紀錄 👍</div>'}</section>
  </div>
  <section class="lv-set" aria-label="額度設定"><span>到職日 <b>${esc(hire)}</b></span><span>年資 <b>${ten?`${ten.y} 年 ${ten.m} 月 ${ten.d} 天`:'—'}</b>${z.estimate!=null?`（本期法定 ${z.estimate} 天）`:''}</span><span>週期 <b>${s.leaveCycleStart?'自訂':'依到職日'}</b></span><span>公司核給 <b>${z.grant==null?(z.estimate!=null?'未填（用法定 '+z.estimate+' 天）':'待設定'):dayHour(z.grant)}</b></span>${+s.leaveReserveHours?`<span>自留 <b>${fh(s.leaveReserveHours)}h</b></span>`:''}<span class="sp"></span>
   <button class="btn sm" data-act="leaveedit" aria-expanded="${S.leaveEdit}">${S.leaveEdit?'收合設定':'編輯設定'}</button><button class="btn sm" data-act="leaveadd" aria-expanded="${S.leaveAdd}">${S.leaveAdd?'收合':'＋ 調整額度／補休核給'}</button></section>
- ${S.leaveEdit?`<div class="card stack"><h3>計算設定</h3><div class="fgrid"><label class="fl">正式到職日<input type="date" data-leaves="hireDate" value="${esc(s.hireDate||'')}"></label><label class="fl">特休週期起算日（留白＝依到職日週年）<input type="date" data-leaves="leaveCycleStart" value="${esc(s.leaveCycleStart||'')}"></label><label class="fl">公司當期核給特休（小時，${hr}h＝1 天）<input type="number" min="0" step="0.5" data-leaves="leaveGrantedHours" placeholder="未確認留白" value="${s.leaveGrantedHours??''}"></label><label class="fl">自行預留特休（hr）<input type="number" min="0" step="0.5" data-leaves="leaveReserveHours" value="${s.leaveReserveHours??0}"></label></div><p class="sub">到職日用來算年資與法定天數參考；週期起算日決定本期範圍。實際以公司核給為準。</p></div>`:''}
+ ${S.leaveEdit?`<div class="card stack"><h3>計算設定</h3><div class="fgrid"><label class="fl">正式到職日<input type="date" data-leaves="hireDate" value="${esc(s.hireDate||'')}"></label><label class="fl">特休週期起算日（留白＝依到職日週年）<input type="date" data-leaves="leaveCycleStart" value="${esc(s.leaveCycleStart||'')}"></label><label class="fl">公司當期核給特休（小時，${hr}h＝1 天）<input type="number" min="0" step="0.5" data-leaves="leaveGrantedHours" placeholder="未確認留白" value="${s.leaveGrantedHours??''}"></label><label class="fl">自行預留特休（hr）<input type="number" min="0" step="0.5" data-leaves="leaveReserveHours" value="${s.leaveReserveHours??0}"></label></div><p class="sub">到職日用來算年資與法定天數參考；週期起算日決定本期範圍。實際以公司核給為準。</p>
+  <h3 style="margin-top:6px">預估扣薪（選填，只存在你自己的資料）</h3><div class="fgrid"><label class="fl">扣薪基數（月工資：本薪＋每月固定給與）<input type="number" min="0" step="100" data-leaves="payBase" placeholder="例如 42000" value="${esc(s.payBase??'')}"></label><label class="fl">全勤獎金（沒有就留白）<input type="number" min="0" step="100" data-leaves="attendBonus" value="${esc(s.attendBonus??'')}"></label><label class="fl">病假扣薪 %<input type="number" min="0" max="100" step="5" data-leaves="rateSick" placeholder="50" value="${esc(s.rateSick??'')}"></label><label class="fl">事假扣薪 %<input type="number" min="0" max="100" step="5" data-leaves="ratePersonal" placeholder="100" value="${esc(s.ratePersonal??'')}"></label><label class="fl">家庭照顧假扣薪 %<input type="number" min="0" max="100" step="5" data-leaves="rateFamily" placeholder="100" value="${esc(s.rateFamily??'')}"></label></div><p class="sub">依勞基法：時薪＝月工資÷30÷8；病假半薪、事假與家庭照顧假不給薪，其他假別不扣。留白就用法定預設。</p></div>`:''}
  ${S.leaveAdd?`<div class="card stack"><h3>新增額度／結清紀錄</h3><div class="fgrid"><label class="fl">日期<input type="date" id="lv-date" value="${today()}"></label><label class="fl">項目<select id="lv-type"><option>補休</option><option>補休結清</option><option>特休</option></select></label><label class="fl">時數（特休調整可輸入負數）<input id="lv-hours" type="number" step="0.5"></label><label class="fl">補休到期日（選填）<input id="lv-expiry" type="date"></label></div><label class="fl">來源／原因<input id="lv-note" placeholder="例如：公司核准加班換補休"></label><div><button class="btn pri" data-act="addleaveledger">新增一筆</button></div>
   <h3 style="margin-top:8px">調整紀錄</h3>${leaveLedger().length?leaveLedger().slice().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<div class="row" style="border-bottom:1px solid var(--line);padding:8px 0"><span style="flex:1">${esc(x.date)}｜${esc(x.type)} ${fh(x.hours)} hr ${x.expiry?'｜到期 '+esc(x.expiry):''} ${esc(x.note||'')}</span><button class="btn sm danger" data-act="delleaveledger" data-id="${x.id}">移除</button></div>`).join(''):'<p class="sub">尚未建立紀錄</p>'}</div>`:''}`}
 
@@ -3483,6 +3534,10 @@ const ACT={
   dlbring:el=>{scheduleTask(el.dataset.id,S.day,true);render._keep=true;render();toast('已帶入今日工作')},
   riskjump:el=>{const x=document.getElementById('rk-'+el.dataset.id);if(x){x.scrollIntoView({block:'center',behavior:'smooth'});x.classList.add('rk-hl');setTimeout(()=>x.classList.remove('rk-hl'),1600)}},
   leaverange:()=>leaveRangeModal(S.page==='day'?S.day:today()),
+  stopday:el=>stopModal(el.dataset.d||(S.page==='day'?S.day:today())),
+  fillmiss:el=>{const d=el.dataset.d,sel=document.querySelector(`[data-miss="${d}"]`);const v=sel?.value||'';if(!v){toast('先選要補登的類型');return}
+    if(v==='__work'){openDay(d);return}if(v==='__stop'){setStopDay(d,true);render._keep=true;render();toast(md(d)+' 已標記颱風停班');return}
+    applyDay(d,setDayLeave(dayText(d),v,hpd()));delete drafts[d];persist();render._keep=true;render();toast(`${md(d)} 已補登 ${v}`)},
   todayadd:()=>todayAdd(),todayedit:el=>todayEdit(el.dataset.i),qaopen:()=>{S.qaOpen=true;render._keep=true;render();setTimeout(()=>$('#qa-proj')?.focus(),0)},todaydel:el=>todayDel(el.dataset.i),
   hdropen:()=>{saveDraftNow();closeDaySubs();guideHeaderDay='';S.hdrSub=true;render();$('#main').scrollTop=0},hdrclose:()=>{S.hdrSub=false;render()},
   leaveedit:()=>{S.leaveEdit=!S.leaveEdit;render._keep=true;render()},leaveadd:()=>{S.leaveAdd=!S.leaveAdd;render._keep=true;render()},
