@@ -2457,10 +2457,29 @@ function dayHour(h){h=Math.round((Number(h)||0)*100)/100;const hr=hpd(),neg=h<0;
 function fmtLeave(type,h){h=Number(h)||0;if(type==='補休')return fh(h)+'h';if(type==='生日假'){const d=h/hpd();return Number.isInteger(Math.round(d*100)/100)?`${fh(d)} 天`:dayHour(h)}return dayHour(h)}
 function leaveTypeList(){const L=db.settings.leaveTypes;return Array.isArray(L)&&L.length?L:['特休','補休','生日假','病假','事假','家庭照顧假','公假','公傷病假','婚假','喪假','陪產檢及陪產假','停班','其他']}
 function migrateLeaveTypes(){const st=db.settings;if(!st||(st.leaveTypesVer||0)>=2)return false;if((st.leaveTypesVer||0)>=1){st.leaveTypes=(st.leaveTypes||[]).map(x=>x==='陪產假'?'陪產檢及陪產假':x).filter(x=>!['生理假','產檢假'].includes(x))}st.leaveTypesVer=2;const cur=Array.isArray(st.leaveTypes)?st.leaveTypes:[];const add=['特休','補休','生日假','病假','事假','家庭照顧假','公假','公傷病假','婚假','喪假','陪產檢及陪產假','停班','其他'].filter(x=>!cur.includes(x));const oth=cur.includes('其他');st.leaveTypes=cur.filter(x=>x!=='其他').concat(add.filter(x=>x!=='其他'),'其他');return true}
+/* 一次性：拆分「TT題庫與會議」（只改專案歸屬，不動日誌原文） */
+function migrateTT(){const st=db.settings;if(!st||(st.ttSplitVer||0)>=1)return false;st.ttSplitVer=1;
+  const p=findProject('TT題庫與會議');if(!p)return true;
+  const twin=Object.values(db.projects).find(x=>x.id!==p.id&&nk(x.name)===nk('TT題庫維護'));
+  if(twin){T().forEach(t=>{if(t.projectId===twin.id)t.projectId=p.id});db.ot.forEach(o=>{if(o.projectId===twin.id)o.projectId=p.id});Object.values(db.notes).forEach(n=>{if(n.projectIds)n.projectIds=[...new Set(n.projectIds.map(x=>x===twin.id?p.id:x))]});p.aliases=[...(p.aliases||[]),...(twin.aliases||[])];delete db.projects[twin.id]}
+  if(p.name!=='TT題庫維護'){p.aliases=[...(p.aliases||[]),p.name];p.name='TT題庫維護'}
+  p.aliases=[...new Set((p.aliases||[]).filter(a=>nk(a)!==nk(p.name)))];
+  const rules=[[/TT\s*13/i,'TT13招募'],[/TT\s*雲端歸檔/i,'TT雲端歸檔協助']];
+  const own=t=>{try{const it=t.rawLine?parseItem(t.rawLine,'today'):null;return (it&&it.ok&&it.project)||''}catch(e){return ''}};
+  for(const [rx,name] of rules){
+    const moveA=(p.aliases||[]).filter(a=>rx.test(a));p.aliases=(p.aliases||[]).filter(a=>!rx.test(a));
+    const ts=T().filter(t=>t.projectId===p.id&&(rx.test(own(t))||rx.test(t.title||'')));
+    if(!moveA.length&&!ts.length)continue;
+    let q=Object.values(db.projects).find(x=>nk(x.name)===nk(name));if(!q)q=db.projects[resolveProject(name,'專案')];
+    q.aliases=[...new Set([...(q.aliases||[]),...moveA])].filter(a=>nk(a)!==nk(q.name));
+    ts.forEach(t=>t.projectId=q.id);db.ot.forEach(o=>{if(o.projectId===p.id&&rx.test(o.text||''))o.projectId=q.id});
+    const last=T().filter(t=>t.projectId===q.id&&t.date).map(t=>t.date).sort().pop()||today();
+    q.status='結案';q.closedAt=q.closedAt||last}
+  return true}
 function migrateHoli(){const st=db.settings;if(!st||(st.holiVer||0)>=2)return false;st.holiVer=2;
   if(st.holidaysText&&/^2027-\d\d-\d\d.*待核/m.test(st.holidaysText)){const keep=st.holidaysText.split('\n').filter(l=>!/^2027-/.test(l.trim())).join('\n').replace(/\s+$/,'');const add=HOLI_TEXT.split('\n').filter(l=>/^2027-/.test(l)).join('\n');st.holidaysText=keep+'\n'+add;HOL_SRC=null}return true}
 function rebindDb(){
-  const m1=migrateHoli(),m2=migrateLeaveTypes();if(m1||m2)persist();
+  const m1=migrateHoli(),m2=migrateLeaveTypes(),m3=migrateTT();if(m1||m2||m3)persist();
   const first=!rebindDb.done;
   if(!db.teamsConfirmed)db.teamsConfirmed=first?Object.assign({},teamsConfirmed):{};
   if(!db.reviews)db.reviews=first?Object.assign({},wcReviews):{};
