@@ -1072,9 +1072,9 @@ label.fl .enh-wrap,.fgrid .enh-wrap{display:flex;width:100%}
 /* 辦公地／請假：電腦一列 */
 .guide-header .g-item.hrow{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}
 .guide-header .g-item.hrow>.fgrid{display:flex;flex-wrap:wrap;gap:8px 10px;flex:1 1 520px;min-width:0;margin:0}
-.guide-header .g-item.hrow>.fgrid>label.fl{flex:1 1 150px;min-width:0;margin:0}
-.guide-header .g-item.hrow>.fgrid>label.fl.f-trip{flex:0 1 130px}
-.guide-header .g-item.hrow>.fgrid>label.fl.f-time{flex:0 0 132px}
+.guide-header .g-item.hrow>.fgrid>label.fl{flex:1 1 118px;min-width:0;margin:0}
+.guide-header .g-item.hrow>.fgrid>label.fl.f-trip{flex:0 1 112px}
+.guide-header .g-item.hrow>.fgrid>label.fl.f-time{flex:0 0 122px}
 .guide-header .g-item.hrow>.fgrid>label.fl.f-ltype{flex:0 1 220px}.guide-header .g-item.hrow>.fgrid>label.fl.f-lh{flex:0 0 140px}
 .guide-header .g-item.hrow>.btn{flex:none;margin:0 0 2px}
 @media(max-width:1023px){.guide-header .g-item.hrow>.fgrid{flex-basis:100%}.guide-header .g-item.hrow>.fgrid>label.fl{flex:1 1 40%}.guide-header .g-item.hrow>.fgrid>label.fl.f-act{flex:1 1 100%}.guide-header .g-item.hrow>.fgrid>label.fl.f-time{flex:1 1 38%}.guide-header .g-item.hrow>.fgrid>label.fl.f-ltype{flex:1 1 50%}.guide-header .g-item.hrow>.fgrid>label.fl.f-lh{flex:1 1 30%}.guide-header .g-item.hrow>.btn{margin-left:auto}}
@@ -1085,6 +1085,21 @@ label.fl .enh-wrap,.fgrid .enh-wrap{display:flex;width:100%}
 .lv-avg span{position:absolute;right:0;top:-20px;font-size:11px;color:var(--w-acc);background:var(--w-card);padding:0 4px}
 .lv-col i.on.over{background:var(--w-acc)}
 .lv-emptytip{position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);font-size:13px;color:var(--w-fg2);white-space:nowrap}
+
+.dstat-link{font:inherit;background:none;border:0;padding:0;color:inherit;cursor:pointer;text-align:left}.dstat-link:hover{text-decoration:underline}
+.dquick{flex-basis:100%;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;margin-top:4px;border-radius:10px;background:var(--w-bg);border:1px dashed var(--w-lake)}
+.dquick b{color:var(--w-fg)}
+.lnk-sub{color:var(--w-fg2)!important;font-size:13px}
+.hdr-inline{flex-basis:100%;margin-top:6px}
+.hdr-inline .guided{border:0!important;padding:0!important;background:none!important;box-shadow:none!important}
+.hdr-inline .guide-header>h2,.hdr-inline .guide-header>.sub:first-of-type{display:none}
+.hdr-sec{border-radius:12px;padding:12px 14px;margin:10px 0}
+.hdr-office{border:2px solid var(--w-lake);background:var(--w-card)}
+.hdr-office .hdr-t{font-size:16px;color:var(--w-fg)}
+.hdr-leave{border:1px solid var(--w-line);background:var(--w-bg)}
+.hdr-leave .hdr-t2{color:var(--w-fg2)}
+.qopen-big{display:block;width:100%;min-height:44px;font:inherit;font-weight:600;border:1px dashed var(--w-lake);border-radius:10px;background:var(--w-bg);color:var(--w-acc);cursor:pointer}
+:root[data-theme="dark"] :is(.hdr-office,.dquick){background:var(--dk-card)!important}:root[data-theme="dark"] .hdr-leave{background:var(--dk-panel)!important;border-color:var(--dk-line)!important}
 </style>
 </head>
 <body>
@@ -1448,7 +1463,7 @@ function applyItemFields(t,it,ref){
   t.category=it.cat;t.projectId=resolveProject(it.project,it.cat);
   const keepTitle=it.subs.length>1&&t.subItems.length>1&&nk(t.subItems.map(s=>s.text).join(''))===nk(it.subs.join(''))&&t.title&&t.title!==it.title;
   if(!keepTitle)t.title=it.title;
-  t.subItems=mergeSubs(t.subItems,it.subs);
+  t.subItems=(!it.subs.length&&t.source==='todo'&&(t.subItems||[]).length)?t.subItems:mergeSubs(t.subItems,it.subs);
   if(it.est!=null)t.estHours=it.est;
   t.isStar=!!it.star;
   if(it.dl){const d=resolveMD(parseDL(it.dl),ref,'future');if(d)setDL(t,d,'日誌更新')}
@@ -2108,7 +2123,17 @@ function pgDay(){
 
 /* ---------- 每日頁（三步驟） ---------- */
 const CHECK_SVG='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>';
-function openTodoCount(){return T().filter(t=>t.source==='todo'&&!t.date&&!t.archived&&!['完成','已交付','放棄'].includes(t.status)).length}
+function bringable(D){return T().filter(t=>t.source==='todo'&&!t.archived&&!['完成','已交付','放棄','延遲'].includes(t.status)&&(!t.date||(t.date<D&&!t.closedByDay)))}
+function setHeaderLine(text,name,value){const ls=String(text).split('\n');const i=ls.findIndex(l=>new RegExp('^'+name+'\\s*[:：]').test(l.trim()));const line=name+'：'+value;if(i>=0)ls[i]=line;else{const di=ls.findIndex(l=>/^(日期|姓名)\s*[:：]/.test(l.trim()));ls.splice(Math.max(0,di+1),0,line)}return ls.join('\n')}
+function prevOffice(D){const ds=Object.keys(db.days).filter(d=>d<D&&(db.days[d].locations||[]).some(l=>String(l.place||'').trim())).sort();const d=ds.pop();if(!d)return null;
+  const line=(db.days[d].rawText||'').split('\n').find(l=>/^辦公地\s*[:：]/.test(l.trim()));const value=line?line.trim().replace(/^辦公地\s*[:：]\s*/,''):'';if(!value)return null;
+  const label=(db.days[d].locations||[]).filter(l=>l.place).map(l=>`${l.place}${l.start&&l.end?' '+l.start+'–'+l.end:''}`).join('、');return{d,value,label}}
+function openTodoCount(){return bringable(S.day||today()).length}
+/* 把排在過去、未回報的待辦帶到 D：舊日誌原文不改，舊筆標延遲並封存，新筆延續同一條鏈 */
+function bringTask(id,D){const o=db.tasks[id];if(!o)return;if(!o.date||o.date>=D){scheduleTask(id,D,true);return}
+  const n=newTask({});const keep=['category','projectId','title','estHours','dl','dlHistory','isStar','doneCriteria','stopLoss','deliverTo','note','riskProfile','riskState','progressLog'];
+  keep.forEach(k=>{if(o[k]!==undefined)n[k]=structuredClone(o[k])});n.subItems=structuredClone(o.subItems||[]);n.source='todo';n.origin='plan';n.status='規劃';n.chainId=o.chainId||o.id;n.carriedCount=(o.carriedCount||0)+1;
+  o.status='延遲';o.archived=true;o.delayReasonText=o.delayReasonText||`未回報，${md(D)} 重新帶入`;persist();scheduleTask(n.id,D,true)}
 function dayStatus(D,text){
  const p=parseDay(text),h=p.header;
  const est=sum(p.today,x=>x.est||0);
@@ -2121,7 +2146,7 @@ function dayStatus(D,text){
  const reported=!!R||doneL.length+undoneL.length+urgL.length>0;
  const nRep=R?(R.done||[]).length+(R.undone||[]).length:Math.min(prev.length,doneL.length+undoneL.length);
  return{p,h,est,work,isActual,leaves,avail:Math.max(0,hpd()-leaves),alerts,prevD,prev,R,reported,nRep,doneL,undoneL,urgL}}
-function dlShort(dl){return /^\d{4}-\d\d-\d\d$/.test(dl||'')?md(dl):String(dl||'')}
+function dlShort(dl){dl=String(dl||'').trim();if(/^\d{4}-\d\d-\d\d$/.test(dl))return md(dl);const m=dl.match(/^(\d{1,2})(\d{2})$/);if(m)return `${+m[1]}/${+m[2]}`;return dl}
 function pgDayMain(D,text,ro,H){
  const st=dayStatus(D,text),isToday=D===today();
  const places=(st.h.locations||[]).filter(l=>String(l.place||'').trim()).map(l=>`${l.trip?'出差 ':''}<b>${esc(l.place)}</b>${l.start&&l.end?` <small>${esc(l.start)}–${esc(l.end)}</small>`:''}`).join('、');
@@ -2133,11 +2158,13 @@ function pgDayMain(D,text,ro,H){
  ${ro?'<div class="banner"><b>隱私模式</b><span>畫面唯讀，私記已隱藏。</span></div>':''}
  <section class="dstat" aria-label="當日概況">
   <span class="dstat-h"><b class="${st.work>st.avail+1e-6?'warnc':''}" title="${st.work>st.avail+1e-6?'超過可用工時':''}">${fh(st.work)}h</b><small>${st.isActual?'實際':'預估'}／可用 ${fh(st.avail)}h</small></span>
-  <span>辦公地 ${places||'<b class="muted">未填</b>'}</span>
-  <span>請假 <b>${leaves||'無'}</b></span>
+  <button type="button" class="dstat-link" data-act="hdropen" ${ro?'disabled':''}>辦公地 ${places||'<b class="warnc">未填</b>'}</button>
+  <button type="button" class="dstat-link" data-act="hdropen" ${ro?'disabled':''}>請假 <b>${leaves||'無'}</b></button>
   <span>昨日 <b class="${st.prev.length&&st.nRep>=st.prev.length?'okc':st.prev.length?'warnc':''}">${st.prev.length?`${st.nRep}/${st.prev.length} 已回報`:'—'}</b></span>
   <button type="button" class="dstat-risk ${st.alerts?'warnc':''}" data-act="riskopen">風險 <b>${st.alerts}</b></button>
-  <span class="sp"></span><button class="btn sm" data-act="hdropen" ${ro?'disabled':''}>編輯辦公地／請假</button>
+  <span class="sp"></span><button class="btn sm" data-act="hdropen" ${ro?'disabled':''} aria-expanded="${!!S.hdrInline}">${S.hdrInline?'收合':'編輯辦公地／請假'}</button>
+  ${!ro&&!places&&!S.hdrInline&&isWorkday(D)&&!(st.leaves>=hpd())?(()=>{const p=prevOffice(D);return `<div class="dquick"><b>今天在哪？</b>${p?`<button class="btn pri sm" data-act="officeprev">同上一工作日：${esc(p.label)}</button>`:''}<button class="btn sm" data-act="hdropen">其他地點／時段</button><button class="btn sm" data-act="hdropen">請假</button><button class="lnk lnk-sub" data-act="stopday">颱風停班</button></div>`})():''}
+  ${S.hdrInline&&!ro?'<div class="hdr-inline"><div id="guided-host"></div></div>':''}
  </section>
  ${dayStep1(D,st,ro)}
  ${dayStep2(D,st,ro,s1done)}
@@ -2170,9 +2197,9 @@ function dayStep2(D,st,ro,s1done){
  const form=ro?'':`${S.qaOpen?'':'<button class="btn qopen" data-act="qaopen">＋ 新增工作</button>'}<div class="qadd ${S.qaOpen?'open':''}" role="group" aria-label="新增今日工作"><label>分類<select id="qa-cat">${categories().map(c=>`<option ${c===cat?'selected':''}>${esc(c)}</option>`).join('')}</select></label><label class="qp">專案<input id="qa-proj" type="text" list="qa-projs" placeholder="輸入或選擇" autocomplete="off"><datalist id="qa-projs">${projs}</datalist></label><label class="qd">內容<input id="qa-detail" type="text" placeholder="例如：上架＋回饋處理"></label><label class="qh">時數<input id="qa-h" type="text" inputmode="decimal" placeholder="1.5"></label><button class="btn pri" data-act="todayadd">加入</button></div>`;
  return `<section class="step ${s1done?'is-active':''}" aria-label="步驟二 今日工作">${stepHead(2,false,'今日工作',`${items.length} 項・${st.isActual?`實際 ${fh(st.work)}h`:`預估 ${fh(st.est)}h`}`,ro?'':`<button class="btn sm" data-act="picktodo">帶入待辦（${n}）</button><button class="lnk hide-m" data-act="guideopen">逐項編輯</button>`)}
   ${ro?'':dlSoonHTML(D)}<div class="srows">${rows||'<div class="sempty">還沒有今日工作。用下方欄位加入，或帶入待辦。</div>'}</div>${form}</section>`}
-function dlSoon(D){return T().filter(t=>t.source==='todo'&&!t.date&&!t.archived&&t.dl&&!['完成','已交付','放棄'].includes(t.status)&&diffD(D,t.dl)<=3).sort(by(t=>t.dl))}
+function dlSoon(D){return bringable(D).filter(t=>t.dl&&diffD(D,t.dl)<=3).sort(by(t=>t.dl))}
 function dlSoonHTML(D){const L=dlSoon(D);if(!L.length)return '';
- return `<div class="dlsoon" role="note"><b>DL 快到的待辦</b>${L.map(t=>{const n=diffD(D,t.dl);return `<div class="dlsoon-row"><span class="stag ${n<0?'warn':'pend'}">${n<0?`逾期 ${-n} 天`:n===0?'今天到期':`剩 ${n} 天`}</span><span class="dlsoon-t">${esc(t.title)}<small> DL ${md(t.dl)}</small></span><span class="sp"></span><button class="btn sm" data-act="dlbring" data-id="${t.id}">帶入今天</button></div>`}).join('')}</div>`}
+ return `<div class="dlsoon" role="note"><b>DL 快到的待辦</b>${L.map(t=>{const n=diffD(D,t.dl);return `<div class="dlsoon-row"><span class="stag ${n<0?'warn':'pend'}">${n<0?`逾期 ${-n} 天`:n===0?'今天到期':`剩 ${n} 天`}</span><span class="dlsoon-t">${esc(t.title)}<small> DL ${md(t.dl)}${t.date?`・原排 ${md(t.date)} 未回報`:''}</small></span><span class="sp"></span><button class="btn sm" data-act="dlbring" data-id="${t.id}">帶入今天</button></div>`}).join('')}</div>`}
 function dayStep3(D,st){
  const t=teamsConfirmed[D],has=!!db.days[D]?.rawText;
  const o=Object.assign({},db.settings.exportDefaults);if(S.privacy)o.priv=false;
@@ -2395,7 +2422,7 @@ function guideHeaderHTML(){
  guideInitHeader();
  const loc=guidePlaces.map((x,i)=>`<div class="g-item hrow"><div class="fgrid">${placePicker(i,x.place)}<label class="fl f-trip">工作性質<select data-gplace="${i}" data-gfield="trip"><option value="0" ${!x.trip?'selected':''}>一般辦公</option><option value="1" ${x.trip?'selected':''}>出差</option></select></label><label class="fl f-act">實際工作項目<select data-gplace="${i}" data-gfield="activity"><option value="" ${!x.activity?'selected':''}>請選擇（選填）</option>${['授課','助教','導師','考官','跟課','聽課','會議','異地辦公','其他'].concat(x.activity&&!['授課','助教','導師','考官','跟課','聽課','會議','異地辦公','其他'].includes(x.activity)?[x.activity]:[]).map(a=>`<option value="${esc(a)}" ${(a==='其他'?String(x.activity||'').startsWith('其他'):x.activity===a)?'selected':''}>${esc(a)}${a==='授課／助教／導師／考官'||a==='跟課／聽課'?'（歷史資料）':''}</option>`).join('')}</select></label><label class="fl" data-other-wrap="${i}" style="${String(x.activity||'').startsWith('其他')?'':'display:none'}">其他工作項目<input data-gplace="${i}" data-gfield="activityOther" value="${esc(String(x.activity||'').startsWith('其他：')?x.activity.slice(3):'')}" placeholder="請輸入工作項目"></label><label class="fl f-time">開始時間<input type="time" data-gplace="${i}" data-gfield="start" value="${esc(x.start||'08:30')}"></label><label class="fl f-time">結束時間<input type="time" data-gplace="${i}" data-gfield="end" value="${esc(x.end||'17:30')}"></label></div><button class="btn sm" data-guide="remove-place" data-i="${i}">移除</button></div>`).join('');
  const leave=guideLeaves.map((x,i)=>`<div class="g-item hrow"><div class="fgrid"><label class="fl f-ltype">假別<select data-gleave="${i}" data-gfield="type">${leaveTypeList().map(y=>`<option ${x.type===y?'selected':''}>${esc(y)}</option>`).join('')}${!leaveTypeList().includes(x.type)?`<option selected>${esc(x.type)}</option>`:''}</select></label><label class="fl f-lh">請假時數 hr<input type="number" min="0" step="0.5" data-gleave="${i}" data-gfield="hours" value="${esc(x.hours)}"></label></div><button class="btn sm" data-guide="remove-leave" data-i="${i}">移除</button></div>`).join('');
- return `<div class="guide-header"><h2>當日基本資料</h2><div class="sub">辦公地可分時段、請假可多筆；填寫後按「儲存基本資料」，同步更新當日日誌及統計。</div><div class="row" style="justify-content:space-between;margin:10px 0 6px"><b>辦公地／出差</b><button class="btn sm" data-guide="add-place">＋ 新增地點／時段</button></div>${loc||'<div class="sub">尚未設定辦公地</div>'}<div class="row" style="justify-content:space-between;margin:12px 0 6px"><b>請假</b><span class="row" style="gap:6px"><button class="btn sm" data-act="stopday">颱風停班</button><button class="btn sm" data-act="leaverange">＋ 連續請假</button><button class="btn sm" data-guide="add-leave">＋ 新增請假</button></span></div>${leave||'<div class="sub">無請假</div>'}<div class="g-actions guide-confirm-actions"><button class="btn pri guide-wide-btn" data-guide="save-header">儲存基本資料</button><span class="sub">儲存後同步更新當日首頁及統計</span></div></div>`;
+ return `<div class="guide-header"><h2>當日基本資料</h2><div class="sub">辦公地可分時段、請假可多筆；填寫後按「儲存基本資料」，同步更新當日日誌及統計。</div><div class="hdr-sec hdr-office"><div class="row" style="justify-content:space-between;margin:0 0 8px"><b class="hdr-t">辦公地／出差</b><button class="btn sm" data-guide="add-place">＋ 新增地點／時段</button></div>${loc||`<button class="qopen-big" data-guide="add-place">＋ 新增辦公地</button>`}</div><div class="hdr-sec hdr-leave"><div class="row" style="justify-content:space-between;margin:0 0 6px"><b class="hdr-t2">請假</b><span class="row" style="gap:6px;align-items:center"><button class="btn sm" data-guide="add-leave">＋ 新增請假</button><button class="btn sm" data-act="leaverange">＋ 連續請假</button><button class="lnk lnk-sub" data-act="stopday">颱風停班</button></span></div>${leave||'<div class="sub">無請假</div>'}</div><div class="g-actions guide-confirm-actions"><button class="btn pri guide-wide-btn" data-guide="save-header">儲存基本資料</button><span class="sub">儲存後同步更新當日首頁及統計</span></div></div>`;
 }
 function guideLoadToday(){guideItems=parseDay(guideSource()).today.map(i=>({category:i.cat,project:i.project,hours:i.est,detail:i.doneText||((i.title!==i.project)?i.title:''),raw:i.raw.trim()}));guideItemsDay=S.day}
 function guideLine(x){return x.raw||`${x.category}-${x.project}${x.hours!=null&&x.hours!==''?'_'+hrTok(x.hours):''}${x.detail?'，'+x.detail:''}`}
@@ -2510,7 +2537,7 @@ function guideAction(type,el){
  if(type==='save-header'){
   const before=guideSource(),text=guideMergeHeader(before);
   if(text!==before&&db.days[S.day]?.rawText&&before!==template(S.day)&&!ask('確認更新當日日誌的辦公地與請假欄位？其餘文字會保留。',()=>guideAction(type,el),'儲存'))return;
-  applyDay(S.day,text);delete drafts[S.day];persist();S.hdrSub=false;render();wcHoursAlert(S.day);toast('辦公地／請假已儲存');return;
+  applyDay(S.day,text);delete drafts[S.day];persist();S.hdrSub=false;S.hdrInline=false;render();wcHoursAlert(S.day);toast('辦公地／請假已儲存');return;
  }
  if(type==='add-place'){
   if(guidePlaces.length>=4){toast('辦公地最多四段');return}
@@ -2761,6 +2788,7 @@ function schedPrompt(id){const t=db.tasks[id];if(!t)return;
     onMount:ov=>{$$('[data-q]',ov).forEach(b=>b.onclick=()=>{$('#sp-d',ov).value=b.dataset.q});
       $('#sp-d',ov).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#sp-ok',ov).click()}});
       $('#sp-ok',ov).onclick=()=>{const d=$('#sp-d',ov).value;if(!d)return;closeModal();
+        if(t.date&&t.date<today()&&d>t.date&&!t.closedByDay&&t.source==='todo'){bringTask(t.id,d);render._keep=true;render();toast(`已改排 ${md(d)}`);return}
         if(t.date&&t.date!==d&&db.days[t.date]?.rawText&&t.rawLine){const od=t.date;t.date=null;applyDay(od,removeLine(db.days[od].rawText,t.rawLine))}
         scheduleTask(id,d);render._keep=true;render()};
       const un=$('#sp-un',ov);if(un)un.onclick=()=>{closeModal();const od=t.date;if(db.days[od]?.rawText&&t.rawLine)applyDay(od,removeLine(db.days[od].rawText,t.rawLine));t.date=null;t.status='待辦';t.source='todo';persist();render()}}})}
@@ -3482,8 +3510,8 @@ function pasteModal(){openModal({title:'貼回定稿',wide:true,body:`<p class="
     if(!/^\s*日期\s*[:：]/.test(v)){const cur=dayText(S.day).split('\n').filter(l=>/^(日期|姓名|辦公地|請假)\s*[:：]/.test(l.trim()));v=cur.join('\n')+'\n\n'+v.replace(/^\s*小馬\s*\d{1,2}\/\d{1,2}\s*\n/,'')}
     closeModal();applyDay(S.day,v);delete drafts[S.day];persist();toast('已覆蓋並存檔');render()}}})}
 function pickTodoModal(){const D=S.day;
-  listModal('帶入待辦','搜尋未排日待辦，Enter 帶入',q=>T().filter(t=>t.source==='todo'&&!t.date&&!t.archived&&!['完成','已交付','放棄'].includes(t.status)&&(!q||(t.title+pname(t.projectId)).includes(q))).map(t=>({l:`${pname(t.projectId)}｜${t.title}`,g:t.dl?`DL ${md(t.dl)}`:'',id:t.id})),
-    it=>{scheduleTask(it.id,D);render._keep=true;if(!$('#ta'))render();else{renderRail()}})}
+  listModal('帶入待辦','搜尋待辦（含排過日但未回報的），Enter 帶入',q=>bringable(D).filter(t=>!q||(t.title+pname(t.projectId)).includes(q)).sort(by(t=>t.dl||'9999')).map(t=>({l:`${pname(t.projectId)}｜${t.title}`,g:[t.date?`原排 ${md(t.date)} 未回報`:'',t.dl?`DL ${md(t.dl)}`:''].filter(Boolean).join('・'),id:t.id})),
+    it=>{bringTask(it.id,D);toast(`已帶入 ${md(D)}`);render._keep=true;if(!$('#ta'))render();else{renderRail()}})}
 function fixLineModal(i,sec){
   const ta=$('#ta');if(!ta)return;const ls=ta.value.split('\n');const raw=ls[i]||'';
   const g=parseItem(raw,sec||'today');const isDone=sec==='done';
@@ -3569,7 +3597,7 @@ const ACT={
   teamscopy:()=>{saveDraftNow();copy(teamsText(S.day,Object.assign({},db.settings.exportDefaults)))},
   riskstalearch:()=>{const L=T().filter(riskStale);confirmBox(`把 ${L.length} 筆兩週前、沒有 DL 的未結項目移到封存？封存後仍可在「待辦 › 封存」查到或還原，日誌原文不變。`,()=>{L.forEach(t=>t.archived=true);persist();render();toast(`已封存 ${L.length} 筆`)},'封存')},
   dayclose:()=>{const D=S.day;if(!parseDay(dayText(D)).today.length){toast('今天還沒有工作項目');return}saveDraftNow();const N=nextWorkday(D);openDay(N);S.closeFrom=D;ACT.wcprevopen()},
-  dlbring:el=>{scheduleTask(el.dataset.id,S.day,true);render._keep=true;render();toast('已帶入今日工作')},
+  dlbring:el=>{bringTask(el.dataset.id,S.day);render._keep=true;render();toast('已帶入今日工作')},
   riskjump:el=>{const x=document.getElementById('rk-'+el.dataset.id);if(x){x.scrollIntoView({block:'center',behavior:'smooth'});x.classList.add('rk-hl');setTimeout(()=>x.classList.remove('rk-hl'),1600)}},
   leaverange:()=>leaveRangeModal(S.page==='day'?S.day:today()),
   stopday:el=>stopModal(el.dataset.d||(S.page==='day'?S.day:today())),
@@ -3578,7 +3606,8 @@ const ACT={
     applyDay(d,setDayLeave(dayText(d),v,hpd()));delete drafts[d];persist();render._keep=true;render();toast(`${md(d)} 已補登 ${v}`)},
   s1toggle:()=>{S.s1Open=!S.s1Open;render._keep=true;render()},
   todayadd:()=>todayAdd(),todayedit:el=>todayEdit(el.dataset.i),qaopen:()=>{S.qaOpen=true;render._keep=true;render();setTimeout(()=>$('#qa-proj')?.focus(),0)},todaydel:el=>todayDel(el.dataset.i),
-  hdropen:()=>{saveDraftNow();closeDaySubs();guideHeaderDay='';S.hdrSub=true;render();$('#main').scrollTop=0},hdrclose:()=>{S.hdrSub=false;render()},
+  hdropen:()=>{saveDraftNow();closeDaySubs();guideHeaderDay='';S.hdrInline=!S.hdrInline;render._keep=true;render();if(S.hdrInline)setTimeout(()=>$('.hdr-inline')?.scrollIntoView({block:'nearest',behavior:'smooth'}),30)},hdrclose:()=>{S.hdrSub=false;S.hdrInline=false;render()},
+  officeprev:()=>{const D=S.day,p=prevOffice(D);if(!p)return;saveDraftNow();applyDay(D,setHeaderLine(dayText(D),'辦公地',p.value));delete drafts[D];persist();render._keep=true;render();toast('辦公地同 '+md(p.d))},
   leaveedit:()=>{S.leaveEdit=!S.leaveEdit;render._keep=true;render()},leaveadd:()=>{S.leaveAdd=!S.leaveAdd;render._keep=true;render()},
   impcommit:()=>{const C=IMP.chunks.filter(c=>!c.bad&&c.date&&['write','overwrite','merge'].includes(c.action)).sort(by(c=>c.date));
     const wasSample=db.sample;if(wasSample){db=emptyDb(db.settings);rebindDb();drafts={}}
