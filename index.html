@@ -904,7 +904,7 @@ label.fl .enh-wrap,.fgrid .enh-wrap{display:flex;width:100%}
 .qadd label:first-child{flex:0 0 110px}.qadd .qp{flex:1 1 170px}.qadd .qd{flex:2 1 220px}.qadd .qh{flex:0 0 76px}
 .qadd input,.qadd select{width:100%;box-sizing:border-box;min-height:40px;font-size:15px}
 .qadd .btn{min-height:40px;padding:0 18px}
-.tprev{margin-top:10px}.tgrp-bar{margin:0 0 8px;gap:12px}.tgrp-sw{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:14px}.tgrp-sw input{width:auto;min-height:0}.tgrp-h{display:flex;align-items:center;gap:8px;padding:10px 4px 6px;border-bottom:1px solid var(--w-line);margin-top:6px}.tgrp-t{display:flex;align-items:center;gap:8px;background:none;border:0;padding:4px 2px;cursor:pointer;color:var(--w-fg);font:inherit;min-width:0;flex-wrap:wrap;text-align:left}.tgrp-ar{width:1em;color:var(--w-fg2)}.tseg-hint{margin:8px 0 6px}.tsegs{display:grid;gap:8px;margin-bottom:10px}.tseg{border:1px solid var(--w-line);border-radius:10px;padding:8px 12px;background:var(--w-bg)}.tseg.done{opacity:.75}.tseg-h{display:flex;align-items:center;gap:8px}.tseg-h .btn{margin-left:auto}.tseg pre{margin:6px 0 0;white-space:pre-wrap;word-break:break-word;font-size:13px;line-height:1.6;color:var(--w-fg)}.g-over{grid-column:1/-1}
+.tprev{margin-top:10px}.week-grid .rl-panel{grid-column:1/-1;order:-1}.rl-go-row{align-items:center;gap:16px;flex-wrap:wrap;margin-top:10px}.rl-go-row .btn{margin:0}.rl-nm{display:inline-flex;align-items:center;gap:6px;font-size:14px}.rl-nm select{width:auto}.rl-sum{margin:12px 0 4px;padding:8px 12px;border-radius:10px;background:var(--w-warnbg);color:var(--w-warn);font-weight:600}.rl-sum.ok{background:var(--w-okbg);color:var(--w-ok)}.rl-h{margin:14px 0 6px;font-size:15px}.rl-item{border:1px solid var(--w-line);border-radius:10px;padding:8px 12px;margin-bottom:8px}.rl-item.rl-pend{border-color:var(--w-warn)}.rl-item.rl-skip,.rl-item.rl-already{opacity:.7}.rl-f{margin-top:6px}.rl-none{display:flex;gap:8px;align-items:center;padding:4px 0;font-size:14px}.rl-none input{width:auto;min-height:0}.rl-out{white-space:pre-wrap;word-break:break-word;background:var(--w-bg);border:1px solid var(--w-line);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.6;max-height:520px;overflow:auto;color:var(--w-fg)}.rl-out .rl-ins{background:var(--w-okbg);color:var(--w-ok);font-weight:600}.rl-out .rl-mod{background:var(--w-warnbg);color:var(--w-warn);font-weight:600}.rl-warn{margin-top:10px}.lnk.tmv{font-size:13px;margin-left:2px}.li.dragging{opacity:.5}.drop-on{background:var(--w-okbg)!important;outline:2px dashed var(--w-ok);outline-offset:-2px}.li[draggable=true]{cursor:grab}#toast-act{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:81;background:var(--fg);color:var(--bg);padding:6px 8px 6px 16px;border-radius:999px;font-size:13px;display:flex;gap:10px;align-items:center;opacity:0;pointer-events:none;transition:opacity .2s}#toast-act.on{opacity:1;pointer-events:auto}#toast-act button{background:transparent;border:1px solid currentColor;color:inherit;border-radius:999px;padding:4px 12px;font:inherit;cursor:pointer}@media (max-width:1023px){#toast-act{bottom:calc(84px + env(safe-area-inset-bottom,0px))}}.tgrp-bar{margin:0 0 8px;gap:12px}.tgrp-sw{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:14px}.tgrp-sw input{width:auto;min-height:0}.tgrp-h{display:flex;align-items:center;gap:8px;padding:10px 4px 6px;border-bottom:1px solid var(--w-line);margin-top:6px}.tgrp-t{display:flex;align-items:center;gap:8px;background:none;border:0;padding:4px 2px;cursor:pointer;color:var(--w-fg);font:inherit;min-width:0;flex-wrap:wrap;text-align:left}.tgrp-ar{width:1em;color:var(--w-fg2)}.tseg-hint{margin:8px 0 6px}.tsegs{display:grid;gap:8px;margin-bottom:10px}.tseg{border:1px solid var(--w-line);border-radius:10px;padding:8px 12px;background:var(--w-bg)}.tseg.done{opacity:.75}.tseg-h{display:flex;align-items:center;gap:8px}.tseg-h .btn{margin-left:auto}.tseg pre{margin:6px 0 0;white-space:pre-wrap;word-break:break-word;font-size:13px;line-height:1.6;color:var(--w-fg)}.g-over{grid-column:1/-1}
 .tprev summary{cursor:pointer;color:var(--w-acc);font-size:14px;width:max-content}
 .tprev pre{margin:8px 0 0;background:var(--w-bg);border:1px solid var(--w-line);border-radius:10px;padding:12px 14px;max-height:220px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:13px;line-height:1.6;color:var(--w-fg)}
 .sacts{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}
@@ -1896,8 +1896,148 @@ function pgWeekSpace(){const [a,b]=weekRange(weekAnchor),w=wkData(),total=w.item
  return `<div class="ph"><h1>週工作規劃與回報</h1><span class="sp"></span><button class="btn sm" data-act="weekprev">‹ 前週</button><b>${a} ～ ${b}</b><button class="btn sm" data-act="weeknext">下週 ›</button></div><p class="sub">每週計畫與個人小組接龍獨立管理，與每日 Teams 上傳確認無關；資料保存在目前瀏覽器。</p>
  <div class="week-stats">本週計畫 ${fh(total)}hr／一般週參考 40hr｜當週日誌預估 ${fh(est)}hr｜已登記實際 ${fh(actual)}hr｜週計畫 ${w.items.length} 項（依請假、假日調整）</div>
  <div class="week-grid"><section class="week-panel"><h2>本週／下週預估工作</h2><div class="fgrid"><label class="fl">回報區塊<select id="wk-group"><option>小組例行任務</option><option>KM 專案</option><option>CHT 專案</option></select></label><label class="fl">分類<select id="wk-cat">${categories().map(x=>`<option>${esc(x)}</option>`).join('')}</select></label><label class="fl">工作名稱<input id="wk-title" placeholder="例如：通路小教室維護"></label><label class="fl">預定日期<input id="wk-date" type="date" value="${a}"></label><label class="fl">預估工時 hr<input id="wk-hours" type="number" value="2" min="0" step="0.5"></label><label class="fl">DL<input id="wk-dl" type="date"></label><label class="fl">工作內容<input id="wk-detail" placeholder="具體預計產出"></label></div><div class="g-actions week-plan-actions"><button class="btn pri" data-act="weekadd" style="margin-top:10px;margin-right:10px;margin-bottom:12px">新增週計畫</button><button class="btn" data-act="weekcarry" style="margin-top:10px;margin-bottom:12px">承接上週未完成候選</button></div>${registered||'<div class="empty">目前無週計畫，可先新增。</div>'}</section>
- <section class="week-panel"><h2>產生我的週接龍</h2><p class="sub">僅整理你的內容（馬／馬哥／小馬）。範例來源分組無法由原日誌確定時，以「請確認」保留人工分類；不處理其他同事，不與每日 Teams 回報相連。</p><button class="btn sm" data-act="weekreload">依紀錄重新彙整</button><textarea class="f mono" rows="18" id="wk-report" placeholder="點擊重新彙整，再編輯並保存你的版本">${esc(w.report||'')}</textarea><div class="g-actions"><button class="btn pri" id="wk-save" type="button">保存個人週報</button><button class="btn" id="wk-copy" type="button">複製個人接龍文字</button></div><p class="sub">已保存的週報只更新你自己的資料；週計畫與每日紀錄變更時請重新彙整並核對。</p></section></div>`}
-function mountWeekSpace(){const x=$('#wk-report');if(weekDraft){x.value=weekDraft;weekDraft=''}$('#wk-save').onclick=()=>{wkData().report=x.value;weekSave();toast('已保存本週個人回報')};$('#wk-copy').onclick=()=>copy(x.value)}
+ <section class="week-panel rl-panel"><h2>週接龍</h2><p class="sub">貼上 Teams 上大家已經接好的全文，App 會把你的工作接進對應的段落：只會新增行或在括號裡加上你的名字，別人的字不會改。第一次要選位置，選過會記住。</p><textarea class="f mono" rows="10" id="rl-src" placeholder="貼上接龍全文"></textarea><div class="g-actions rl-go-row"><button class="btn pri" id="rl-go" type="button">接上我的工作</button><label class="rl-nm">寫上的名字<select id="rl-name"><option>馬</option><option>馬哥</option></select></label></div><div id="rl-host"></div></section></div>`}
+function mountWeekSpace(){relayMount()}
+
+/* ---------- 週接龍：貼上大家接好的全文，把自己的工作接進去（別人的字不改） ---------- */
+const RELAY_KINDS={undone:'上週未完成的事情',urgent:'上週突發或臨時新增的事情',plan:'本週預定要做的事情'};
+const RELAY_KLABEL={undone:'上週未完成',urgent:'上週突發',plan:'本週預定'};
+let relay={week:'',parsed:null,items:[],ch:{},none:{}};
+function relayName(){return db.settings.relayName==='馬哥'?'馬哥':'馬'}
+function relayIsMe(x){return /^(小馬|馬哥|馬)$/.test(String(x||'').trim())}
+function relayNamesOf(text){const out=[];const c=String(text).match(/[:：]([^:：]*)$/);if(c)out.push(...c[1].split(/[、,，\s/]+/));
+  const re=/[（(]([^（()）]*)[)）]/g;let m;while((m=re.exec(text)))out.push(...m[1].split(/[、,，\s/]+/));return out.map(x=>x.trim()).filter(Boolean)}
+function relayMineLine(text){return relayNamesOf(text).some(relayIsMe)}
+function relayCore(text){return String(text||'').replace(/[:：][^:：]*$/,'').replace(/[（(][^（()）]*[)）]/g,'').replace(/DL\s*[0-9/、,，\s]*/gi,'').replace(/\s+/g,' ').trim()}
+function relayParse(text){const lines=String(text||'').replace(/\r/g,'').split('\n');const secs=[];let cur=null;
+  lines.forEach((l,i)=>{const m=l.match(/^\s*(.+?)\s*[:：]\s*(上週未完成|上週突發|本週預定)/);
+    if(m&&!/^\s*(\d+\s*\.|[(（]\s*\d|[-－])/.test(l)){const kind=m[2]==='上週未完成'?'undone':m[2]==='上週突發'?'urgent':'plan';cur={group:m[1].trim(),gk:nk(m[1]),kind,head:i,end:i,items:[]};secs.push(cur);return}
+    if(!cur)return;if(l.trim())cur.end=i;let mm;
+    if((mm=l.match(/^(\s*)(\d+)\s*\.+\s*(.*)$/)))cur.items.push({i,lv:1,n:+mm[2],text:mm[3],indent:mm[1]});
+    else if((mm=l.match(/^(\s*)[(（]\s*(\d+)\s*[)）]\s*(.*)$/)))cur.items.push({i,lv:2,n:+mm[2],text:mm[3],indent:mm[1]});
+    else if((mm=l.match(/^(\s*)[-－]\s*(.*)$/)))cur.items.push({i,lv:3,text:mm[2],indent:mm[1]})});
+  for(const s of secs){let p1=null,p2=null;for(const it of s.items){if(it.lv===1){p1=it;p2=null;it.parent=null}else if(it.lv===2){it.parent=p1;p2=it}else it.parent=p2||p1;
+    it.core=relayCore(it.text);it.path=[it.parent?.parent?.core,it.parent?.core,it.core].filter(Boolean).join(' › ');it.key=nk(it.parent?.core||'')+'|'+nk(it.core);it.mine=relayMineLine(it.text);it.none=/^無\s*([:：]|$)/.test(it.text.trim())}}
+  const groups=[];for(const s of secs)if(!groups.some(g=>g.gk===s.gk))groups.push({gk:s.gk,name:s.group});
+  return{lines,secs,groups}}
+function relayDL(d){return d?`DL ${md(d)}`:''}
+function relayMyItems(){const [a,b]=weekRange(weekAnchor),pa=addD(a,-7),pb=addD(a,-1);const out=[],seen=new Set();
+  const lbl=t=>{const p=pname(t.projectId),c=taskContent(t)||t.title||'';return c&&nk(c)!==nk(p)&&!nk(p).includes(nk(c))?`${p}－${c}`:p};
+  const add=(kind,pid,label,dl,from,alt)=>{const k=kind+'|'+(pid||'')+'|'+nk(label);if(seen.has(k))return;seen.add(k);out.push({id:k,kind,pid:pid||'',mk:(kind==='plan'?'plan':'last')+':'+(pid||'w:'+nk(label)),label,dl:dl||'',from,alt:[label,pid?pname(pid):'',...(alt||[])].filter(Boolean)})};
+  const alt=t=>[taskContent(t)||t.title||''];
+  const last=T().filter(t=>t.date&&t.date>=pa&&t.date<=pb&&t.status!=='放棄');
+  const doneChain=new Set(T().filter(t=>t.date&&t.date<=pb&&['完成','已交付'].includes(t.status)).map(t=>t.chainId||t.id));
+  for(const t of last){if(t.isUrgent||t.origin==='urgent'){add('urgent',t.projectId,pname(t.projectId),'',`${md(t.date)} 突發`);continue}
+    if(t.status==='延遲'&&!doneChain.has(t.chainId||t.id))add('undone',t.projectId,lbl(t),t.dl,`${md(t.date)} 未完成`,alt(t))}
+  for(const t of T().filter(t=>t.date&&t.date>=a&&t.date<=b&&t.origin==='plan'&&!t.isUrgent&&t.status!=='放棄'))add('plan',t.projectId,lbl(t),t.dl,`${md(t.date)} 排定`,alt(t));
+  for(const t of T().filter(t=>!t.archived&&!t.date&&!['完成','已交付','放棄'].includes(t.status)&&(t.source==='todo'||t.source==='carry')&&((t.planDate&&t.planDate<=b)||(t.dl&&t.dl>=a&&t.dl<=b))))add('plan',t.projectId,lbl(t),t.dl,t.planDate?`待辦・擬 ${md(t.planDate)}`:`待辦・DL ${md(t.dl)}`,alt(t));
+  for(const x of wkData().items){const p=findProject(x.title);add('plan',p?.id||'',x.detail?`${x.title}－${x.detail}`:x.title,x.dl,`週計畫 ${md(x.date)}`,[x.title,x.detail])}
+  return out}
+function relaySec(gk,kind){return relay.parsed?.secs.find(s=>s.gk===gk&&s.kind===kind)}
+function relayItemAt(i){for(const s of relay.parsed.secs)for(const it of s.items)if(it.i===i)return it;return null}
+function relayScore(it,x){const flat=it.path.replace(/ › /g,'');let v=0;for(const a of x.alt){v=Math.max(v,sim(it.core,a),sim(flat,a)*.98)}return v}
+function relayDupIn(sec,label){return sec?sec.items.find(it=>it.mine&&(sim(it.core,label)>=.85||nk(it.core)===nk(label))):null}
+function relaySuggest(x){const P=relay.parsed,M=db.settings.relayMap||{};const r=M[x.mk];
+  if(r){const s=relaySec(r.gk,x.kind);
+    if(r.place==='skip')return{gk:r.gk,place:'skip',ok:true,auto:true};
+    if(r.place==='append')return{gk:r.gk,place:'append',ok:true,auto:true};
+    const it=s?.items.find(y=>y.key===r.anchor);if(it)return{gk:r.gk,place:r.place,at:it.i,ok:true,auto:true}}
+  const cands=[];for(const s of P.secs){if(s.kind!==x.kind)continue;for(const it of s.items){if(it.none)continue;cands.push({s,it,v:relayScore(it,x)})}}
+  const top=Math.max(0,...cands.map(c=>c.v));const pool=cands.filter(c=>c.v>=.6&&c.v>=top-.08).sort((a,b)=>b.it.lv-a.it.lv||(b.it.mine?1:0)-(a.it.mine?1:0)||b.v-a.v);const best=pool[0],bs=best?best.v:0;
+  if(best&&bs>=.6)return{gk:best.s.gk,place:'name',at:best.it.i,ok:false};
+  const other=M[(x.kind==='plan'?'last':'plan')+':'+x.mk.split(':').slice(1).join(':')];
+  return{gk:other?.gk||r?.gk||'',place:'append',ok:false}}
+function relayStart(text){relay.parsed=relayParse(text);relay.week=weekRange(weekAnchor)[0];relay.items=relay.parsed.secs.length?relayMyItems():[];relay.ch={};relay.none={};relay.newGroups={};
+  for(const r of Object.values(db.settings.relayMap||{}))if(r.gk&&r.name&&!relay.parsed.groups.some(g=>g.gk===r.gk))relay.newGroups[r.gk]=r.name;
+  for(const x of relay.items)relay.ch[x.id]=Object.assign({label:x.label},relaySuggest(x));
+  const NM=db.settings.relayNone||{};for(const s of relay.parsed.secs)if(s.kind!=='plan'&&s.items.some(y=>y.none))relay.none[s.gk+'|'+s.kind]=!!NM[s.gk+'|'+s.kind]}
+function relayStatus(x){const c=relay.ch[x.id];if(c.place==='skip')return'skip';if(!c.gk)return'pend';
+  if((c.place==='name'||c.place==='sub')&&relayItemAt(c.at)==null)return'pend';
+  if(c.place==='name'&&relayItemAt(c.at)?.mine)return'already';
+  if(c.place==='append'&&relayDupIn(relaySec(c.gk,x.kind),c.label))return'already';
+  if(c.place==='sub'){const it=relayItemAt(c.at),s=relay.parsed.secs.find(s=>s.items.includes(it));if(s){const idx=s.items.indexOf(it);for(let j=idx+1;j<s.items.length&&s.items[j].lv>it.lv;j++)if(s.items[j].mine&&sim(s.items[j].core,c.label)>=.85)return'already'}}
+  return c.ok?'ok':'pend'}
+function relayAddName(line,kind,name){
+  const re=/[（(]([^（()）]*)[)）]/g;let m,last=null;while((m=re.exec(line)))if(!/\d/.test(m[1])&&m[1].trim())last=m;
+  const colon=line.match(/^(.*[:：])([^:：]*?)(\s*)$/);
+  if(colon&&(kind!=='plan'||!last)){const names=colon[2].trim().replace(/[、,，]+$/,'');return colon[1]+(names?names+'、':'')+name+colon[3]}
+  if(last){const inner=last[1].replace(/[、,，\s]+$/,'');return line.slice(0,last.index+1)+inner+'、'+name+line.slice(last.index+1+last[1].length)}
+  const dm=line.match(/\s+DL/i);if(dm)return line.slice(0,dm.index)+'（'+name+'）'+line.slice(dm.index);
+  const tr=line.match(/\s*$/)[0];return line.slice(0,line.length-tr.length)+(kind==='plan'?'（'+name+'）':'：'+name)+tr}
+function relayBuild(){const P=relay.parsed,name=relayName();const lines=P.lines.slice(),mark=lines.map(()=>'');const ins={};
+  const push=(after,arr)=>{(ins[after]=ins[after]||[]).push(...arr)};
+  const fmt=(x,c,n)=>x.kind==='plan'?`${n}.${c.label}（${name}）${x.dl?' '+relayDL(x.dl):''}`:`${n}.${c.label}：${name}`;
+  const nameOps=new Set();
+  for(const x of relay.items){const c=relay.ch[x.id],st=relayStatus(x);if(st!=='ok')continue;
+    if(c.place==='name'){nameOps.add(c.at)}}
+  for(const k of Object.keys(relay.none))if(relay.none[k]){const [gk,kind]=k.split('|');const s=relaySec(gk,kind);const it=s?.items.find(y=>y.none);if(it&&!it.mine)nameOps.add(it.i)}
+  for(const i of nameOps){const it=relayItemAt(i);const s=P.secs.find(s=>s.items.includes(it));lines[i]=relayAddName(lines[i],s.kind,name);mark[i]='mod'}
+  // 子項
+  const subBy={};for(const x of relay.items){const c=relay.ch[x.id];if(relayStatus(x)!=='ok'||c.place!=='sub')continue;(subBy[c.at]=subBy[c.at]||[]).push(x)}
+  for(const at in subBy){const it=relayItemAt(+at),s=P.secs.find(s=>s.items.includes(it));const idx=s.items.indexOf(it);let end=it.i,maxN=0,ind=null;
+    for(let j=idx+1;j<s.items.length&&s.items[j].lv>it.lv;j++){end=s.items[j].i;if(s.items[j].lv===it.lv+1){if(s.items[j].n)maxN=Math.max(maxN,s.items[j].n);if(ind==null)ind=s.items[j].indent}}
+    if(ind==null)ind=it.indent+'   ';
+    push(end,subBy[at].map(x=>{const c=relay.ch[x.id];return it.lv===1?`${ind}(${++maxN}) ${c.label}（${name}）${x.dl?' '+relayDL(x.dl):''}`:`${ind}-${c.label}（${name}）${x.dl?' '+relayDL(x.dl):''}`}))}
+  // 段落最後新增／新段落
+  const app={};for(const x of relay.items){const c=relay.ch[x.id];if(relayStatus(x)!=='ok'||c.place!=='append')continue;const k=c.gk+'|'+x.kind;(app[k]=app[k]||[]).push(x)}
+  const kindOrder=['undone','urgent','plan'];
+  for(const k in app){const [gk,kind]=k.split('|');const s=relaySec(gk,kind);
+    if(s){let n=Math.max(0,...s.items.filter(y=>y.lv===1).map(y=>y.n||0));push(s.end,app[k].map(x=>fmt(x,relay.ch[x.id],++n)))}
+    else{const g=P.groups.find(g=>g.gk===gk)||{name:(relay.newGroups||{})[gk]||gk};const same=P.secs.filter(s=>s.gk===gk);let after;
+      const ki=kindOrder.indexOf(kind);const before=same.filter(s=>kindOrder.indexOf(s.kind)<ki).pop(),nxt=same.find(s=>kindOrder.indexOf(s.kind)>ki);
+      after=before?before.end:nxt?nxt.head-1:(P.secs.length?Math.max(...P.secs.map(s=>s.end)):lines.length-1);
+      let n=0;push(after,['',`${g.name}：${RELAY_KINDS[kind]}`,...app[k].map(x=>fmt(x,relay.ch[x.id],++n))])}}
+  const out=[],om=[];lines.forEach((l,i)=>{out.push(l);om.push(mark[i]);if(ins[i])for(const a of ins[i]){out.push(a);om.push(a?'ins':'')}});
+  if(ins[-1]){out.unshift(...ins[-1]);om.unshift(...ins[-1].map(a=>a?'ins':''))}
+  return{text:out.join('\n'),lines:out,mark:om}}
+function relayGroupsAll(){const P=relay.parsed;const gs=P.groups.slice();for(const [gk,n] of Object.entries(relay.newGroups||{}))if(!gs.some(g=>g.gk===gk))gs.push({gk,name:n});return gs}
+function relayPanelHTML(){const P=relay.parsed;if(!P)return'';
+  if(!P.secs.length)return`<div class="warn rl-warn">認不出接龍的段落標題（例如「小組例行任務：上週未完成的事情」），所以不會接。請確認貼上的是完整的接龍全文。</div>`;
+  if(!relay.items.length)return`<div class="sub">這週沒有找到你的上週未完成、上週突發或本週預定工作。</div>`;
+  const st=relay.items.map(relayStatus);const nOk=st.filter(s=>s==='ok'||s==='already').length,nP=st.filter(s=>s==='pend').length,nS=st.filter(s=>s==='skip').length;
+  const gs=relayGroupsAll();
+  const row=x=>{const c=relay.ch[x.id],s=relayStatus(x);const sec=c.gk?relaySec(c.gk,x.kind):null;
+    const opts=[`<option value="append" ${c.place==='append'?'selected':''}>${sec?'新增在段落最後':'新開這一段，放在第 1 項'}</option>`];
+    if(sec)for(const it of sec.items){if(it.none)continue;opts.push(`<option value="name:${it.i}" ${c.place==='name'&&c.at===it.i?'selected':''}>加名字到：${esc(it.path).slice(0,60)}${it.mine?'（已有你）':''}</option>`);
+      if(x.kind==='plan'&&it.lv<3)opts.push(`<option value="sub:${it.i}" ${c.place==='sub'&&c.at===it.i?'selected':''}>當子項放在：${esc(it.path).slice(0,60)} 底下</option>`)}
+    opts.push(`<option value="skip" ${c.place==='skip'?'selected':''}>這次不接</option>`);
+    const tag={ok:c.auto?'<span class="stag ok">已記住位置</span>':'<span class="stag ok">已確認</span>',pend:'<span class="stag warn">待選</span>',skip:'<span class="stag idle">不接</span>',already:'<span class="stag idle">接龍裡已有你</span>'}[s];
+    return`<div class="rl-item rl-${s}"><div class="row" style="flex-wrap:wrap;gap:6px">${tag}<span class="sub">${esc(x.from)}${x.dl?'・'+relayDL(x.dl):''}</span></div>
+     <div class="fgrid rl-f"><label class="fl">寫成<input type="text" data-rl="label" data-id="${esc(x.id)}" value="${esc(c.label)}"></label>
+     <label class="fl">區塊<select data-rl="gk" data-id="${esc(x.id)}"><option value="" ${!c.gk?'selected':''}>請選擇</option>${gs.map(g=>`<option value="${esc(g.gk)}" ${c.gk===g.gk?'selected':''}>${esc(g.name)}</option>`).join('')}<option value="__new">＋ 新區塊…</option></select></label>
+     <label class="fl">放哪裡<select data-rl="place" data-id="${esc(x.id)}" ${c.gk?'':'disabled'}>${opts.join('')}</select></label></div>
+     ${s==='pend'&&c.gk?`<div><button class="btn sm pri" data-rl="ok" data-id="${esc(x.id)}">照這樣放</button></div>`:''}</div>`};
+  const kinds=['undone','urgent','plan'].map(k=>{const xs=relay.items.filter(x=>x.kind===k);return xs.length?`<h3 class="rl-h">${RELAY_KLABEL[k]}（${xs.length}）</h3>${xs.map(row).join('')}`:''}).join('');
+  const noneKeys=Object.keys(relay.none);
+  const noneHTML=noneKeys.length?`<h3 class="rl-h">沒有項目的段落</h3><p class="sub" style="margin:0 0 6px">勾選的段落，會把「${relayName()}」加進那一段的「無」。</p>${noneKeys.map(k=>{const [gk,kind]=k.split('|');const s=relaySec(gk,kind);const has=relay.items.some(x=>x.kind===kind&&relay.ch[x.id].gk===gk&&relayStatus(x)!=='skip');const mine=s.items.find(y=>y.none)?.mine;
+    return`<label class="rl-none"><input type="checkbox" data-rl="none" data-k="${esc(k)}" ${relay.none[k]?'checked':''} ${has||mine?'disabled':''}> ${esc(s.group)}：${RELAY_KLABEL[kind]}${mine?'（已有你）':has?'（你有項目，不用加）':''}</label>`}).join('')}`:'';
+  const B=relayBuild();const ready=nP===0;
+  return`<div class="rl-sum ${ready?'ok':''}">你的工作 ${relay.items.length} 筆：已放 ${nOk}・待選 ${nP}・不接 ${nS}</div>${kinds}${noneHTML}
+   <h3 class="rl-h">接好的全文 <span class="sub">綠色＝新增的行，黃色＝加上名字的行</span></h3>
+   <pre class="rl-out mono">${B.lines.map((l,i)=>`<span class="${B.mark[i]?'rl-'+B.mark[i]:''}">${esc(l)||' '}</span>`).join('\n')}</pre>
+   <div class="g-actions"><button class="btn pri" data-rl="copy" ${ready?'':'disabled'}>${ready?'複製全文':'還有 '+nP+' 筆待選'}</button></div>`}
+function relayRemember(){const M=db.settings.relayMap=Object.assign({},db.settings.relayMap||{});
+  for(const x of relay.items){const c=relay.ch[x.id],s=relayStatus(x);if(s!=='ok'&&s!=='skip'&&s!=='already')continue;const it=c.at!=null?relayItemAt(c.at):null;
+    const g=relayGroupsAll().find(g=>g.gk===c.gk);M[x.mk]={gk:c.gk,name:g?g.name:'',place:c.place,anchor:it?it.key:''}}
+  const NM=db.settings.relayNone=Object.assign({},db.settings.relayNone||{});for(const k in relay.none)NM[k]=!!relay.none[k];
+  const w=wkData();w.relaySrc=relay.src;persist()}
+function relayRedraw(){const h=$('#rl-host');if(h)h.innerHTML=relayPanelHTML()}
+function relayMount(){const src=$('#rl-src'),host=$('#rl-host');if(!src||!host)return;
+  const w=wkData();if(relay.week!==weekRange(weekAnchor)[0]){relay={week:'',parsed:null,items:[],ch:{},none:{}};src.value=w.relaySrc||''}else src.value=relay.src||w.relaySrc||'';
+  if(relay.parsed)relayRedraw();
+  $('#rl-go').onclick=()=>{relay.src=src.value;if(!src.value.trim()){toast('請先貼上接龍全文');return}relayStart(src.value);relay.src=src.value;wkData().relaySrc=src.value;persist();relayRedraw()};
+  const nm=$('#rl-name');nm.value=relayName();nm.onchange=()=>{db.settings.relayName=nm.value;persist();relayRedraw()};
+  host.addEventListener('change',e=>{const el=e.target.closest('[data-rl]');if(!el)return;const c=relay.ch[el.dataset.id],k=el.dataset.rl;
+    if(k==='none'){relay.none[el.dataset.k]=el.checked;relayRedraw();return}
+    if(!c)return;
+    if(k==='label'){c.label=el.value.trim()||c.label}
+    if(k==='gk'){if(el.value==='__new'){inputBox('新區塊名稱','例如：△△專案','',v=>{v=v.trim();if(!v){relayRedraw();return}const gk=nk(v);relay.newGroups=Object.assign({},relay.newGroups,{[gk]:v});c.gk=gk;c.place='append';c.at=null;c.ok=true;c.auto=false;relayRedraw()});return}
+      c.gk=el.value;c.place='append';c.at=null;c.ok=!!el.value;c.auto=false}
+    if(k==='place'){const v=el.value;if(v.startsWith('name:')||v.startsWith('sub:')){const [p,i]=v.split(':');c.place=p;c.at=+i}else{c.place=v;c.at=null}c.ok=true;c.auto=false}
+    relayRedraw()});
+  host.addEventListener('click',e=>{const el=e.target.closest('button[data-rl]');if(!el)return;
+    if(el.dataset.rl==='ok'){const c=relay.ch[el.dataset.id];if(c){c.ok=true;relayRedraw()}}
+    if(el.dataset.rl==='copy'){const B=relayBuild();copy(B.text);relayRemember();wkData().report=B.text;weekSave();toast('已複製，位置已記住，下週會自動放好')}})}
 
 /* ---------- 外殼 ---------- */
 const PAGES=[['today','今天','sun'],['calendar','月曆','cal'],['work','工作','todo'],['review','回顧','stat'],['notes','筆記','note']];
@@ -2713,16 +2853,40 @@ function pgTodo(){
 function todoRow(t,i){
   const done=['完成','已交付'].includes(t.status);const subDone=(t.subItems||[]).filter(s=>s.status==='完成').length;
   const l=t.dl?diffD(today(),t.dl):null;
-  return`<div class="li ${i===S.todoSel?'sel':''}" data-act="todosel" data-i="${i}" data-id="${t.id}">
+  return`<div class="li ${i===S.todoSel?'sel':''}" data-act="todosel" data-i="${i}" data-id="${t.id}" ${todoByProj()&&!t.archived&&!isMobile()?'draggable="true"':''}>
     <button class="ck ${done?'on':''}" data-act="todock" data-id="${t.id}" aria-label="${done?'取消完成':'標記完成'}">${done?ICO.chk:''}</button>
     <div class="main"><div class="ttl">${t.isStar?'⭐ ':''}${esc(t.title)}</div>
     <div class="meta"><span class="pdot" style="background:${pcolor(t.projectId)}"></span>${esc(pname(t.projectId))}<span class="chip">${t.category}</span>
       ${t.estHours!=null?`<span class="num">${fh(t.estHours)}hr</span>`:''}${t.subItems?.length?`<span>子項 ${subDone}/${t.subItems.length}</span>`:''}
       ${t.dl?`<span class="chip ${l<0?'late':l<=2?'pend':''}">DL ${md(t.dl)}${l<0?`（逾期 ${-l} 天）`:l===0?'（今天）':''}</span>`:''}
       ${t.date?(t.date<today()&&['規劃','待辦'].includes(t.status)?`<span class="chip pend" title="排定的日子已過，還沒在日誌回報完成或延遲">排入 ${md(t.date)}・未回報</span>`:`<span class="chip plan">排入 ${md(t.date)}</span>`):t.planDate?`<span class="chip plan" title="上一工作日盤點時寫的預計完成日，帶入當天再填預估">擬 ${md(t.planDate)} 完成</span>`:''}${t.estHours==null&&!t.date&&t.carryBy?'<span class="chip">預估未填</span>':''}<span class="chip ${STCLS[t.status]}">${t.status}</span>${t.carriedCount?`<span class="chip late">延續 ${t.carriedCount}</span>`:''}
-      ${t.deliverTo?`<span>交付：${esc(t.deliverTo)}</span>`:''}${t.outcome?`<span>成果：${esc(t.outcome)}</span>`:''}</div></div>
+      ${t.deliverTo?`<span>交付：${esc(t.deliverTo)}</span>`:''}${t.outcome?`<span>成果：${esc(t.outcome)}</span>`:''}${t.archived?'':`<button class="lnk tmv" data-act="todomove" data-id="${t.id}">移到…</button>`}</div></div>
     <div class="row hide-m">${t.archived?`<button class="btn sm" data-act="restore" data-id="${t.id}">還原</button><button class="btn sm danger" data-act="hardel" data-id="${t.id}">永久移除</button>`:`<button class="btn sm" data-act="sched" data-id="${t.id}">排入</button><button class="btn sm" data-act="deliver" data-id="${t.id}">交付</button><button class="btn sm" data-act="archive" data-id="${t.id}">封存</button><button class="btn sm danger" data-act="hardel" data-id="${t.id}">移除</button>`}</div></div>`}
-after.todo=()=>{const l=$('#todolist');if(l&&!isMobile()&&!modalStack.length&&document.activeElement===document.body)l.focus()};
+after.todo=()=>{const l=$('#todolist');if(l&&!isMobile()&&!modalStack.length&&document.activeElement===document.body)l.focus();
+  if(!l||!todoByProj()||isMobile())return;let dragId=null;
+  const pidOf=el=>{const h=el.closest('.tgrp-h');if(h)return h.querySelector('[data-pid]')?.dataset.pid??null;const r=el.closest('.li');return r?(db.tasks[r.dataset.id]?.projectId||''):null};
+  const clear=()=>$$('.drop-on',l).forEach(x=>x.classList.remove('drop-on'));
+  const groupEls=pid=>[...l.querySelectorAll('.tgrp-h,.li')].filter(x=>pidOf(x)===pid);
+  l.addEventListener('dragstart',e=>{const r=e.target.closest('.li');if(!r)return;dragId=r.dataset.id;e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',dragId)}catch(x){}r.classList.add('dragging')});
+  l.addEventListener('dragend',()=>{dragId=null;clear();$$('.dragging',l).forEach(x=>x.classList.remove('dragging'))});
+  l.addEventListener('dragover',e=>{if(!dragId)return;const pid=pidOf(e.target);if(pid==null)return;e.preventDefault();clear();if(pid!==(db.tasks[dragId]?.projectId||''))groupEls(pid).forEach(x=>x.classList.add('drop-on'))});
+  l.addEventListener('drop',e=>{if(!dragId)return;e.preventDefault();const pid=pidOf(e.target);const id=dragId;dragId=null;clear();if(pid==null||!pid)return;moveTodo(id,pid)})};
+function moveTodo(id,pid){const t=db.tasks[id];if(!t||!pid||t.projectId===pid)return;const old=t.projectId,oldName=pname(old),newName=pname(pid);
+  const day=t.date&&t.rawLine&&db.days[t.date]?.rawText?.includes(t.rawLine)?t.date:null;
+  const done=withLog=>{let undoLine=null;
+    if(withLog){const it=parseItem(t.rawLine,'today');const txt=db.days[day].rawText;if(it.ok){const nl=t.rawLine.replace(new RegExp('^(\\s*'+it.cat.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*[-－]\\s*)'+it.project.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')),'$1'+newName);if(nl!==t.rawLine){undoLine={day,from:nl,to:t.rawLine};applyDay(day,txt.replace(t.rawLine,nl));t.rawLine=nl}}}
+    t.projectId=pid;t.updatedAt=Date.now();persist();render._keep=true;render();
+    toastAct(`已移到「${newName}」`,'復原',()=>{const u=db.tasks[id];if(!u)return;if(undoLine&&db.days[undoLine.day]?.rawText?.includes(undoLine.from)){applyDay(undoLine.day,db.days[undoLine.day].rawText.replace(undoLine.from,undoLine.to));u.rawLine=undoLine.to}u.projectId=old;persist();render._keep=true;render();toast(`已移回「${oldName}」`)})};
+  if(!day){done(false);return}
+  openModal({title:'這筆已經排進日誌',body:`<p style="margin:0">「${esc(t.title)}」排在 ${md(day)}，日誌裡那一行寫的專案是「${esc(oldName)}」。<br>要不要把那天日誌的專案名稱一起改成「${esc(newName)}」？</p>`,
+    foot:'<button class="btn" data-act="mclose">取消</button><button class="btn" id="mv-only">只移待辦</button><button class="btn pri" id="mv-log">連日誌一起改</button>',
+    onMount:ov=>{$('#mv-only',ov).onclick=()=>{closeModal();done(false)};$('#mv-log',ov).onclick=()=>{closeModal();done(true)}}})}
+function moveTodoPick(id){const t=db.tasks[id];if(!t)return;
+  listModal('移到哪個專案','搜尋專案，或輸入新專案名稱後按 Enter',q=>{const ps=Object.values(db.projects).filter(p=>p.status!=='結案'&&p.id!==t.projectId&&(!q||nk(p.name).includes(nk(q))||(p.aliases||[]).some(a=>nk(a).includes(nk(q)))));const out=ps.map(p=>({l:p.name,g:'',id:p.id}));if(q.trim()&&!findProject(q.trim()))out.push({l:`新增專案「${q.trim()}」`,g:'',newName:q.trim()});return out},
+    it=>{const pid=it.newName?resolveProject(it.newName,t.category):it.id;moveTodo(id,pid)})}
+function toastAct(msg,label,fn){let el=$('#toast-act');if(!el){el=document.createElement('div');el.id='toast-act';document.body.appendChild(el)}
+  el.innerHTML=`<span>${esc(msg)}</span><button type="button">${esc(label)}</button>`;el.classList.add('on');clearTimeout(toastAct._t);
+  el.querySelector('button').onclick=()=>{el.classList.remove('on');fn()};toastAct._t=setTimeout(()=>el.classList.remove('on'),6000)}
 function curTodo(){const G=todoGroups();return(G[S.todoTab]||[])[S.todoSel]}
 
 function expandLongEntry(el){
@@ -3607,6 +3771,7 @@ const ACT={
   fixline:el=>fixLineModal(+el.dataset.i,el.dataset.sec),
   task:el=>openTask(el.dataset.id),newtodo:el=>openTask(null,el.dataset.pid?{projectId:el.dataset.pid}:{}),
   todotab:el=>{S.todoTab=el.dataset.t;S.todoSel=0;render()},
+  todomove:el=>moveTodoPick(el.dataset.id),
   todobyproj:el=>{try{localStorage.setItem('wc.todoByProj',el.checked?'1':'0')}catch(e){}S.todoSel=0;render()},
   todofold:el=>{S.todoFold=S.todoFold||{};const k=el.dataset.pid;S.todoFold[k]=!S.todoFold[k];render._keep=true;render()},
   todofoldall:()=>{const list=todoGroups()[S.todoTab]||[];const all=list.every(t=>todoHidden(t));S.todoFold={};if(!all)list.forEach(t=>S.todoFold[t.projectId||'']=true);render._keep=true;render()},
