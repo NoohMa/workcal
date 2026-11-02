@@ -904,7 +904,7 @@ label.fl .enh-wrap,.fgrid .enh-wrap{display:flex;width:100%}
 .qadd label:first-child{flex:0 0 110px}.qadd .qp{flex:1 1 170px}.qadd .qd{flex:2 1 220px}.qadd .qh{flex:0 0 76px}
 .qadd input,.qadd select{width:100%;box-sizing:border-box;min-height:40px;font-size:15px}
 .qadd .btn{min-height:40px;padding:0 18px}
-.tprev{margin-top:10px}.tseg-hint{margin:8px 0 6px}.tsegs{display:grid;gap:8px;margin-bottom:10px}.tseg{border:1px solid var(--w-line);border-radius:10px;padding:8px 12px;background:var(--w-bg)}.tseg.done{opacity:.75}.tseg-h{display:flex;align-items:center;gap:8px}.tseg-h .btn{margin-left:auto}.tseg pre{margin:6px 0 0;white-space:pre-wrap;word-break:break-word;font-size:13px;line-height:1.6;color:var(--w-fg)}.g-over{grid-column:1/-1}
+.tprev{margin-top:10px}.tgrp-bar{margin:0 0 8px;gap:12px}.tgrp-sw{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:14px}.tgrp-sw input{width:auto;min-height:0}.tgrp-h{display:flex;align-items:center;gap:8px;padding:10px 4px 6px;border-bottom:1px solid var(--w-line);margin-top:6px}.tgrp-t{display:flex;align-items:center;gap:8px;background:none;border:0;padding:4px 2px;cursor:pointer;color:var(--w-fg);font:inherit;min-width:0;flex-wrap:wrap;text-align:left}.tgrp-ar{width:1em;color:var(--w-fg2)}.tseg-hint{margin:8px 0 6px}.tsegs{display:grid;gap:8px;margin-bottom:10px}.tseg{border:1px solid var(--w-line);border-radius:10px;padding:8px 12px;background:var(--w-bg)}.tseg.done{opacity:.75}.tseg-h{display:flex;align-items:center;gap:8px}.tseg-h .btn{margin-left:auto}.tseg pre{margin:6px 0 0;white-space:pre-wrap;word-break:break-word;font-size:13px;line-height:1.6;color:var(--w-fg)}.g-over{grid-column:1/-1}
 .tprev summary{cursor:pointer;color:var(--w-acc);font-size:14px;width:max-content}
 .tprev pre{margin:8px 0 0;background:var(--w-bg);border:1px solid var(--w-line);border-radius:10px;padding:12px 14px;max-height:220px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:13px;line-height:1.6;color:var(--w-fg)}
 .sacts{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}
@@ -1622,7 +1622,7 @@ function teamsSegments(D,o){const lines=teamsText(D,o).split('\n').slice(1);cons
     if(cur){if(cur.key==='priv'&&/^私記/.test(t))continue;cur.lines.push(l)}else if(t)pre.push(l)}
   for(const g of segs){while(g.lines.length&&!g.lines[g.lines.length-1].trim())g.lines.pop();while(g.lines.length&&!g.lines[0].trim())g.lines.shift()}
   const out=[];if(pre.length)out.push({key:'head',title:'辦公地／請假',text:pre.join('\n')});
-  for(const g of segs)out.push({key:g.key,title:g.title,text:(g.key==='priv'?'':g.title+'\n')+(g.lines.length?g.lines.join('\n'):'無')});
+  for(const g of segs)out.push({key:g.key,title:g.title,text:g.lines.length?g.lines.join('\n'):'無'});
   return out}
 function weekRange(d){const g=pd(d).getDay();const mon=addD(d,-((g+6)%7));return[mon,addD(mon,6)]}
 function weeklyText(anchor){
@@ -2219,7 +2219,7 @@ function dayStep3(D,st){
  const txt=has?teamsText(D,o):'';
  const when=t?new Date(t):null;
  return `<section class="step ${t?'is-done':''}" aria-label="步驟三 送出 Teams">${stepHead(3,!!t,'送出 Teams',t?`<span class="okc">已上傳 ${pad(when.getHours())}:${pad(when.getMinutes())}</span>`:has?'<span class="warnc">尚未上傳</span>':'<span class="muted">日誌還是空的</span>','<button class="lnk" data-act="teams">匯出選項</button>')}
-  ${has?(()=>{const segs=teamsSegments(D,o),cp=(S.tsegCopied||{})[D]||{};return `<p class="sub tseg-hint">一段一段複製貼到 Teams；日期標題只留在自己的紀錄，不會複製。</p><div class="tsegs">${segs.map((g,i)=>`<div class="tseg ${cp[g.key]?'done':''}"><div class="tseg-h"><b>${esc(g.title)}</b><span class="sp"></span><button class="btn sm ${cp[g.key]?'':'pri'}" data-act="teamsseg" data-k="${g.key}" data-i="${i}">${cp[g.key]?'已複製・再複製':'複製'}</button></div><pre class="mono">${esc(g.key==='priv'?g.text:g.text.split('\n').slice(1).join('\n'))}</pre></div>`).join('')}</div>`})():''}
+  ${has?(()=>{const segs=teamsSegments(D,o),cp=(S.tsegCopied||{})[D]||{};return `<p class="sub tseg-hint">一段一段複製貼到 Teams：只複製內容，不含段落標題和日期；「複製全部」會保留段落標題。</p><div class="tsegs">${segs.map((g,i)=>`<div class="tseg ${cp[g.key]?'done':''}"><div class="tseg-h"><b>${esc(g.title)}</b><span class="sp"></span><button class="btn sm ${cp[g.key]?'':'pri'}" data-act="teamsseg" data-k="${g.key}" data-i="${i}">${cp[g.key]?'已複製・再複製':'複製'}</button></div><pre class="mono">${esc(g.text)}</pre></div>`).join('')}</div>`})():''}
   <div class="sacts"><button class="btn big" data-act="teamscopy" ${has?'':'disabled'}>複製全部 <kbd class="hide-m">Ctrl⇧C</kbd></button><button class="btn big ${t?'':'outline'}" data-act="teamsconfirm" ${has?'':'disabled'}>${t?'取消已上傳':'標記已上傳'}</button>${(()=>{if(S.privacy||!st.p.today.length)return'';const N=nextWorkday(D),done=!!liveReview(N);return `<button class="btn big ${done?'':'outline'}" data-act="dayclose" title="下班前直接盤點今天，寫入 ${md(N)} 的昨日完成">${done?'已結案・重新盤點':'今日結案'}</button>`})()}<span class="sp"></span>
   <span class="slinks"><button class="lnk" data-act="copyai">複製給 AI</button><button class="lnk" data-act="pasteback" ${S.privacy?'disabled':''}>貼回定稿</button><button class="lnk" data-act="logopen">原文編輯</button><button class="lnk" data-act="wcdetailopen">單日完整內容</button></span></div></section>`}
 function dayCommit(D,text,msg){applyDay(D,text);delete drafts[D];persist();render._keep=true;render();wcHoursAlert(D);if(msg)toast(msg)}
@@ -2690,10 +2690,14 @@ function todoGroups(){
   let arch=all.filter(t=>t.archived);
   if(S.archYear!=='all')arch=arch.filter(t=>(t.deliveredAt||t.date||'').startsWith(S.archYear));
   if(S.archProj!=='all')arch=arch.filter(t=>t.projectId===S.archProj);
-  return{'未排日':all.filter(t=>open(t)&&!t.date&&!od.has(t.id)).sort(by(t=>t.dl||'9999')),
+  const G={'未排日':all.filter(t=>open(t)&&!t.date&&!od.has(t.id)).sort(by(t=>t.dl||'9999')),
     '已排日':all.filter(t=>open(t)&&t.date&&!od.has(t.id)).sort(by(t=>t.date)),
     '逾期':overdue.sort(by(t=>t.dl||t.date)),
-    '封存':arch.sort(by(t=>t.deliveredAt||t.date||'',-1))}}
+    '封存':arch.sort(by(t=>t.deliveredAt||t.date||'',-1))};
+  if(todoByProj())for(const k in G)G[k]=groupByProj(G[k]);return G}
+function todoByProj(){try{return localStorage.getItem('wc.todoByProj')==='1'}catch(e){return false}}
+function groupByProj(list){const order=[],m={};for(const t of list){const k=t.projectId||'';if(!m[k]){m[k]=[];order.push(k)}m[k].push(t)}return order.flatMap(k=>m[k])}
+function todoHidden(t){return todoByProj()&&!!(S.todoFold||{})[t.projectId||'']}
 function pastScheduled(){const t0=today();return T().filter(t=>(t.source==='todo'||t.source==='carry')&&!t.archived&&t.date&&t.date<t0&&['完成','延遲','已交付'].includes(t.status))}
 function pgTodo(){
   const G=todoGroups();const list=G[S.todoTab]||[];if(S.todoSel>=list.length)S.todoSel=Math.max(0,list.length-1);
@@ -2703,7 +2707,8 @@ function pgTodo(){
   <div class="tabs" role="tablist">${Object.keys(G).map(k=>`<button class="tab" data-act="todotab" data-t="${k}" aria-label="${k}${k==='逾期'&&G[k].length?'，有 ' + G[k].length + ' 筆逾期待辦':''}" aria-pressed="${S.todoTab===k}">${k}<span class="c">${G[k].length}</span>${k==='逾期'&&G[k].length?'<span class="todo-alert" aria-label="有逾期待辦">●</span>':''}</button>`).join('')}</div>
   ${S.todoTab==='封存'?`<div class="row" style="margin-bottom:10px"><select data-act="archyear" style="width:auto"><option value="all">全部年份</option>${years.map(y=>`<option ${S.archYear===y?'selected':''}>${y}</option>`).join('')}</select>
     <select data-act="archproj" style="width:auto"><option value="all">全部專案</option>${Object.values(db.projects).map(p=>`<option value="${p.id}" ${S.archProj===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div>`:''}
-  ${list.length?`<div class="list" id="todolist" tabindex="0" aria-label="待辦清單（↑↓ 選擇）">${list.map((t,i)=>todoRow(t,i)).join('')}</div>`:`<div class="empty">${S.todoTab==='未排日'?'沒有未排日的待辦。按 N 新增一筆。':S.todoTab==='封存'?'封存區是空的。交付或放棄的待辦會自動移到這裡。':'這裡沒有項目。'}</div>`}
+  <div class="row tgrp-bar"><label class="tgrp-sw"><input type="checkbox" data-act="todobyproj" ${todoByProj()?'checked':''}> 依專案分組</label>${todoByProj()&&list.length?`<button class="lnk" data-act="todofoldall">${list.every(t=>todoHidden(t))?'全部展開':'全部收合'}</button>`:''}</div>
+  ${list.length?`<div class="list" id="todolist" tabindex="0" aria-label="待辦清單（↑↓ 選擇）">${list.map((t,i)=>{const pid=t.projectId||'';let head='';if(todoByProj()&&(i===0||(list[i-1].projectId||'')!==pid)){const g=list.filter(x=>(x.projectId||'')===pid),est=sum(g,x=>x.estHours||0),fold=!!(S.todoFold||{})[pid];head=`<div class="tgrp-h"><button class="tgrp-t" data-act="todofold" data-pid="${pid}" aria-expanded="${!fold}"><span class="tgrp-ar">${fold?'▸':'▾'}</span><span class="pdot" style="background:${pcolor(t.projectId)}"></span><b>${esc(pid?pname(pid):'未指定專案')}</b><span class="sub">${g.length} 項${est?`・預估 ${fh(est)}h`:''}</span></button><span class="sp"></span>${S.todoTab!=='封存'&&pid?`<button class="btn sm" data-act="newtodo" data-pid="${pid}">＋ 新增到此專案</button>`:''}</div>`}return head+(todoHidden(t)?'':todoRow(t,i))}).join('')}</div>`:`<div class="empty">${S.todoTab==='未排日'?'沒有未排日的待辦。按 N 新增一筆。':S.todoTab==='封存'?'封存區是空的。交付或放棄的待辦會自動移到這裡。':'這裡沒有項目。'}</div>`}
   <p class="sub" style="margin-top:10px">鍵盤：↑↓ 選擇・N 新增・Enter 編輯・Space 完成・D 設 DL・S 排入某天・Del 封存</p>`}
 function todoRow(t,i){
   const done=['完成','已交付'].includes(t.status);const subDone=(t.subItems||[]).filter(s=>s.status==='完成').length;
@@ -3602,6 +3607,9 @@ const ACT={
   fixline:el=>fixLineModal(+el.dataset.i,el.dataset.sec),
   task:el=>openTask(el.dataset.id),newtodo:el=>openTask(null,el.dataset.pid?{projectId:el.dataset.pid}:{}),
   todotab:el=>{S.todoTab=el.dataset.t;S.todoSel=0;render()},
+  todobyproj:el=>{try{localStorage.setItem('wc.todoByProj',el.checked?'1':'0')}catch(e){}S.todoSel=0;render()},
+  todofold:el=>{S.todoFold=S.todoFold||{};const k=el.dataset.pid;S.todoFold[k]=!S.todoFold[k];render._keep=true;render()},
+  todofoldall:()=>{const list=todoGroups()[S.todoTab]||[];const all=list.every(t=>todoHidden(t));S.todoFold={};if(!all)list.forEach(t=>S.todoFold[t.projectId||'']=true);render._keep=true;render()},
   todosel:(el,e)=>{if(e.target.closest('button'))return;S.todoSel=+el.dataset.i;openTask(el.dataset.id)},
   todock:el=>toggleDone(el.dataset.id),sched:el=>schedPrompt(el.dataset.id),deliver:el=>deliverPrompt(el.dataset.id),
   archive:el=>{const t=db.tasks[el.dataset.id];t.archived=true;persist();toast('已封存，可在「封存」還原');render._keep=true;render()},
@@ -3702,8 +3710,8 @@ document.addEventListener('keydown',e=>{
     if(k==='n'||k==='N'){openTask(null);return}return}
   if(k==='t'||k==='T'){if(S.page!=='notes'){openDay(today());return}}
   if(S.page==='todo'){const G=todoGroups();const list=G[S.todoTab]||[];const t=list[S.todoSel];
-    if(k==='ArrowDown'){e.preventDefault();S.todoSel=Math.min(list.length-1,S.todoSel+1);render._keep=true;render();$('.li.sel')?.scrollIntoView({block:'nearest'});return}
-    if(k==='ArrowUp'){e.preventDefault();S.todoSel=Math.max(0,S.todoSel-1);render._keep=true;render();$('.li.sel')?.scrollIntoView({block:'nearest'});return}
+    if(k==='ArrowDown'){e.preventDefault();let j=S.todoSel+1;while(j<list.length&&todoHidden(list[j]))j++;if(j<list.length)S.todoSel=j;render._keep=true;render();$('.li.sel')?.scrollIntoView({block:'nearest'});return}
+    if(k==='ArrowUp'){e.preventDefault();let j=S.todoSel-1;while(j>=0&&todoHidden(list[j]))j--;if(j>=0)S.todoSel=j;render._keep=true;render();$('.li.sel')?.scrollIntoView({block:'nearest'});return}
     if(k==='ArrowRight'||k==='ArrowLeft'){const ks=Object.keys(G);const i=ks.indexOf(S.todoTab);S.todoTab=ks[(i+(k==='ArrowRight'?1:ks.length-1))%ks.length];S.todoSel=0;render();return}
     if(k==='n'||k==='N'){openTask(null);return}
     if(!t)return;
