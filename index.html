@@ -1503,6 +1503,7 @@ function applyDay(D,text,opt={}){
   const prevPlan=T().filter(t=>t.date===Pd&&t.origin==='plan');const used2=new Set();
   const snap=t=>{t._ps=t.status;t._pa=t.actual?.office??null;t._psub=structuredClone(t.subItems);t._pdv=t.deliveredAt;t._pdt=t.doneText;t._pdr=t.delayReasonText;t._pdg=t.delayReasonTag;t.closedByDay=D};
   for(const it of r.done){
+    if(it.actual==null&&/＿/.test(it.raw))continue; // 範本預填、還沒盤點的行（實＿hr）不算完成
     let t=bestMatch(prevPlan,it,used2);
     if(t){used2.add(t.id);snap(t)}
     else{t=newTask({date:Pd,origin:'backfill',source:'backfill',createdByDay:D,isUrgent:!!it.fromUrgent});applyItemFields(t,it,Pd)}
@@ -1516,6 +1517,7 @@ function applyDay(D,text,opt={}){
     if(it.note&&!t.note)t.note=it.note;if(it.overReason)t.overReason=it.overReason;t.updatedAt=Date.now()}
   const carries=[];
   for(const it of r.undone){
+    if(/因\s*＿＿/.test(it.raw))continue; // 範本預填、還沒盤點的行不算未完成
     let t=bestMatch(prevPlan,it,used2);
     if(t){used2.add(t.id);snap(t)}
     else{t=newTask({date:Pd,origin:'backfill',source:'backfill',createdByDay:D,isUrgent:!!it.fromUrgent});applyItemFields(t,it,Pd)}
@@ -2736,7 +2738,7 @@ function migrateTT(){const st=db.settings;if(!st||(st.ttSplitVer||0)>=1)return f
 function migrateHoli(){const st=db.settings;if(!st||(st.holiVer||0)>=2)return false;st.holiVer=2;
   if(st.holidaysText&&/^2027-\d\d-\d\d.*待核/m.test(st.holidaysText)){const keep=st.holidaysText.split('\n').filter(l=>!/^2027-/.test(l.trim())).join('\n').replace(/\s+$/,'');const add=HOLI_TEXT.split('\n').filter(l=>/^2027-/.test(l)).join('\n');st.holidaysText=keep+'\n'+add;HOL_SRC=null}return true}
 function rebindDb(){
-  const m1=migrateHoli(),m2=migrateLeaveTypes(),m3=migrateTT(),m5=migrateRoutines(),m4=expireCarries();if(m1||m2||m3||m4||m5)persist();
+  const m1=migrateHoli(),m2=migrateLeaveTypes(),m3=migrateTT(),m5=migrateRoutines(),m6=fixPlaceholderReview(),m4=expireCarries();if(m1||m2||m3||m4||m5||m6)persist();
   clearTimeout(rebindDb._mg);rebindDb._mg=setTimeout(()=>{try{if(!modalStack.length&&!(db.settings.mergeReviewVer>=1))mergeReview()}catch(e){}},200);
   const first=!rebindDb.done;
   if(!db.teamsConfirmed)db.teamsConfirmed=first?Object.assign({},teamsConfirmed):{};
@@ -3718,6 +3720,9 @@ const ROUTINE_DEFAULTS=[
   {id:'rt-review',on:true,cat:'例行',project:'每週工作盤點',detail:'',est:0.5,rule:'w1',shift:'review'}];
 const ROUTINE_SHIFT={skip:'放假就不做',prev1:'放假改前一天；前一天也放假就不做',review:'國定假日延到下一個上班日；自己請假提前到上一個上班日'};
 function routines(){return db.settings.routines||(db.settings.routines=structuredClone(ROUTINE_DEFAULTS))}
+function fixPlaceholderReview(){const s=db.settings;if(s.phFixVer>=1)return false;s.phFixVer=1;const from=addD(today(),-60);
+  // 之前範本預填的「昨日完成（實＿hr）」被當成已完成；重新套用這些天（原文不變），讓前一天的工作回到正確狀態
+  for(const D of Object.keys(db.days).sort()){if(D<from)continue;const tx=db.days[D]?.rawText||'';if(/實＿hr|因＿＿/.test(tx))applyDay(D,tx,{noCascade:true})}return true}
 function migrateRoutines(){const s=db.settings;if(s.routinesVer>=1)return false;if(!s.routines)s.routines=structuredClone(ROUTINE_DEFAULTS);s.routineFrom=s.routineFrom||today();s.routinesVer=1;return true}
 function officeDay(d){return isWorkday(d)&&!isStopDay(d)}
 function planOff(d){return leavePlans().some(p=>planDates(p.start,p.end).includes(d)&&(p.mode!=='hours'||Number(p.hours)>=hpd()))}
