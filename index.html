@@ -1744,13 +1744,13 @@ function dlUniq(list){const ck=t=>t.chainId||t.id;const live=T().filter(u=>!u.ar
     const rank=x=>[x.status==='延遲'?0:1,x.date||'9999',x.updatedAt||0];const a=rank(t),b=rank(cur);if(a[0]>b[0]||a[0]===b[0]&&(a[1]>b[1]||a[1]===b[1]&&a[2]>b[2]))keep.set(k,t)}
   return list.filter(t=>{if(keep.get(ck(t))!==t)return false;if(t.status==='延遲'&&live.some(u=>u!==t&&ck(u)===ck(t)&&u.status!=='延遲'))return false;return true})}
 document.addEventListener('input',e=>{const el=e.target;if(!el.classList||!el.classList.contains('dur'))return;const h=el.nextElementSibling;if(h&&h.classList.contains('dur-hint'))h.innerHTML=durHint(el.value)});
-/* 專案下拉：依最近 30 天使用次數排序；30 天沒用的不列，打字仍可搜尋 */
-function projUsage(cat){const from=addD(today(),-30),T0=today(),all={},byCat={};
+/* 專案下拉：只列最近 14 天、且是所選分類用過的專案（該分類沒有就列全部近 14 天）；打字可搜尋全部 */
+function projUsage(cat){const from=addD(today(),-14),T0=today(),all={},byCat={};
   for(const t of T()){if(!t.projectId||!t.date||t.date<from||t.date>T0)continue;all[t.projectId]=(all[t.projectId]||0)+1;if(cat&&t.category===cat)byCat[t.projectId]=(byCat[t.projectId]||0)+1}return{all,byCat}}
 function projDL(q,cat){const u=projUsage(cat),ps=Object.values(db.projects);const sc=p=>[(u.byCat[p.id]||0),(u.all[p.id]||0)];
   const ord=(a,b)=>{const x=sc(a),y=sc(b);return y[0]-x[0]||y[1]-x[1]||a.name.localeCompare(b.name,'zh-Hant')};
   q=nk(q||'');let L;
-  if(!q)L=ps.filter(p=>p.status!=='結案'&&u.all[p.id]).sort(ord).slice(0,15);
+  if(!q){const inCat=cat?ps.filter(p=>p.status!=='結案'&&u.byCat[p.id]):[];L=(inCat.length?inCat:ps.filter(p=>p.status!=='結案'&&u.all[p.id])).sort(ord).slice(0,15)}
   else L=ps.filter(p=>nk(p.name).includes(q)||(p.aliases||[]).some(a=>nk(a).includes(q))).sort((a,b)=>(a.status==='結案')-(b.status==='結案')||ord(a,b)).slice(0,30);
   return L.map(p=>`<option value="${esc(p.name)}">${p.status==='結案'?'（已結案）':''}</option>`).join('')}
 function projDLFill(el){const dl=document.getElementById(el.getAttribute('list'));if(!dl)return;const c=el.dataset.pj?document.querySelector(el.dataset.pj):null;dl.innerHTML=projDL(el.value,c?c.value:'')}
